@@ -1,9 +1,12 @@
 import React from "react";
 
-export default function Clue() {
+export default function Clue(props) {
+
+  const { displayClue, handleDoubleClick } = props
+
   return (
-    <div className="clue">
-      
+    <div onDoubleClick={handleDoubleClick} className="clue">
+      <p>{displayClue()}</p>
     </div>
   )
 }
