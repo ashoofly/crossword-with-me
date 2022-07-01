@@ -87,10 +87,9 @@ body {
   cursor: pointer;
 }
 
-/* .square:focus {
-  outline: 1px solid yellow;
-  z-index: 1;
-} */
+.square:focus {
+  outline: none;
+}
 
 .focused-letter {
   background-color: rgb(22, 61, 237);
@@ -98,4 +97,8 @@ body {
 }
 .focused-word {
   background-color: rgb(21, 120, 242);
+}
+
+.show-answer {
+  color:rgb(176, 207, 245)
 }

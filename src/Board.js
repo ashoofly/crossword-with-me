@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React from "react";
 import Square from "./Square";
 import data from "./data/xwordinfo.json";
@@ -14,8 +15,11 @@ export default function Board(props) {
     setSquareProps,
     activeSquare,
     setActiveSquare ,
-    findWordStart,
-    showAnswers
+    findWordBoundaries,
+    showAnswers,
+    handleKeyDown,
+    goToNextLogicalSquare, 
+    deleteMode
   } = props;
 
   /**
@@ -38,52 +42,15 @@ export default function Board(props) {
     })
   }
 
-  function findWordEnd(index) {
-    const answers = data.grid;
-    let currentIndex = index;
-    let wordEnd;
-    if (orientation === "across") {
-      while(answers[currentIndex] !== '.' && currentIndex % numCols !== (numCols-1)) {
-        currentIndex++;
-      }
-      wordEnd = answers[currentIndex] === '.' ?  currentIndex-1 : currentIndex;
-
-    } else {
-      //orientation is "down"
-      while((currentIndex + numCols) < (numCols * numRows) && answers[currentIndex] !== '.') {
-        currentIndex = currentIndex + numCols;
-      }
-      wordEnd = answers[currentIndex] === '.' ?  currentIndex-numCols : currentIndex;
-    }
-    return wordEnd;
-  }
-
-  function switchFocusOnOrientationChange() {
-    toggleWordHighlight(activeSquare, true);
-    switchTabbingBehavior();
-  }
-
-  function switchTabbingBehavior() {
-    const tabClass = orientation === "across" ? "ws-across" : "ws-down";
-    setSquareProps( prevState => {
-      return prevState.map( square => {
-        return ({
-          ...square,
-          tabIndex: square.classNames.find( c => c === tabClass) ? 0 : -1
-        });
-      })
-    });
-  }
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  React.useEffect(switchFocusOnOrientationChange, [orientation]);
-
+  // React.useEffect(switchFocusOnOrientationChange, [orientation]);
+  React.useEffect(highlightActiveWord, [orientation, activeSquare])
 
   function handleFocus(event, index) {
+    console.log("Focused index: " + index);
     if (squareProps[index].answer === ".") return;
     clearAllFocus();
     setActiveSquare(index);
-    toggleWordHighlight(index, true);
   }
 
   function handleMouseDown(index) {
@@ -92,56 +59,48 @@ export default function Board(props) {
     } 
   }
 
-  function handleBlur(index) {
-    // toggleWordHighlight(index, false);
-  }
-
-  function toggleWordHighlight(index, isHighlighted) {
-    let endIndex = findWordEnd(index);
-    let startIndex = findWordStart(index);
+  function highlightActiveWord() {
+    let [ startIndex, endIndex ] = findWordBoundaries(activeSquare);
     if (orientation === "across") {
       for (let i=startIndex; i<=endIndex; i++) {
-        if (index === i) {
-          toggleClass(i, "focused-letter", isHighlighted);
+        if (activeSquare === i) {
+          toggleClass(i, "focused-letter", true);
         } else {
-          toggleClass(i, "focused-word", isHighlighted);
+          toggleClass(i, "focused-word", true);
         }
       }
     } else {
       // orientation is "down"
       for (let i=startIndex; i<=endIndex; i=(i + numCols)) {
-        if (index === i) {
-          toggleClass(i, "focused-letter", isHighlighted);
+        if (activeSquare === i) {
+          toggleClass(i, "focused-letter", true);
         } else {
-          toggleClass(i, "focused-word", isHighlighted);
+          toggleClass(i, "focused-word", true);
         }
       }
     }
   }
 
-
+  function showAnswer() {
+    return showAnswers;
+  }
 
   const squares = squareProps.map( square => {
     return (
       <Square key={square.id} 
               {...square}
-              showAnswers={showAnswers}
+              showAnswer={showAnswer()}
               handleMouseDown={() => handleMouseDown(square.id) }
               handleFocus={(event) => handleFocus(event, square.id) }
-              handleBlur={() => handleBlur(square.id)} 
+              handleKeyDown={handleKeyDown}
+              goToNextLogicalSquare={goToNextLogicalSquare}
+              deleteMode={deleteMode}
       />
     )
   });
 
-  function handleKeyDown(event) {
-    if (event.key === " ") {
-      changeOrientation();
-    }
-  }
-
-
   return (
-    <div onKeyDown={handleKeyDown} className="Board">
+    <div className="Board">
       {squares}
     </div>
   )
