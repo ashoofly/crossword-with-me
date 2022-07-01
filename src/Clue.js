@@ -2,10 +2,10 @@ import React from "react";
 
 export default function Clue(props) {
 
-  const { displayClue, handleDoubleClick } = props
+  const { displayClue, handleClick } = props
 
   return (
-    <div onDoubleClick={handleDoubleClick} className="clue">
+    <div onClick={handleClick} className="clue">
       <p>{displayClue()}</p>
     </div>
   )

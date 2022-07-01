@@ -9,11 +9,13 @@ export default function Board(props) {
     numRows, 
     orientation, 
     changeOrientation, 
+    clearAllFocus,
     squareProps, 
     setSquareProps,
     activeSquare,
     setActiveSquare ,
-    findWordStart
+    findWordStart,
+    showAnswers
   } = props;
 
   /**
@@ -56,19 +58,8 @@ export default function Board(props) {
     return wordEnd;
   }
 
-  function handleClick(event, index) {
-    if (squareProps[index].value === ".") return;
-    setActiveSquare(index);
-    if (event.detail % 2 === 0) {
-      // double click switches clue orientation 
-      changeOrientation();
-    } else {
-      handleFocus(index);
-    }
-  }
-
   function switchFocusOnOrientationChange() {
-    handleFocus(activeSquare);
+    toggleWordHighlight(activeSquare, true);
     switchTabbingBehavior();
   }
 
@@ -88,11 +79,17 @@ export default function Board(props) {
   React.useEffect(switchFocusOnOrientationChange, [orientation]);
 
 
-  function handleFocus(index) {
-    if (squareProps[index].value === ".") return;
+  function handleFocus(event, index) {
+    if (squareProps[index].answer === ".") return;
     clearAllFocus();
     setActiveSquare(index);
     toggleWordHighlight(index, true);
+  }
+
+  function handleMouseDown(index) {
+    if (index === activeSquare) {
+      changeOrientation();
+    } 
   }
 
   function handleBlur(index) {
@@ -122,30 +119,29 @@ export default function Board(props) {
     }
   }
 
-  function clearAllFocus() {
-    setSquareProps(prevState => {
-      return prevState.map( square => {
-        return ({
-          ...square,
-          classNames: square.classNames.filter( c => c !== "focused-letter" && c!== "focused-word")
-        });
-      })
-    })
-  }
+
 
   const squares = squareProps.map( square => {
     return (
       <Square key={square.id} 
               {...square}
-              handleFocus={() => handleFocus(square.id) }
-              handleClick={(event) => handleClick(event, square.id)}
+              showAnswers={showAnswers}
+              handleMouseDown={() => handleMouseDown(square.id) }
+              handleFocus={(event) => handleFocus(event, square.id) }
               handleBlur={() => handleBlur(square.id)} 
       />
     )
   });
 
+  function handleKeyDown(event) {
+    if (event.key === " ") {
+      changeOrientation();
+    }
+  }
+
+
   return (
-    <div className="Board">
+    <div onKeyDown={handleKeyDown} className="Board">
       {squares}
     </div>
   )

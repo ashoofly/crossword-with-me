@@ -12,15 +12,27 @@ body {
 
 }
 
-.Navbar {
+.navbar {
   border: 1px solid greenyellow;
   color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.navbar h1 {
+  font-size: 1rem;
 
 }
 
-.Navbar h1 {
-  font-size: 1rem;
 
+.check-puzzle {
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
 }
 
 .Board {
@@ -72,6 +84,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
 }
 
 /* .square:focus {
