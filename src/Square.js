@@ -28,7 +28,7 @@ export default function Square(props) {
     <div 
         ref={squareRef} 
         onKeyDown={handleKeyDown} 
-        onFocus={handleFocus} 
+        onClick={handleFocus} 
         onMouseDown={handleMouseDown} 
         className={classNames.join(" ")} 
     >

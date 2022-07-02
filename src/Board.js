@@ -7,14 +7,15 @@ export default function Board(props) {
     numCols, 
     numRows, 
     gridNums,
-    orientation, 
     toggleOrientation, 
     squareProps, 
     setSquareProps,
     grid,
     showAnswers,
     activeWord,
-    setActiveWord
+    setActiveWord,
+    findWordStart,
+    findWordEnd
   } = props;
 
   const [ deleteMode, setDeleteMode ] = React.useState(false);
@@ -40,18 +41,19 @@ export default function Board(props) {
     })
   }
 
-  // React.useEffect(highlightActiveWord, [orientation, activeWord])
-  // React.useEffect(clearAllFocus, [orientation]); //TODO: how can we tell which order these will run in and weird dependencies that i don't want to include 
+  React.useEffect(highlightActiveWord, [activeWord])
+ // React.useEffect(clearAllFocus, [activeWord]); //TODO: how can we tell which order these will run in and weird dependencies that i don't want to include 
 
   function handleFocus(event, index) {
     console.log("Focused index: " + index);
     if (squareProps[index].answer === ".") return;
-    clearAllFocus();
-    setActiveWord({
+    // clearAllFocus();
+    setActiveWord( prevState => ({
+      ...prevState,
       focus: index,
-      start: findWordStart(index),
-      end: findWordEnd(index),
-    });
+      start: findWordStart(index, prevState.orientation),
+      end: findWordEnd(index,prevState.orientation),
+    }));
   }
 
   function handleMouseDown(index) {
@@ -62,7 +64,9 @@ export default function Board(props) {
   }
 
   function highlightActiveWord() {
-    let incrementInterval = orientation === "across" ? 1 : numCols;
+    clearAllFocus();
+    console.log("highlight active word");
+    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
     for (let i=activeWord.start; i<=activeWord.end; i=(i + incrementInterval)) {
       if (activeWord.focus === i) {
         toggleClass(i, "focused-letter", true);
@@ -134,44 +138,11 @@ export default function Board(props) {
     } 
   }
 
-  function findWordStart(index) {
-    let currentIndex = index;
-    if (orientation === "across") {
-      while(!squareProps[currentIndex].classNames.find(c => c === "ws-across")) {
-        currentIndex--;
-      }
-    } else {
-      //orientation is "down"
-      while(currentIndex >= numCols && !squareProps[currentIndex].classNames.find(c => c === "ws-down")) {
-        currentIndex = currentIndex - numCols;
-      }
-    }
-    return currentIndex;
-  }
-
-  function findWordEnd(index) {
-    let currentIndex = index;
-    let wordEnd;
-    if (orientation === "across") {
-      while(grid[currentIndex] !== '.' && currentIndex % numCols !== (numCols-1)) {
-        currentIndex++;
-      }
-      wordEnd = grid[currentIndex] === '.' ?  currentIndex-1 : currentIndex;
-
-    } else {
-      //orientation is "down"
-      while((currentIndex + numCols) < (numCols * numRows) && grid[currentIndex] !== '.') {
-        currentIndex = currentIndex + numCols;
-      }
-      wordEnd = grid[currentIndex] === '.' ?  currentIndex-numCols : currentIndex;
-    }
-    return wordEnd;
-  }
 
   function getPreviousSquare() {
     if (activeWord.focus === 0) return 0;
 
-    if (orientation === "across") {
+    if (activeWord.orientation === "across") {
       let current = activeWord.focus-1;
       while(squareProps[current].answer === ".") {
         current--;
@@ -194,23 +165,23 @@ export default function Board(props) {
     }
   }
 
-  function getPreviousWord() {
-    // TODO: For the tab back button on the clue bar. 
-  }
+  // function getPreviousWord() {
+  //   // TODO: For the tab back button on the clue bar. 
+  // }
 
-  function getNextWord() {
-    // TODO:
-    if (orientation === "across") {
-      let currentIndex = activeWord.end;
-      while(squareProps[currentIndex].userInput !== "" || squareProps[currentIndex].answer === ".") {
-        currentIndex++;
-      }
-      return currentIndex;
-    } else {
-      // orientation is "down"
-      return getNextDownEmptySquare(activeWord.start);
-    }
-  }
+  // function getNextWord() {
+  //   // TODO:
+  //   if (activeWord.orientation === "across") {
+  //     let currentIndex = activeWord.end;
+  //     while(squareProps[currentIndex].userInput !== "" || squareProps[currentIndex].answer === ".") {
+  //       currentIndex++;
+  //     }
+  //     return currentIndex;
+  //   } else {
+  //     // orientation is "down"
+  //     return getNextDownEmptySquare(activeWord.start);
+  //   }
+  // }
 
   function getNextEmptySquare(index) {
     // TODO: if last square, start search at beginning
@@ -224,11 +195,11 @@ export default function Board(props) {
         setOverwriteMode(false);
       } else {
         // in overwrite mode, just go to the next square regardless of whether it is occupied
-        return orientation === "across" ? index+1 : index+numCols;
+        return activeWord.orientation === "across" ? index+1 : index+numCols;
       }
 
     } else {
-      let incrementInterval = orientation === "across" ? 1 : numCols;
+      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
 
       // Start at active square and go to next empty letter in word
       for (let i=index; i<=activeWord.end; i=(i + incrementInterval)) {
@@ -240,8 +211,8 @@ export default function Board(props) {
       }
 
       // TODO: If word is all filled out, find next word 
-      let indexOfNextWord = getNextWord();
-      return getNextEmptySquare(indexOfNextWord);
+      //let indexOfNextWord = getNextWord();
+      //return getNextEmptySquare(indexOfNextWord);
       // if (orientation === "across") {
       //   let currentIndex = endIndex;
       //   while(squareProps[currentIndex].userInput !== "" || squareProps[currentIndex].answer === ".") {

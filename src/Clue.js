@@ -7,22 +7,24 @@ export default function Clue(props) {
     clueDictionary,
     gridNums,
     activeWord, 
-    orientation, 
     toggleOrientation,
     goToPrevClue,
     goToNextClue 
   } = props
 
+  const [ clueText, setClueText ] = React.useState("");
 
   function displayClue() {
     let dictionaryKey = gridNums[activeWord.start];
-    return clueDictionary[orientation][dictionaryKey].clue;
+    setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
   }
+
+  React.useEffect(displayClue, [activeWord, gridNums, clueDictionary]);
 
   return (
     <div className="clue">
       <img onClick={goToPrevClue} className="arrows" src={prev} alt="prev_clue" />
-      <p onClick={toggleOrientation} className="clue-text">{displayClue()}</p>
+      <div onClick={toggleOrientation} className="clue-text">{clueText}</div>
       <img onClick={goToNextClue} className="arrows" src={next} alt="next_clue" />
     </div>
   )

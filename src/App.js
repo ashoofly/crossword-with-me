@@ -17,22 +17,63 @@ function App() {
   const answers = data.answers;
   let clueDictionary = setupClueDictionary();
 
-  const [ orientation, setOrientation ] = React.useState("across");
   const [ showAnswers, setShowAnswers ] = React.useState(false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ activeWord, setActiveWord ] = React.useState({
+    orientation: "across",
     focus: 0,
     start: 0,
     end: 0
   });
 
+
+  function findWordStart(index, orientation) {
+    let currentIndex = index;
+    if (orientation === "across") {
+      while(!squareProps[currentIndex].classNames.find(c => c === "ws-across")) {
+        currentIndex--;
+      }
+    } else {
+      //orientation is "down"
+      while(currentIndex >= numCols && !squareProps[currentIndex].classNames.find(c => c === "ws-down")) {
+        currentIndex = currentIndex - numCols;
+      }
+    }
+    return currentIndex;
+  }
+
+  function findWordEnd(index, orientation) {
+    let currentIndex = index;
+    let wordEnd;
+    if (orientation === "across") {
+      while(grid[currentIndex] !== '.' && currentIndex % numCols !== (numCols-1)) {
+        currentIndex++;
+      }
+      wordEnd = grid[currentIndex] === '.' ?  currentIndex-1 : currentIndex;
+
+    } else {
+      //orientation is "down"
+      while((currentIndex + numCols) < (numCols * numRows) && grid[currentIndex] !== '.') {
+        currentIndex = currentIndex + numCols;
+      }
+      wordEnd = grid[currentIndex] === '.' ?  currentIndex-numCols : currentIndex;
+    }
+    return wordEnd;
+  }
+
   /**
    * Methods for child components to use to toggle state
    */
   function toggleOrientation() {
-    setOrientation( prevState => prevState === "across" ? "down" : "across");
+    setActiveWord( prevWord => {
+        const newOrientation = prevWord.orientation === "across" ? "down" : "across";
+        return {
+          ...prevWord,
+          orientation: newOrientation,
+          start: findWordStart(prevWord.focus, newOrientation),
+          end: findWordEnd(prevWord.focus, newOrientation)
+      }});
   }
-  console.log(orientation);
 
   function toggleAnswers() {
     setShowAnswers( prevState => !prevState );
@@ -167,7 +208,8 @@ function App() {
       <Board numCols={numCols}
              numRows={numRows}
              gridNums={gridNums}
-             orientation={orientation}
+             findWordStart={findWordStart}
+             findWordEnd={findWordEnd}
              toggleOrientation={toggleOrientation}
              squareProps={squareProps}
              setSquareProps={setSquareProps}
@@ -181,7 +223,6 @@ function App() {
              clueDictionary={clueDictionary}
              gridNums={gridNums}
              toggleOrientation={toggleOrientation}
-             orientation={orientation}
              activeWord={activeWord}
              goToPrevClue={goToPrevWord}
              goToNextClue={goToNextWord} />
