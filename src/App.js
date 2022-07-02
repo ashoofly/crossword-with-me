@@ -192,13 +192,27 @@ function App() {
 
 
   function goToPrevWord() {
-    let prevWordStartIndex = clueDictionary[clueDictionary[squareProps[activeWord.start].gridNum].prevGridNum].index;
-    squareProps[prevWordStartIndex].squareRef.current.focus();
+    let activeWordClueDictionaryEntry = clueDictionary[activeWord.orientation][squareProps[activeWord.start].gridNum];
+    let prevGridNum = activeWordClueDictionaryEntry.prevGridNum;
+    if (prevGridNum !== -1) {
+      let prevWordStartIndex = clueDictionary[activeWord.orientation][prevGridNum].index;
+      console.log(squareProps[prevWordStartIndex].squareRef.current);
+      squareProps[prevWordStartIndex].squareRef.current.focus();
+    } else {
+      squareProps[activeWord.start].squareRef.current.focus();
+    }
   }
 
   function goToNextWord() {
-    let nextWordStartIndex = clueDictionary[clueDictionary[squareProps[activeWord.start].gridNum].nextGridNum].index;
-    squareProps[nextWordStartIndex].squareRef.current.focus();
+    let activeWordClueDictionaryEntry = clueDictionary[activeWord.orientation][squareProps[activeWord.start].gridNum];
+    let nextGridNum = activeWordClueDictionaryEntry.nextGridNum;
+    if (nextGridNum !== -1) {
+      let nextWordStartIndex = clueDictionary[activeWord.orientation][nextGridNum].index;
+      console.log(squareProps[nextWordStartIndex].squareRef.current);
+      squareProps[nextWordStartIndex].squareRef.current.focus();
+    } else {
+      squareProps[activeWord.end].squareRef.current.focus();
+    }
   }
 
 

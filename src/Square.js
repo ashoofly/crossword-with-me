@@ -24,10 +24,15 @@ export default function Square(props) {
 
   React.useEffect(goToNextSquareAfterInput, [userInput, deleteMode, goToNextSquareAfterInput])
 
+  function whatThe() {
+    // TODO: On focus is not working :( :( But onclick is working whyyy))
+    console.log("what the");
+  }
   return (
     <div 
         ref={squareRef} 
         onKeyDown={handleKeyDown} 
+        onFocus={whatThe}
         onClick={handleFocus} 
         onMouseDown={handleMouseDown} 
         className={classNames.join(" ")} 
