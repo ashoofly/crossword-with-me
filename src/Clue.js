@@ -1,48 +1,17 @@
 import React from "react";
+import prev from "./images/prev.svg";
+import next from "./images/next.svg";
 
 export default function Clue(props) {
   const { 
-    clues,
-    answers,
+    clueDictionary,
     gridNums,
     activeWord, 
     orientation, 
-    toggleOrientation 
+    toggleOrientation,
+    goToPrevClue,
+    goToNextClue 
   } = props
-
-  let clueDictionary = setupClueDictionary();
-
-  /**
-   * Organizes API json 
-   */
-   function setupClueDictionary() {
-    let clueDictionary = {
-      across: {},
-      down: {}
-    };
-    const clueStartNum = /(^\d+)\./;
-    const acrossAnswers = answers.across;
-    const downAnswers = answers.down;
-
-    clues.across.forEach((clue, index) => {
-      const m = clueStartNum.exec(clue);
-      const key = m[1];
-      clueDictionary.across[key] = {
-        clue: clue,
-        answer: acrossAnswers[index]
-      }
-    });
-
-    clues.down.forEach((clue, index) => {
-      const m = clueStartNum.exec(clue);
-      const key = m[1];
-      clueDictionary.down[key] = {
-        clue: clue,
-        answer: downAnswers[index]
-      }
-    });
-    return clueDictionary;
-  }
 
 
   function displayClue() {
@@ -50,11 +19,11 @@ export default function Clue(props) {
     return clueDictionary[orientation][dictionaryKey].clue;
   }
 
-  React.useEffect(displayClue, [clueDictionary, gridNums, orientation, activeWord])
-
   return (
-    <div onClick={toggleOrientation} className="clue">
-      <p>{displayClue()}</p>
+    <div className="clue">
+      <img onClick={goToPrevClue} className="arrows" src={prev} alt="prev_clue" />
+      <p onClick={toggleOrientation} className="clue-text">{displayClue()}</p>
+      <img onClick={goToNextClue} className="arrows" src={next} alt="next_clue" />
     </div>
   )
 }

@@ -11,7 +11,7 @@ export default function Board(props) {
     toggleOrientation, 
     squareProps, 
     setSquareProps,
-    answers,
+    grid,
     showAnswers,
     activeWord,
     setActiveWord
@@ -40,8 +40,8 @@ export default function Board(props) {
     })
   }
 
-  React.useEffect(highlightActiveWord, [orientation, activeWord])
-  React.useEffect(clearAllFocus, [orientation]); //TODO: how can we tell which order these will run in and weird dependencies that i don't want to include 
+  // React.useEffect(highlightActiveWord, [orientation, activeWord])
+  // React.useEffect(clearAllFocus, [orientation]); //TODO: how can we tell which order these will run in and weird dependencies that i don't want to include 
 
   function handleFocus(event, index) {
     console.log("Focused index: " + index);
@@ -55,6 +55,7 @@ export default function Board(props) {
   }
 
   function handleMouseDown(index) {
+    console.log("mousedown");
     if (index === activeWord.focus) {
       toggleOrientation();
     } 
@@ -72,6 +73,7 @@ export default function Board(props) {
   }
 
   function clearAllFocus() {
+    console.log("clear focus");
     setSquareProps(prevState => {
       return prevState.map( square => {
         return ({
@@ -151,23 +153,22 @@ export default function Board(props) {
     let currentIndex = index;
     let wordEnd;
     if (orientation === "across") {
-      while(answers[currentIndex] !== '.' && currentIndex % numCols !== (numCols-1)) {
+      while(grid[currentIndex] !== '.' && currentIndex % numCols !== (numCols-1)) {
         currentIndex++;
       }
-      wordEnd = answers[currentIndex] === '.' ?  currentIndex-1 : currentIndex;
+      wordEnd = grid[currentIndex] === '.' ?  currentIndex-1 : currentIndex;
 
     } else {
       //orientation is "down"
-      while((currentIndex + numCols) < (numCols * numRows) && answers[currentIndex] !== '.') {
+      while((currentIndex + numCols) < (numCols * numRows) && grid[currentIndex] !== '.') {
         currentIndex = currentIndex + numCols;
       }
-      wordEnd = answers[currentIndex] === '.' ?  currentIndex-numCols : currentIndex;
+      wordEnd = grid[currentIndex] === '.' ?  currentIndex-numCols : currentIndex;
     }
     return wordEnd;
   }
 
   function getPreviousSquare() {
-    //TODO: edge case when no more previous squares? 
     if (activeWord.focus === 0) return 0;
 
     if (orientation === "across") {
