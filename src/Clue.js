@@ -8,33 +8,30 @@ export default function Clue(props) {
     gridNums,
     activeWord, 
     toggleOrientation,
-    getPrevWord,
-    getNextWord,
-    jumpToSquare
+    goToPrevWord,
+    goToNextWord
   } = props
 
   const [ clueText, setClueText ] = React.useState("");
+  React.useEffect(displayClue, [activeWord, gridNums, clueDictionary]);
 
   function displayClue() {
     let dictionaryKey = gridNums[activeWord.start];
     setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
   }
 
-  function goToPrevClue() {
-    jumpToSquare(getPrevWord(activeWord.focus));
+  // TODO: This is not working correctly.
+  function jumpToNextWord() {
+    console.log("I've been clicked")
+    goToNextWord();
   }
 
-  function goToNextClue() {
-    jumpToSquare(getNextWord(activeWord.focus));
-  }
-
-  React.useEffect(displayClue, [activeWord, gridNums, clueDictionary]);
 
   return (
     <div className="clue">
-      <img onClick={goToPrevClue} className="arrows" src={prev} alt="prev_clue" />
+      <img onClick={goToPrevWord} className="arrows" src={prev} alt="prev_clue" />
       <div onClick={toggleOrientation} className="clue-text">{clueText}</div>
-      <img onClick={goToNextClue} className="arrows" src={next} alt="next_clue" />
+      <img onClick={jumpToNextWord} className="arrows" src={next} alt="next_clue" />
     </div>
   )
 }

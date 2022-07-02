@@ -16,14 +16,21 @@ export default function Board(props) {
     setActiveWord,
     findWordStart,
     findWordEnd,
-    getPrevWord,
     getNextWord,
-    jumpToSquare,
+    getPrevWord,
+    goToNextWord,
+    goToPreviousWord,
     isLastClueSquare
   } = props;
 
   const [ deleteMode, setDeleteMode ] = React.useState(false);
   const [ overwriteMode, setOverwriteMode ] = React.useState(false);
+  React.useEffect(() => {
+    goToNextWord.current = jumpToNextWord
+  }, []);
+  React.useEffect(() => {
+    goToPreviousWord.current = jumpToPreviousWord
+  }, []);
 
   /**
    * Toggles class on/off for square.
@@ -111,11 +118,10 @@ export default function Board(props) {
         toggleOrientation();
   
       } else if (e.key === "Tab" || (e.shiftKey && e.key === "ArrowRight")) {
-        jumpToSquare(getNextWord(activeWord.focus));
-        //TODO:look for next empty space.
+        jumpToNextWord();
       
       } else if (e.shiftKey && e.key === "ArrowLeft") {
-        jumpToSquare(getPrevWord(activeWord.focus));
+        jumpToPreviousWord();
         
       } else if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
@@ -131,6 +137,18 @@ export default function Board(props) {
     }
   }
 
+
+  function jumpToSquare(index) {
+    squareProps[index].squareRef.current.focus();
+  }
+
+  function jumpToPreviousWord() {
+    jumpToSquare(getNextEmptySquare(getPrevWord(activeWord.focus)));
+  }
+  function jumpToNextWord() {
+    jumpToSquare(getNextEmptySquare(getNextWord(activeWord.focus)));
+  }
+
   function backspace() {
     let index = getPreviousSquare();
     jumpToSquare(index);
@@ -138,9 +156,7 @@ export default function Board(props) {
 
   function goToNextSquareAfterInput() {
     if (!deleteMode) {
-      console.log("Getting next empty square");
       let index = getNextEmptySquare(activeWord.focus);
-      console.log(`Jumping to ${index}`);
       jumpToSquare(index);
     } 
   }
@@ -148,6 +164,8 @@ export default function Board(props) {
   function isValidSquare(index) {
     return squareProps[index].answer !== '.';
   }
+
+
 
   function getPreviousSquare() {
     if (activeWord.focus === 0) return 0;
@@ -201,7 +219,6 @@ export default function Board(props) {
 
       // Start at current square and go to next empty letter in word
       for (let i=index; i<=currentWordEnd; i=(i + incrementInterval)) {
-        console.log(squareProps[i]);
         if (squareProps[i].userInput=== "") return i;
       }
       // If all filled, go back to any empty letters at the beginning of the word
@@ -211,30 +228,6 @@ export default function Board(props) {
 
       // If word is all filled out, find next word 
       return getNextEmptySquare(getNextWord(index));
-    }
-  }
-
-  function getNextDownEmptySquare(index) {
-    console.log(index);
-    if (squareProps.findIndex( square => square.answer !== '.' && square.userInput === "") === -1) {
-      // puzzle is complete. go back to top.
-      toggleOrientation();
-      return 0; // TODO: edge case where index 0 is blank square
-    }
-    let gridNum = gridNums[index];
-    let nextStart = squareProps.findIndex( square => square.gridNum > gridNum && square.classNames.includes("ws-down"));
-    if (nextStart === -1) {
-      // This is the last DOWN clue. Go back to first ACROSS clue and change orientation
-      toggleOrientation();
-      return 0; // TODO: edge case where index 0 is blank square
-    } else {
-      let nextEnd = findWordEnd(nextStart);
-      let current = nextStart;
-      while(current <= nextEnd && squareProps[current].userInput !== "") {
-        current = current + numCols;
-      }
-      if (current <= nextEnd) return current;
-      getNextDownEmptySquare(nextEnd);
     }
   }
 

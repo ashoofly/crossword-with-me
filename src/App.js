@@ -25,6 +25,8 @@ function App() {
     start: 0,
     end: 0
   });
+  const goToNextWord = React.useRef(null);
+  const goToPreviousWord = React.useRef(null);
 
 
   function findWordStart(index, orientation) {
@@ -197,9 +199,6 @@ function App() {
     return initialSquareProps;
   }
 
-  function jumpToSquare(index) {
-    squareProps[index].squareRef.current.focus();
-  }
 
   function mapGridIndexToClueDictionaryEntry(index) {
     let currentWordStart = findWordStart(index, activeWord.orientation);
@@ -222,12 +221,8 @@ function App() {
   function getNextWord(index) {
     let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
     let nextGridNum = currentWordClueDictionaryEntry.nextGridNum;
-    console.log(`Index: ${index}.`)
-    console.log(activeWord);
-    console.log(currentWordClueDictionaryEntry);
     if (nextGridNum !== -1) {
       let nextWordStartIndex = clueDictionary[activeWord.orientation][nextGridNum].index;
-      console.log(nextWordStartIndex);
       return nextWordStartIndex;
     } else {
       let currentWordEnd = findWordEnd(index, activeWord.orientation);
@@ -252,9 +247,10 @@ function App() {
              activeWord={activeWord}
              setActiveWord={setActiveWord}
              clueDictionary={clueDictionary}
-             getPrevWord={getPrevWord}
              getNextWord={getNextWord}
-             jumpToSquare={jumpToSquare}
+             getPrevWord={getPrevWord}
+             goToNextWord={goToNextWord}
+             goToPreviousWord={goToPreviousWord}
              isLastClueSquare={isLastClueSquare}
              />
       <Clue 
@@ -262,9 +258,8 @@ function App() {
              gridNums={gridNums}
              toggleOrientation={toggleOrientation}
              activeWord={activeWord}
-             getPrevWord={getPrevWord}
-             getNextWord={getNextWord}
-             jumpToSquare={jumpToSquare}
+             goToNextWord={() => goToNextWord.current()}
+             goToPrevWord={() => goToPreviousWord.current()}
       />
       <Keyboard />
     </div>
