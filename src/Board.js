@@ -5,12 +5,9 @@ import Square from "./Square";
 export default function Board(props) {
   const { 
     numCols, 
-    numRows, 
-    gridNums,
     toggleOrientation, 
     squareProps, 
     setSquareProps,
-    grid,
     showAnswers,
     activeWord,
     setActiveWord,

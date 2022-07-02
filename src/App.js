@@ -235,14 +235,11 @@ function App() {
     <div className="App">
       <Navbar toggleAnswers={toggleAnswers} />
       <Board numCols={numCols}
-             numRows={numRows}
-             gridNums={gridNums}
              findWordStart={findWordStart}
              findWordEnd={findWordEnd}
              toggleOrientation={toggleOrientation}
              squareProps={squareProps}
              setSquareProps={setSquareProps}
-             grid={grid}
              showAnswers={showAnswers}
              activeWord={activeWord}
              setActiveWord={setActiveWord}
