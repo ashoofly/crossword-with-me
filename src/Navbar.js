@@ -1,6 +1,5 @@
 import React from "react";
 import './styles.css';
-import nyt from './data/xwordinfo.json';
 import lifebuoy from './images/life-buoy.svg';
 
 export default function Navbar(props) {

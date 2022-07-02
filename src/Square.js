@@ -1,7 +1,18 @@
 import React from "react";
 
 export default function Square(props) {
-  const { goToNextLogicalSquare, deleteMode, squareRef, classNames, tabIndex, gridNum, answer, handleFocus, handleMouseDown, handleBlur, showAnswer, userInput, handleKeyDown } = props;
+  const { 
+    goToNextSquareAfterInput, 
+    deleteMode, 
+    squareRef, 
+    classNames, 
+    gridNum, 
+    answer, 
+    handleFocus, 
+    handleMouseDown, 
+    showAnswer, 
+    userInput, 
+    handleKeyDown } = props;
 
   function displaySquare() {
     if (showAnswer) {
@@ -11,10 +22,16 @@ export default function Square(props) {
     }
   }
 
-  React.useEffect(goToNextLogicalSquare, [userInput, deleteMode])
+  React.useEffect(goToNextSquareAfterInput, [userInput, deleteMode, goToNextSquareAfterInput])
 
   return (
-    <div ref={squareRef} onKeyDown={handleKeyDown} onFocus={handleFocus} onMouseDown={handleMouseDown} onBlur={handleBlur} className={classNames.join(" ")} tabIndex={tabIndex}>
+    <div 
+        ref={squareRef} 
+        onKeyDown={handleKeyDown} 
+        onFocus={handleFocus} 
+        onMouseDown={handleMouseDown} 
+        className={classNames.join(" ")} 
+    >
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
       <div className={`square-value ${showAnswer ? "show-answer": ''}`}>{displaySquare()}</div>
     </div>
