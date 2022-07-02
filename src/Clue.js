@@ -8,8 +8,9 @@ export default function Clue(props) {
     gridNums,
     activeWord, 
     toggleOrientation,
-    goToPrevClue,
-    goToNextClue 
+    getPrevWord,
+    getNextWord,
+    jumpToSquare
   } = props
 
   const [ clueText, setClueText ] = React.useState("");
@@ -17,6 +18,14 @@ export default function Clue(props) {
   function displayClue() {
     let dictionaryKey = gridNums[activeWord.start];
     setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
+  }
+
+  function goToPrevClue() {
+    jumpToSquare(getPrevWord(activeWord.focus));
+  }
+
+  function goToNextClue() {
+    jumpToSquare(getNextWord(activeWord.focus));
   }
 
   React.useEffect(displayClue, [activeWord, gridNums, clueDictionary]);

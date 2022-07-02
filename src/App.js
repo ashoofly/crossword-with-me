@@ -111,7 +111,8 @@ function App() {
       clueDictionary.across[orderedGridNumAcross[i]] = {
         ...clueDictionary.across[orderedGridNumAcross[i]],
         prevGridNum: i===0 ? -1 : orderedGridNumAcross[i-1],
-        nextGridNum: i+1 <= orderedGridNumAcross.length ? orderedGridNumAcross[i+1] : -1
+        nextGridNum: i+1 < orderedGridNumAcross.length ? orderedGridNumAcross[i+1] : -1,
+        isLastClue: i+1 < orderedGridNumAcross.length ? false : true
       }
     }
     let orderedGridNumDown = []
@@ -128,10 +129,16 @@ function App() {
       clueDictionary.down[orderedGridNumDown[i]] = {
         ...clueDictionary.down[orderedGridNumDown[i]],
         prevGridNum: i===0 ? -1 : orderedGridNumDown[i-1],
-        nextGridNum: i+1 <= orderedGridNumDown.length ? orderedGridNumDown[i+1] : -1
+        nextGridNum: i+1 < orderedGridNumDown.length ? orderedGridNumDown[i+1] : -1,
+        isLastClue: i+1 < orderedGridNumDown.length ? false : true
       }
     }
     return clueDictionary;
+  }
+
+  function isLastClueSquare(index, orientation) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    return currentWordClueDictionaryEntry.isLastClue && findWordEnd(index, orientation) === index;
   }
 
   /**
@@ -190,28 +197,41 @@ function App() {
     return initialSquareProps;
   }
 
+  function jumpToSquare(index) {
+    squareProps[index].squareRef.current.focus();
+  }
 
-  function goToPrevWord() {
-    let activeWordClueDictionaryEntry = clueDictionary[activeWord.orientation][squareProps[activeWord.start].gridNum];
-    let prevGridNum = activeWordClueDictionaryEntry.prevGridNum;
+  function mapGridIndexToClueDictionaryEntry(index) {
+    let currentWordStart = findWordStart(index, activeWord.orientation);
+    return clueDictionary[activeWord.orientation][squareProps[currentWordStart].gridNum];
+  }
+
+
+  function getPrevWord(index) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    let prevGridNum = currentWordClueDictionaryEntry.prevGridNum;
     if (prevGridNum !== -1) {
       let prevWordStartIndex = clueDictionary[activeWord.orientation][prevGridNum].index;
-      console.log(squareProps[prevWordStartIndex].squareRef.current);
-      squareProps[prevWordStartIndex].squareRef.current.focus();
+      return prevWordStartIndex;
     } else {
-      squareProps[activeWord.start].squareRef.current.focus();
+      let currentWordStart = findWordStart(index, activeWord.orientation);
+      return currentWordStart;
     }
   }
 
-  function goToNextWord() {
-    let activeWordClueDictionaryEntry = clueDictionary[activeWord.orientation][squareProps[activeWord.start].gridNum];
-    let nextGridNum = activeWordClueDictionaryEntry.nextGridNum;
+  function getNextWord(index) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    let nextGridNum = currentWordClueDictionaryEntry.nextGridNum;
+    console.log(`Index: ${index}.`)
+    console.log(activeWord);
+    console.log(currentWordClueDictionaryEntry);
     if (nextGridNum !== -1) {
       let nextWordStartIndex = clueDictionary[activeWord.orientation][nextGridNum].index;
-      console.log(squareProps[nextWordStartIndex].squareRef.current);
-      squareProps[nextWordStartIndex].squareRef.current.focus();
+      console.log(nextWordStartIndex);
+      return nextWordStartIndex;
     } else {
-      squareProps[activeWord.end].squareRef.current.focus();
+      let currentWordEnd = findWordEnd(index, activeWord.orientation);
+      return currentWordEnd;
     }
   }
 
@@ -232,14 +252,20 @@ function App() {
              activeWord={activeWord}
              setActiveWord={setActiveWord}
              clueDictionary={clueDictionary}
+             getPrevWord={getPrevWord}
+             getNextWord={getNextWord}
+             jumpToSquare={jumpToSquare}
+             isLastClueSquare={isLastClueSquare}
              />
       <Clue 
              clueDictionary={clueDictionary}
              gridNums={gridNums}
              toggleOrientation={toggleOrientation}
              activeWord={activeWord}
-             goToPrevClue={goToPrevWord}
-             goToNextClue={goToNextWord} />
+             getPrevWord={getPrevWord}
+             getNextWord={getNextWord}
+             jumpToSquare={jumpToSquare}
+      />
       <Keyboard />
     </div>
   );

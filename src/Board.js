@@ -15,7 +15,11 @@ export default function Board(props) {
     activeWord,
     setActiveWord,
     findWordStart,
-    findWordEnd
+    findWordEnd,
+    getPrevWord,
+    getNextWord,
+    jumpToSquare,
+    isLastClueSquare
   } = props;
 
   const [ deleteMode, setDeleteMode ] = React.useState(false);
@@ -42,12 +46,10 @@ export default function Board(props) {
   }
 
   React.useEffect(highlightActiveWord, [activeWord])
- // React.useEffect(clearAllFocus, [activeWord]); //TODO: how can we tell which order these will run in and weird dependencies that i don't want to include 
 
   function handleFocus(event, index) {
     console.log("Focused index: " + index);
     if (squareProps[index].answer === ".") return;
-    // clearAllFocus();
     setActiveWord( prevState => ({
       ...prevState,
       focus: index,
@@ -56,8 +58,11 @@ export default function Board(props) {
     }));
   }
 
+  /**
+   * This event is fired before 'onFocus', so we can toggle orientation before changing active word
+   * @param {int} index 
+   */
   function handleMouseDown(index) {
-    console.log("mousedown");
     if (index === activeWord.focus) {
       toggleOrientation();
     } 
@@ -65,7 +70,6 @@ export default function Board(props) {
 
   function highlightActiveWord() {
     clearAllFocus();
-    console.log("highlight active word");
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
     for (let i=activeWord.start; i<=activeWord.end; i=(i + incrementInterval)) {
       if (activeWord.focus === i) {
@@ -77,7 +81,6 @@ export default function Board(props) {
   }
 
   function clearAllFocus() {
-    console.log("clear focus");
     setSquareProps(prevState => {
       return prevState.map( square => {
         return ({
@@ -89,18 +92,9 @@ export default function Board(props) {
   }
 
   function handleKeyDown(e) {
-    console.log(e.key);
     e.preventDefault();
 
-    if (e.key === " ") {
-      setDeleteMode(false);
-      toggleOrientation();
-
-    } else if (e.key === "Tab") {
-      setDeleteMode(false);
-      //TODO: Find next word first. Then look for next empty space. 
-    
-    } else if (e.key === "Backspace") {
+    if (e.key === "Backspace") {
       // if user input already empty, go to previous letter
       if (deleteMode) {
         backspace();
@@ -111,40 +105,56 @@ export default function Board(props) {
           return square.id === activeWord.focus ? {...square, userInput: ''} : square
         })
       })
-  
-    } else if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
+    } else {
       setDeleteMode(false);
-      // if letter already in square, go into 'overwrite' mode
-      if (squareProps[activeWord.focus].userInput !== "") {
-        setOverwriteMode(true);
+      if (e.key === " ") {
+        toggleOrientation();
+  
+      } else if (e.key === "Tab" || (e.shiftKey && e.key === "ArrowRight")) {
+        jumpToSquare(getNextWord(activeWord.focus));
+        //TODO:look for next empty space.
+      
+      } else if (e.shiftKey && e.key === "ArrowLeft") {
+        jumpToSquare(getPrevWord(activeWord.focus));
+        
+      } else if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
+        // if letter already in square, go into 'overwrite' mode
+        if (squareProps[activeWord.focus].userInput !== "") {
+          setOverwriteMode(true);
+        }
+        setSquareProps( prevState => {
+          return prevState.map( square => {
+            return square.id === activeWord.focus ? {...square, userInput: e.key.toUpperCase()} : square
+          });
+        })
       }
-      setSquareProps( prevState => {
-        return prevState.map( square => {
-          return square.id === activeWord.focus ? {...square, userInput: e.key.toUpperCase()} : square
-        });
-      })
     }
   }
 
   function backspace() {
     let index = getPreviousSquare();
-    squareProps[index].squareRef.current.focus();
+    jumpToSquare(index);
   }
 
   function goToNextSquareAfterInput() {
     if (!deleteMode) {
+      console.log("Getting next empty square");
       let index = getNextEmptySquare(activeWord.focus);
-      squareProps[index].squareRef.current.focus();
+      console.log(`Jumping to ${index}`);
+      jumpToSquare(index);
     } 
   }
 
+  function isValidSquare(index) {
+    return squareProps[index].answer !== '.';
+  }
 
   function getPreviousSquare() {
     if (activeWord.focus === 0) return 0;
 
     if (activeWord.orientation === "across") {
       let current = activeWord.focus-1;
-      while(squareProps[current].answer === ".") {
+      while(!isValidSquare(current)) {
         current--;
       }
       return current;
@@ -153,76 +163,54 @@ export default function Board(props) {
       if (activeWord.focus > activeWord.start) {
         return activeWord.focus - numCols;
       } else {
-        let sortedDownWordsByGridnum = squareProps.filter(square => square.classNames.includes("ws-down"))
-                      .sort ((a, b) => a.gridNum - b.gridNum)
-        let prevGridNum = sortedDownWordsByGridnum[
-                            sortedDownWordsByGridnum.findIndex( 
-                              square => square.id === squareProps[activeWord.focus].id ) - 1].gridNum;
-        let prevWordStartIndex = squareProps.findIndex( square => square.gridNum === prevGridNum);
-        let prevWordEndIndex = findWordEnd(prevWordStartIndex);
+        let prevWordEndIndex = findWordEnd(getPrevWord(activeWord.focus), activeWord.orientation);
         return prevWordEndIndex;
       }
     }
   }
 
-  // function getPreviousWord() {
-  //   // TODO: For the tab back button on the clue bar. 
-  // }
-
-  // function getNextWord() {
-  //   // TODO:
-  //   if (activeWord.orientation === "across") {
-  //     let currentIndex = activeWord.end;
-  //     while(squareProps[currentIndex].userInput !== "" || squareProps[currentIndex].answer === ".") {
-  //       currentIndex++;
-  //     }
-  //     return currentIndex;
-  //   } else {
-  //     // orientation is "down"
-  //     return getNextDownEmptySquare(activeWord.start);
-  //   }
-  // }
+  function isPuzzleFilled() {
+    return squareProps.filter( square => square.userInput === "").length === 0 ? true : false;
+  }
 
   function getNextEmptySquare(index) {
-    // TODO: if last square, start search at beginning
-    // TODO: Need base case for recursion. Puzzle all filled out / no more empty squares.
+    // If puzzle is all filled out, return current index
+    if (isPuzzleFilled()) {
+      console.log("Puzzle is filled.");
+      return index;
+    }
+
+    // If last square in orientation, start search at beginning
+    // TODO: edge case where(0,0) square is not valid
+    if (isLastClueSquare(index, activeWord.orientation)) return 0;
 
     if (overwriteMode) {
-      console.log("Overwrite mode");
-      let wordEnd = findWordEnd(index);
-      if (wordEnd === index) {
+      if (activeWord.end === index) {
         // exit overwrite mode at the end of a word
         setOverwriteMode(false);
+        return getNextEmptySquare(getNextWord(index));
       } else {
-        // in overwrite mode, just go to the next square regardless of whether it is occupied
+        // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
         return activeWord.orientation === "across" ? index+1 : index+numCols;
       }
 
     } else {
       let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+      let currentWordStart = findWordStart(index, activeWord.orientation);
+      let currentWordEnd = findWordEnd(index, activeWord.orientation);
 
-      // Start at active square and go to next empty letter in word
-      for (let i=index; i<=activeWord.end; i=(i + incrementInterval)) {
+      // Start at current square and go to next empty letter in word
+      for (let i=index; i<=currentWordEnd; i=(i + incrementInterval)) {
+        console.log(squareProps[i]);
         if (squareProps[i].userInput=== "") return i;
       }
       // If all filled, go back to any empty letters at the beginning of the word
-      for (let i=activeWord.start; i<index; i=(i + incrementInterval)) {
+      for (let i=currentWordStart; i<index; i=(i + incrementInterval)) {
         if (squareProps[i].userInput=== "") return i;
       }
 
-      // TODO: If word is all filled out, find next word 
-      //let indexOfNextWord = getNextWord();
-      //return getNextEmptySquare(indexOfNextWord);
-      // if (orientation === "across") {
-      //   let currentIndex = endIndex;
-      //   while(squareProps[currentIndex].userInput !== "" || squareProps[currentIndex].answer === ".") {
-      //     currentIndex++;
-      //   }
-      //   return currentIndex;
-      // } else {
-      //   // orientation is "down"
-      //   return getNextDownEmptySquare(startIndex);
-      // }
+      // If word is all filled out, find next word 
+      return getNextEmptySquare(getNextWord(index));
     }
   }
 
