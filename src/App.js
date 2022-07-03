@@ -7,7 +7,6 @@ import './styles.css';
 import data from "./data/wednesday.json";
 
 
-
 function App() {
   const numRows = data.size.rows;
   const numCols = data.size.cols;
@@ -176,7 +175,6 @@ function App() {
         classNames: classes,
         gridNum: gridNums[index],
         answer: value,
-        userInput: "",
         squareRef: ref
       };
 
@@ -234,7 +232,9 @@ function App() {
   return (
     <div className="App">
       <Navbar toggleAnswers={toggleAnswers} />
-      <Board numCols={numCols}
+      <Board 
+             numRows={numRows}
+             numCols={numCols}
              findWordStart={findWordStart}
              findWordEnd={findWordEnd}
              toggleOrientation={toggleOrientation}

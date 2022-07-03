@@ -1,9 +1,11 @@
 import React from "react";
 import Square from "./Square";
+import useLocalStorage from "./hooks/useLocalStorage";
 
 
 export default function Board(props) {
   const { 
+    numRows,
     numCols, 
     toggleOrientation, 
     squareProps, 
@@ -22,12 +24,18 @@ export default function Board(props) {
 
   const [ deleteMode, setDeleteMode ] = React.useState(false);
   const [ overwriteMode, setOverwriteMode ] = React.useState(false);
+  const [ userInput, setUserInput ] = useLocalStorage("userInput", Array(numRows*numCols).fill(""));
+
   React.useEffect(() => {
     goToNextWord.current = jumpToNextWord
-  }, []);
+  }, [activeWord]);
+  
   React.useEffect(() => {
     goToPreviousWord.current = jumpToPreviousWord
-  }, []);
+  }, [activeWord]);
+
+  React.useEffect(highlightActiveWord, [activeWord])
+
 
   /**
    * Toggles class on/off for square.
@@ -49,7 +57,6 @@ export default function Board(props) {
     })
   }
 
-  React.useEffect(highlightActiveWord, [activeWord])
 
   function handleFocus(event, index) {
     console.log("Focused index: " + index);
@@ -100,14 +107,14 @@ export default function Board(props) {
 
     if (e.key === "Backspace") {
       // if user input already empty, go to previous letter
-      if (deleteMode) {
+      if (userInput[activeWord.focus] === '' || deleteMode) {
         backspace();
       }
       setDeleteMode(true);
-      setSquareProps ( prevState => {
-        return prevState.map( square => {
-          return square.id === activeWord.focus ? {...square, userInput: ''} : square
-        })
+      setUserInput( prevState => {
+        return prevState.map( (square, index) => {
+          return index === activeWord.focus ? '' : square
+        });
       })
     } else {
       setDeleteMode(false);
@@ -122,12 +129,12 @@ export default function Board(props) {
         
       } else if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
-        if (squareProps[activeWord.focus].userInput !== "") {
+        if (userInput[activeWord.focus] !== "") {
           setOverwriteMode(true);
         }
-        setSquareProps( prevState => {
-          return prevState.map( square => {
-            return square.id === activeWord.focus ? {...square, userInput: e.key.toUpperCase()} : square
+        setUserInput( prevState => {
+          return prevState.map( (square, index) => {
+            return index === activeWord.focus ? e.key.toUpperCase() : square
           });
         })
       }
@@ -185,7 +192,7 @@ export default function Board(props) {
   }
 
   function isPuzzleFilled() {
-    return squareProps.filter( square => square.userInput === "").length === 0 ? true : false;
+    return userInput.filter( square => square === "").length === 0 ? true : false;
   }
 
   function getNextEmptySquare(index) {
@@ -203,6 +210,11 @@ export default function Board(props) {
       if (activeWord.end === index) {
         // exit overwrite mode at the end of a word
         setOverwriteMode(false);
+
+        console.log("Overwrite mode at end of word. set overwrite back to FALSE")
+        console.log("next word index: " + getNextWord(index));
+        console.log("next empty square: " + getNextEmptySquare(getNextWord(index)));
+        // TODO: overwrite mode state is still true here, so goes to next square unfortunately
         return getNextEmptySquare(getNextWord(index));
       } else {
         // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
@@ -213,14 +225,15 @@ export default function Board(props) {
       let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
       let currentWordStart = findWordStart(index, activeWord.orientation);
       let currentWordEnd = findWordEnd(index, activeWord.orientation);
-
+      console.log(`[${currentWordStart}, ${currentWordEnd}]`)
       // Start at current square and go to next empty letter in word
       for (let i=index; i<=currentWordEnd; i=(i + incrementInterval)) {
-        if (squareProps[i].userInput=== "") return i;
+        console.log(`userinput[i]: ${userInput[i]}`)
+        if (userInput[i]=== "") return i;
       }
       // If all filled, go back to any empty letters at the beginning of the word
       for (let i=currentWordStart; i<index; i=(i + incrementInterval)) {
-        if (squareProps[i].userInput=== "") return i;
+        if (userInput[i]=== "") return i;
       }
 
       // If word is all filled out, find next word 
@@ -236,12 +249,14 @@ export default function Board(props) {
     return (
       <Square key={square.id} 
               {...square}
+              overwriteMode={overwriteMode}
+              deleteMode={deleteMode}
+              userInput={userInput[square.id]}
               showAnswer={showAnswer()}
               handleMouseDown={() => handleMouseDown(square.id) }
               handleFocus={(event) => handleFocus(event, square.id) }
               handleKeyDown={handleKeyDown}
               goToNextSquareAfterInput={goToNextSquareAfterInput}
-              deleteMode={deleteMode}
       />
     )
   });

@@ -3,6 +3,7 @@ import React from "react";
 export default function Square(props) {
   const { 
     goToNextSquareAfterInput, 
+    overwriteMode,
     deleteMode, 
     squareRef, 
     classNames, 
@@ -22,7 +23,7 @@ export default function Square(props) {
     }
   }
 
-  React.useEffect(goToNextSquareAfterInput, [userInput])
+  React.useEffect(goToNextSquareAfterInput, [userInput, overwriteMode, deleteMode])
 
 
   return (

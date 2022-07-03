@@ -20,18 +20,11 @@ export default function Clue(props) {
     setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
   }
 
-  // TODO: This is not working correctly.
-  function jumpToNextWord() {
-    console.log("I've been clicked")
-    goToNextWord();
-  }
-
-
   return (
     <div className="clue">
       <img onClick={goToPrevWord} className="arrows" src={prev} alt="prev_clue" />
       <div onClick={toggleOrientation} className="clue-text">{clueText}</div>
-      <img onClick={jumpToNextWord} className="arrows" src={next} alt="next_clue" />
+      <img onClick={goToNextWord} className="arrows" src={next} alt="next_clue" />
     </div>
   )
 }
