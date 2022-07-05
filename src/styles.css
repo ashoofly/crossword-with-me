@@ -1,8 +1,14 @@
+* {
+  box-sizing: border-box;
+}
 body {
   font-family: 'Roboto', sans-serif;
 }
 
-
+hr {
+  width: 80%;
+  border: 0.25px solid gray;
+}
 
 .App {
   max-width: 525px;
@@ -73,9 +79,21 @@ body {
   background-color: #595963;
   display: grid;
   padding-bottom: 5px;
-  /* flex-direction: column; */
-  /* justify-content: center; */
+  overflow: hidden;
+  position: relative;
 }
+
+.wrong-answer-overlay {
+  position: absolute;
+  border: 1px solid red;
+  width: calc(1.414 * 100%);
+  transform: rotate(-45deg);
+  transform-origin: bottom left;
+  bottom: -2px; 
+  left: -1px;
+
+}
+
 
 .square-gridnum {
   height: 12px;
@@ -89,6 +107,11 @@ body {
   color: white;
 
 }
+
+.disabled {
+  color: gray;
+}
+
 
 .block {
   background-color: black;

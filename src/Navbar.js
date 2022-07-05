@@ -1,11 +1,15 @@
 import React from "react";
 import './styles.css';
-import lifebuoy from './images/life-buoy.svg';
 import info from './images/info.svg';
+import HintMenu from './HintMenu';
 
 export default function Navbar(props) {
 
-  const { toggleAnswers } = props;
+  const { 
+    autocheck,
+    setAutocheck,
+    toggleAnswers 
+  } = props;
 
   return (
     <div className="navbar">
@@ -15,7 +19,11 @@ export default function Navbar(props) {
       <p>Ed: {nyt.editor}</p>
       <small>	&copy; {nyt.copyright}</small> */}
       <div className="rebus-button">REBUS</div>
-      <img onClick={toggleAnswers} className="check-puzzle" src={lifebuoy} alt="check_puzzle" />
+      {/* <img onClick={toggleAnswers} className="check-puzzle" src={lifebuoy} alt="check_puzzle" /> */}
+      <HintMenu
+        autocheck={autocheck}
+        setAutocheck={setAutocheck} 
+      />
       <img className="info" src={info} alt="info" />
 
     </div>

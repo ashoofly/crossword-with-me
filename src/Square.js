@@ -2,6 +2,9 @@ import React from "react";
 
 export default function Square(props) {
   const { 
+    id,
+    isPlayableSquare,
+    checkAnswer,
     goToNextSquareAfterInput, 
     overwriteMode,
     deleteMode, 
@@ -23,7 +26,12 @@ export default function Square(props) {
     }
   }
 
-  React.useEffect(goToNextSquareAfterInput, [userInput, overwriteMode, deleteMode])
+  React.useEffect(goToNextSquareAfterInput, [userInput])
+
+
+  function checkSquare() {
+    return isPlayableSquare && userInput !== '' && checkAnswer() && userInput.charAt(0) !== answer.charAt(0);
+  }
 
 
   return (
@@ -35,6 +43,7 @@ export default function Square(props) {
         onMouseDown={handleMouseDown} 
         className={classNames.join(" ")} 
     >
+      {checkSquare() && <div className="wrong-answer-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
       <div className={`square-value ${showAnswer ? "show-answer": ''}`}>{displaySquare()}</div>
     </div>

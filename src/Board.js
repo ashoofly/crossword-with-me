@@ -5,6 +5,7 @@ import useLocalStorage from "./hooks/useLocalStorage";
 
 export default function Board(props) {
   const { 
+    autocheck,
     numRows,
     numCols, 
     toggleOrientation, 
@@ -36,6 +37,11 @@ export default function Board(props) {
 
   React.useEffect(highlightActiveWord, [activeWord])
 
+  React.useEffect(() => {
+    if (overwriteMode && activeWord.end === activeWord.focus) {
+      setOverwriteMode(false);
+    }
+  }, [activeWord]);
 
   /**
    * Toggles class on/off for square.
@@ -106,16 +112,19 @@ export default function Board(props) {
     e.preventDefault();
 
     if (e.key === "Backspace") {
-      // if user input already empty, go to previous letter
-      if (userInput[activeWord.focus] === '' || deleteMode) {
-        backspace();
-      }
       setDeleteMode(true);
+      let currentIndex = activeWord.focus;
+      if (userInput[activeWord.focus] === '') {
+        // if user input already empty, backspace to previous letter
+        currentIndex = backspace();
+      }
       setUserInput( prevState => {
         return prevState.map( (square, index) => {
-          return index === activeWord.focus ? '' : square
+          return index === currentIndex ? '' : square
         });
       })
+
+
     } else {
       setDeleteMode(false);
       if (e.key === " ") {
@@ -156,6 +165,7 @@ export default function Board(props) {
   function backspace() {
     let index = getPreviousSquare();
     jumpToSquare(index);
+    return index;
   }
 
   function goToNextSquareAfterInput() {
@@ -165,7 +175,7 @@ export default function Board(props) {
     } 
   }
 
-  function isValidSquare(index) {
+  function isPlayableSquare(index) {
     return squareProps[index].answer !== '.';
   }
 
@@ -176,7 +186,7 @@ export default function Board(props) {
 
     if (activeWord.orientation === "across") {
       let current = activeWord.focus-1;
-      while(!isValidSquare(current)) {
+      while(!isPlayableSquare(current)) {
         current--;
       }
       return current;
@@ -207,28 +217,15 @@ export default function Board(props) {
     if (isLastClueSquare(index, activeWord.orientation)) return 0;
 
     if (overwriteMode) {
-      if (activeWord.end === index) {
-        // exit overwrite mode at the end of a word
-        setOverwriteMode(false);
-
-        console.log("Overwrite mode at end of word. set overwrite back to FALSE")
-        console.log("next word index: " + getNextWord(index));
-        console.log("next empty square: " + getNextEmptySquare(getNextWord(index)));
-        // TODO: overwrite mode state is still true here, so goes to next square unfortunately
-        return getNextEmptySquare(getNextWord(index));
-      } else {
-        // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
-        return activeWord.orientation === "across" ? index+1 : index+numCols;
-      }
+      // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
+      return activeWord.orientation === "across" ? index+1 : index+numCols;
 
     } else {
       let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
       let currentWordStart = findWordStart(index, activeWord.orientation);
       let currentWordEnd = findWordEnd(index, activeWord.orientation);
-      console.log(`[${currentWordStart}, ${currentWordEnd}]`)
       // Start at current square and go to next empty letter in word
       for (let i=index; i<=currentWordEnd; i=(i + incrementInterval)) {
-        console.log(`userinput[i]: ${userInput[i]}`)
         if (userInput[i]=== "") return i;
       }
       // If all filled, go back to any empty letters at the beginning of the word
@@ -245,19 +242,29 @@ export default function Board(props) {
     return showAnswers;
   }
 
+  function checkAnswer(index) {
+    if (autocheck) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   const squares = squareProps.map( square => {
     return (
-      <Square key={square.id} 
-              {...square}
-              overwriteMode={overwriteMode}
-              deleteMode={deleteMode}
-              userInput={userInput[square.id]}
-              showAnswer={showAnswer()}
-              handleMouseDown={() => handleMouseDown(square.id) }
-              handleFocus={(event) => handleFocus(event, square.id) }
-              handleKeyDown={handleKeyDown}
-              goToNextSquareAfterInput={goToNextSquareAfterInput}
-      />
+        <Square key={square.id} 
+                {...square}
+                isPlayableSquare={isPlayableSquare(square.id)}
+                checkAnswer={() => checkAnswer(square.id)}
+                overwriteMode={overwriteMode}
+                deleteMode={deleteMode}
+                userInput={userInput[square.id]}
+                showAnswer={showAnswer()}
+                handleMouseDown={() => handleMouseDown(square.id) }
+                handleFocus={(event) => handleFocus(event, square.id) }
+                handleKeyDown={handleKeyDown}
+                goToNextSquareAfterInput={goToNextSquareAfterInput}
+        />
     )
   });
 

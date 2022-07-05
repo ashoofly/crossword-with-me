@@ -1,4 +1,6 @@
-{
+/* eslint-disable import/no-anonymous-default-export */
+
+export default {
   "title": "New York Times, Wednesday, June 29, 2022",
   "author": "Jared Goudsmit",
   "editor": "Will Shortz",

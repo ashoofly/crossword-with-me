@@ -4,7 +4,7 @@ import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
 import './styles.css';
-import data from "./data/wednesday.json";
+import data from "./data/wednesday";
 
 
 function App() {
@@ -16,6 +16,7 @@ function App() {
   const answers = data.answers;
   let clueDictionary = setupClueDictionary();
 
+  const [ autocheck, setAutocheck ] = React.useState(false);
   const [ showAnswers, setShowAnswers ] = React.useState(false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ activeWord, setActiveWord ] = React.useState({
@@ -231,8 +232,12 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar toggleAnswers={toggleAnswers} />
+      <Navbar
+             autocheck={autocheck}
+             setAutocheck={setAutocheck} 
+             toggleAnswers={toggleAnswers} />
       <Board 
+             autocheck={autocheck}
              numRows={numRows}
              numCols={numCols}
              findWordStart={findWordStart}
