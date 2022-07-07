@@ -8,7 +8,7 @@ export default function Navbar(props) {
   const { 
     autocheck,
     setAutocheck,
-    toggleAnswers 
+    clearPuzzle
   } = props;
 
   return (
@@ -23,6 +23,7 @@ export default function Navbar(props) {
       <HintMenu
         autocheck={autocheck}
         setAutocheck={setAutocheck} 
+        clearPuzzle={clearPuzzle}
       />
       <img className="info" src={info} alt="info" />
 

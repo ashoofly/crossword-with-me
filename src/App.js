@@ -5,7 +5,22 @@ import Clue from './Clue';
 import Keyboard from './Keyboard';
 import './styles.css';
 import data from "./data/wednesday";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import useLocalStorage from "./hooks/useLocalStorage";
 
+const theme = createTheme({
+  components: {
+    // MuiMenuItem: {
+    //   styleOverrides: {
+    //     // root: ({ ownerState, theme }) => ({
+    //     //   ...(ownerState.disabled && {
+    //     //     color: theme.palette.grey[500]
+    //     //   })
+    //     // })
+    //   }
+    // }
+  }
+});
 
 function App() {
   const numRows = data.size.rows;
@@ -16,7 +31,7 @@ function App() {
   const answers = data.answers;
   let clueDictionary = setupClueDictionary();
 
-  const [ autocheck, setAutocheck ] = React.useState(false);
+  const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ showAnswers, setShowAnswers ] = React.useState(false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ activeWord, setActiveWord ] = React.useState({
@@ -27,7 +42,20 @@ function App() {
   });
   const goToNextWord = React.useRef(null);
   const goToPreviousWord = React.useRef(null);
+  const clearPuzzle = React.useRef(null);
+  const requestCheckAnswer = React.useRef(null);
 
+  function checkActiveSquare() {
+
+  }
+
+  function checkActiveWord() {
+
+  }
+
+  function checkEntirePuzzle() {
+
+  }
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
@@ -230,41 +258,47 @@ function App() {
   }
 
 
+
   return (
-    <div className="App">
-      <Navbar
-             autocheck={autocheck}
-             setAutocheck={setAutocheck} 
-             toggleAnswers={toggleAnswers} />
-      <Board 
-             autocheck={autocheck}
-             numRows={numRows}
-             numCols={numCols}
-             findWordStart={findWordStart}
-             findWordEnd={findWordEnd}
-             toggleOrientation={toggleOrientation}
-             squareProps={squareProps}
-             setSquareProps={setSquareProps}
-             showAnswers={showAnswers}
-             activeWord={activeWord}
-             setActiveWord={setActiveWord}
-             clueDictionary={clueDictionary}
-             getNextWord={getNextWord}
-             getPrevWord={getPrevWord}
-             goToNextWord={goToNextWord}
-             goToPreviousWord={goToPreviousWord}
-             isLastClueSquare={isLastClueSquare}
-             />
-      <Clue 
-             clueDictionary={clueDictionary}
-             gridNums={gridNums}
-             toggleOrientation={toggleOrientation}
-             activeWord={activeWord}
-             goToNextWord={() => goToNextWord.current()}
-             goToPrevWord={() => goToPreviousWord.current()}
-      />
-      <Keyboard />
-    </div>
+    <ThemeProvider theme={theme}>
+      <div className="App">
+        <Navbar
+              clearPuzzle={() => clearPuzzle.current()}
+              autocheck={autocheck}
+              setAutocheck={setAutocheck} 
+         />
+        <Board 
+              requestCheckAnswer={requestCheckAnswer}
+              clearPuzzle={clearPuzzle}
+              autocheck={autocheck}
+              setAutocheck={setAutocheck}
+              numRows={numRows}
+              numCols={numCols}
+              findWordStart={findWordStart}
+              findWordEnd={findWordEnd}
+              toggleOrientation={toggleOrientation}
+              squareProps={squareProps}
+              setSquareProps={setSquareProps}
+              activeWord={activeWord}
+              setActiveWord={setActiveWord}
+              clueDictionary={clueDictionary}
+              getNextWord={getNextWord}
+              getPrevWord={getPrevWord}
+              goToNextWord={goToNextWord}
+              goToPreviousWord={goToPreviousWord}
+              isLastClueSquare={isLastClueSquare}
+              />
+        <Clue 
+              clueDictionary={clueDictionary}
+              gridNums={gridNums}
+              toggleOrientation={toggleOrientation}
+              activeWord={activeWord}
+              goToNextWord={() => goToNextWord.current()}
+              goToPrevWord={() => goToPreviousWord.current()}
+        />
+        <Keyboard />
+      </div>
+    </ThemeProvider>
   );
 }
 

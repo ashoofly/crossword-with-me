@@ -108,8 +108,8 @@ hr {
 
 }
 
-.disabled {
-  color: gray;
+.verified {
+  color:  blue;
 }
 
 
@@ -140,7 +140,7 @@ hr {
   background-color: rgb(21, 120, 242);
 }
 
-.show-answer {
+.verified {
   color:rgb(176, 207, 245)
 }
 

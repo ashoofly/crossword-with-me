@@ -4,35 +4,88 @@ export default function Square(props) {
   const { 
     id,
     isPlayableSquare,
-    checkAnswer,
+    autocheck,
     goToNextSquareAfterInput, 
     overwriteMode,
     deleteMode, 
     squareRef, 
-    classNames, 
     gridNum, 
     answer, 
     handleFocus, 
     handleMouseDown, 
-    showAnswer, 
     userInput, 
-    handleKeyDown } = props;
+    handleKeyDown,
+    markSquareVerified,
+    classNames,
+    markSquareIncorrect,
+    squareMarked,
+    requestCheckAnswer
+   } = props;
 
   function displaySquare() {
-    if (showAnswer) {
-      return answer!== '.' ? answer : '';
-    } else {
-      return userInput;
+    setSquareText(userInput);
+  }
+
+  let [squareText, setSquareText] = React.useState('');
+  let [squareValueClasses, setSquareValueClasses] = React.useState(["square-value"]);
+  let [shouldCheckAnswer, setShouldCheckAnswer] = React.useState(autocheck);
+
+  React.useEffect(displaySquare, [userInput, squareMarked]);
+  React.useEffect(goToNextSquareAfterInput, [userInput]);
+  React.useEffect(checkAnswer, [shouldCheckAnswer, userInput]);
+  React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
+  React.useEffect(() => {
+    requestCheckAnswer.current = (index) => {
+      if (index === id) {
+        setShouldCheckAnswer(true);
+      }
+    }
+  }, []);
+
+  function markCheckedSquare() {
+    setSquareValueClasses( prevState => {
+      if (squareMarked.verified) {
+        if (!prevState.includes("verified")) {
+          return [...prevState, "verified"];
+        }
+      } else if (squareMarked.incorrect) {
+        return [...prevState, "checked-incorrect"];
+      } else if (!squareMarked.incorrect) {
+        return prevState.filter( cn => cn !== "checked-incorrect");
+      } else {
+        return prevState;
+      }
+    })
+  };
+
+
+  function checkAnswer() {
+    if (shouldCheckAnswer) {
+      if (isPlayableSquare && userInput !== '') {
+        if (verifyLetter()) {
+          markSquareVerified(id);
+        } else {
+          markSquareIncorrect(id);
+        }
+      }
     }
   }
 
-  React.useEffect(goToNextSquareAfterInput, [userInput])
 
-
-  function checkSquare() {
-    return isPlayableSquare && userInput !== '' && checkAnswer() && userInput.charAt(0) !== answer.charAt(0);
+  function verifyLetter() {
+    return userInput === answer;
   }
 
+  function isIncorrect() {
+    //TODO: incomplete rebus, mark yellow instead of red. 
+    return isPlayableSquare && userInput !== '' && userInput !== answer;
+  }
+
+
+  function log() {
+    console.log(`Index: ${id}. Should check answer: ${shouldCheckAnswer}`);
+    console.log(squareMarked);
+  }
 
   return (
     <div 
@@ -42,10 +95,11 @@ export default function Square(props) {
         onFocus={handleFocus}
         onMouseDown={handleMouseDown} 
         className={classNames.join(" ")} 
+        onClick={log}
     >
-      {checkSquare() && <div className="wrong-answer-overlay"></div>}
+      {(squareMarked.incorrect || (shouldCheckAnswer && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
-      <div className={`square-value ${showAnswer ? "show-answer": ''}`}>{displaySquare()}</div>
+      <div className={squareValueClasses.join(' ')}>{squareText}</div>
     </div>
   )
-}
+} 

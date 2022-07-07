@@ -7,7 +7,8 @@ export default function HintMenu(props) {
 
   const {
     autocheck,
-    setAutocheck
+    setAutocheck,
+    clearPuzzle
   } = props;
 
   const mainHintMenuItems = [
@@ -20,19 +21,19 @@ export default function HintMenu(props) {
       id: 2,
       text: "Check Square",
       onClick: checkSquare,
-      classNames: autocheck ? 'disabled' : ''
+      disabled: autocheck ? true : false
     },
     {
       id: 3,
       text: "Check Word",
       onClick: checkWord,
-      classNames: autocheck ? 'disabled' : ''
+      disabled: autocheck ? true : false
     },
     {
       id: 4,
       text: "Check Puzzle",
       onClick: checkPuzzle,
-      classNames: autocheck ? 'disabled' : ''
+      disabled: autocheck ? true : false
     },
     {
       id: 5,
@@ -94,7 +95,6 @@ export default function HintMenu(props) {
   function revealSquare() {}
   function revealWord() {}
   function revealPuzzle() {}
-  function clearPuzzle() {}
 
   function showMenu() {
     let currentMenu;
@@ -108,8 +108,7 @@ export default function HintMenu(props) {
         <MenuItem 
           key={menuItem.id} 
           onClick={menuItem.onClick}
-          //TODO: This does not work, you need to override it like this: https://mui.com/material-ui/customization/theme-components/
-          className={menuItem.classNames ?? ''}
+          disabled={menuItem.disabled ?? false}
           style={menuItem.style ?? {}}>
             {menuItem.text}
         </MenuItem>
