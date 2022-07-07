@@ -21,8 +21,7 @@ export default function Board(props) {
     goToNextWord,
     goToPreviousWord,
     isLastClueSquare,
-    clearPuzzle,
-    requestCheckAnswer
+    clearPuzzle
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -38,6 +37,23 @@ export default function Board(props) {
   }
   function jumpToNextWord() {
     jumpToSquare(getNextEmptySquare(getNextWord(activeWord.focus)));
+  }
+
+  function checkActiveSquare() {
+    if (actually input in there)
+    userInput[activeWord.focus].requestCheck = true
+  }
+
+  function checkActiveWord() {
+    for (length of activeWord) {
+      if (actually input in there)
+
+      userInput[i].requestCheck = true
+    }
+  }
+
+  function checkEntirePuzzle() {
+    userInput -> map (if (actually input in there)) all requestCheck = true;
   }
 
 
@@ -155,7 +171,7 @@ export default function Board(props) {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
-      removeAnyPreviousIncorrectChecks(currentIndex);
+      removeAnyPreviousChecks(currentIndex);
       if (!squareMarked[currentIndex].verified) {
         setUserInput(prevState => {
           return prevState.map((square, index) => {
@@ -169,7 +185,7 @@ export default function Board(props) {
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
         if (userInput[activeWord.focus] !== "") {
-          removeAnyPreviousIncorrectChecks(activeWord.focus);
+          removeAnyPreviousChecks(activeWord.focus);
           setOverwriteMode(true);
         }
         setUserInput(prevState => {
@@ -210,13 +226,24 @@ export default function Board(props) {
       })
     }
 
-    function removeAnyPreviousIncorrectChecks(id) {
+    function removeAnyPreviousChecks(id) {
       setSquareMarked(prevState => {
         return prevState.map((square, index) => {
           return (index === id ?
             {
               ...square,
               incorrect: false
+            }
+            : square
+          )
+        });
+      })
+      setUserInput(prevState => {
+        return prevState.map((square, index) => {
+          return (index === id ?
+            {
+              ...square,
+              requestCheck: false
             }
             : square
           )
@@ -323,7 +350,6 @@ export default function Board(props) {
           markSquareVerified={() => markSquareVerified(square.id)}
           markSquareIncorrect={() => markSquareIncorrect(square.id)}
           squareMarked={squareMarked[square.id]}
-          requestCheckAnswer={() => requestCheckAnswer.current(activeWord.focus)}
         />
       )
     });

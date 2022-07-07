@@ -43,19 +43,13 @@ function App() {
   const goToNextWord = React.useRef(null);
   const goToPreviousWord = React.useRef(null);
   const clearPuzzle = React.useRef(null);
-  const requestCheckAnswer = React.useRef(null);
+  const checkSquare = React.useRef(null);
+  const checkWord = React.useRef(null);
+  const checkPuzzle = React.useRef(null);
+  const revealSquare = React.useRef(null);
+  const revealWord = React.useRef(null);
+  const revealPuzzle = React.useRef(null);
 
-  function checkActiveSquare() {
-
-  }
-
-  function checkActiveWord() {
-
-  }
-
-  function checkEntirePuzzle() {
-
-  }
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
@@ -268,7 +262,6 @@ function App() {
               setAutocheck={setAutocheck} 
          />
         <Board 
-              requestCheckAnswer={requestCheckAnswer}
               clearPuzzle={clearPuzzle}
               autocheck={autocheck}
               setAutocheck={setAutocheck}

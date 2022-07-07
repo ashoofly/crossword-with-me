@@ -18,8 +18,7 @@ export default function Square(props) {
     markSquareVerified,
     classNames,
     markSquareIncorrect,
-    squareMarked,
-    requestCheckAnswer
+    squareMarked
    } = props;
 
   function displaySquare() {
@@ -28,19 +27,11 @@ export default function Square(props) {
 
   let [squareText, setSquareText] = React.useState('');
   let [squareValueClasses, setSquareValueClasses] = React.useState(["square-value"]);
-  let [shouldCheckAnswer, setShouldCheckAnswer] = React.useState(autocheck);
 
   React.useEffect(displaySquare, [userInput, squareMarked]);
   React.useEffect(goToNextSquareAfterInput, [userInput]);
-  React.useEffect(checkAnswer, [shouldCheckAnswer, userInput]);
+  React.useEffect(checkAnswer, [autocheck, userInput]);
   React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
-  React.useEffect(() => {
-    requestCheckAnswer.current = (index) => {
-      if (index === id) {
-        setShouldCheckAnswer(true);
-      }
-    }
-  }, []);
 
   function markCheckedSquare() {
     setSquareValueClasses( prevState => {
@@ -60,7 +51,7 @@ export default function Square(props) {
 
 
   function checkAnswer() {
-    if (shouldCheckAnswer) {
+    if (autocheck || userInput.requestCheck) {
       if (isPlayableSquare && userInput !== '') {
         if (verifyLetter()) {
           markSquareVerified(id);
