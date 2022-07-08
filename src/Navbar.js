@@ -8,7 +8,13 @@ export default function Navbar(props) {
   const { 
     autocheck,
     setAutocheck,
-    clearPuzzle
+    clearPuzzle,
+    checkSquare,
+    checkWord,
+    checkPuzzle,
+    revealSquare,
+    revealWord,
+    revealPuzzle
   } = props;
 
   return (
@@ -24,6 +30,12 @@ export default function Navbar(props) {
         autocheck={autocheck}
         setAutocheck={setAutocheck} 
         clearPuzzle={clearPuzzle}
+        checkSquare={checkSquare}
+        checkWord={checkWord}
+        checkPuzzle={checkPuzzle}
+        revealSquare={revealSquare}
+        revealWord={revealWord}
+        revealPuzzle={revealPuzzle}
       />
       <img className="info" src={info} alt="info" />
 

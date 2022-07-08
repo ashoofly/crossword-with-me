@@ -8,7 +8,13 @@ export default function HintMenu(props) {
   const {
     autocheck,
     setAutocheck,
-    clearPuzzle
+    clearPuzzle,
+    checkSquare,
+    checkWord,
+    checkPuzzle,
+    revealSquare,
+    revealWord,
+    revealPuzzle
   } = props;
 
   const mainHintMenuItems = [
@@ -86,15 +92,9 @@ export default function HintMenu(props) {
     setAutocheck( prevState => !prevState);
   }
 
-  function checkSquare() {}
-  function checkWord() {}
-  function checkPuzzle() {}
   function goToRevealMenu() {
     setShowDetailedMenu(true);
   }
-  function revealSquare() {}
-  function revealWord() {}
-  function revealPuzzle() {}
 
   function showMenu() {
     let currentMenu;

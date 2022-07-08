@@ -1,4 +1,6 @@
 import React from "react";
+import StarsIcon from '@mui/icons-material/Stars';
+import SvgIcon from '@mui/material/SvgIcon';
 
 export default function Square(props) {
   const { 
@@ -18,11 +20,17 @@ export default function Square(props) {
     markSquareVerified,
     classNames,
     markSquareIncorrect,
-    squareMarked
+    squareMarked,
+    checkRequest
    } = props;
 
   function displaySquare() {
-    setSquareText(userInput);
+    if (!isPlayableSquare) return;
+    if (squareMarked.revealed) {
+      setSquareText(answer);
+    } else {    
+      setSquareText(userInput);
+    }
   }
 
   let [squareText, setSquareText] = React.useState('');
@@ -30,7 +38,7 @@ export default function Square(props) {
 
   React.useEffect(displaySquare, [userInput, squareMarked]);
   React.useEffect(goToNextSquareAfterInput, [userInput]);
-  React.useEffect(checkAnswer, [autocheck, userInput]);
+  React.useEffect(checkAnswer, [autocheck, userInput, checkRequest]);
   React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
 
   function markCheckedSquare() {
@@ -41,17 +49,17 @@ export default function Square(props) {
         }
       } else if (squareMarked.incorrect) {
         return [...prevState, "checked-incorrect"];
+
       } else if (!squareMarked.incorrect) {
         return prevState.filter( cn => cn !== "checked-incorrect");
-      } else {
-        return prevState;
       }
+      return prevState;
     })
   };
 
 
   function checkAnswer() {
-    if (autocheck || userInput.requestCheck) {
+    if (shouldCheckAnswer()) {
       if (isPlayableSquare && userInput !== '') {
         if (verifyLetter()) {
           markSquareVerified(id);
@@ -60,6 +68,10 @@ export default function Square(props) {
         }
       }
     }
+  }
+
+  function shouldCheckAnswer() {
+    return autocheck || checkRequest;
   }
 
 
@@ -74,7 +86,7 @@ export default function Square(props) {
 
 
   function log() {
-    console.log(`Index: ${id}. Should check answer: ${shouldCheckAnswer}`);
+    console.log(`Index: ${id}. Check request: ${checkRequest}`);
     console.log(squareMarked);
   }
 
@@ -88,8 +100,9 @@ export default function Square(props) {
         className={classNames.join(" ")} 
         onClick={log}
     >
-      {(squareMarked.incorrect || (shouldCheckAnswer && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
+      {(squareMarked.incorrect || (shouldCheckAnswer() && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
+      {squareMarked.revealed && <div className="revealed-marker"></div>}
       <div className={squareValueClasses.join(' ')}>{squareText}</div>
     </div>
   )

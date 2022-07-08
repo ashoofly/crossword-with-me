@@ -21,15 +21,23 @@ export default function Board(props) {
     goToNextWord,
     goToPreviousWord,
     isLastClueSquare,
-    clearPuzzle
+    clearPuzzle,
+    checkSquare,
+    checkWord,
+    checkPuzzle,
+    revealSquare,
+    revealWord,
+    revealPuzzle
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
   const [overwriteMode, setOverwriteMode] = React.useState(false);
   const [userInput, setUserInput] = useLocalStorage("userInput", Array(numRows * numCols).fill(""));
+  const [checkRequest, setCheckRequest] = useLocalStorage("checkRequest", Array(numRows * numCols).fill(false)); //TODO: move to local storage when ready
   const [squareMarked, setSquareMarked] = useLocalStorage("squareMarked", Array(numRows * numCols).fill({
     verified: false,
-    incorrect: false
+    incorrect: false,
+    revealed: false
   }));
 
   function jumpToPreviousWord() {
@@ -40,21 +48,102 @@ export default function Board(props) {
   }
 
   function checkActiveSquare() {
-    if (actually input in there)
-    userInput[activeWord.focus].requestCheck = true
+    if (userInput[activeWord.focus] !== '') {
+      setCheckRequest( prevState => {
+        return prevState.map( (checkStatus, index) => {
+          return index === activeWord.focus ? true : checkStatus;
+        })
+      });
+    }
   }
 
-  function checkActiveWord() {
-    for (length of activeWord) {
-      if (actually input in there)
+  React.useEffect(() => {
+    checkSquare.current = checkActiveSquare;
+  }, [activeWord]); 
+  
+  React.useEffect(() => {
+    checkWord.current = checkActiveWord;
+  }, [activeWord]); 
 
-      userInput[i].requestCheck = true
+  React.useEffect(() => {
+    checkPuzzle.current = checkEntirePuzzle;
+  }, [activeWord]); 
+
+  function checkActiveWord() {
+    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+    for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
+      if (userInput[i] !== '') {
+        setCheckRequest( prevState => {
+          return prevState.map( (checkStatus, index) => {
+            return index === i ? true : checkStatus;
+          })
+        });
+      }
     }
   }
 
   function checkEntirePuzzle() {
-    userInput -> map (if (actually input in there)) all requestCheck = true;
+    setCheckRequest( prevState => {
+      return prevState.map( (checkStatus, index) => {
+        return userInput[index] !== '' ? true : checkStatus;
+      })
+    });
   }
+
+
+  React.useEffect(() => {
+    revealSquare.current = () => {
+      if (userInput[activeWord.focus] === squareProps[activeWord.focus].answer) {
+        checkActiveSquare();
+      } else {
+        toggleClass(activeWord.focus, "revealed-overlay", true);
+        markSquare(activeWord.focus, "revealed");
+        markSquare(activeWord.focus, "verified");
+      }
+    }
+  }, [activeWord]);
+
+  React.useEffect(() => {
+    revealWord.current = () => {
+      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+      for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
+        if (!squareMarked[i].revealed && !squareMarked[i].verified) {
+          if (userInput[i] === squareProps[i].answer) {
+            setCheckRequest( prevState => {
+              return prevState.map( (checkStatus, index) => {
+                return index === i ? true : checkStatus;
+              })
+            });
+          } else {
+            toggleClass(i, "revealed-overlay", true);
+            markSquare(i, "revealed");
+            markSquare(i, "verified");
+          }
+        }
+      }
+    }
+  }, [activeWord]);
+
+  React.useEffect(() => {
+    revealPuzzle.current = () => {
+      userInput.forEach( (square, i) => {
+        if (!squareMarked[i].revealed && !squareMarked[i].verified) {
+          if (userInput[i] === squareProps[i].answer) {
+            setCheckRequest( prevState => {
+              return prevState.map( (checkStatus, index) => {
+                return index === i ? true : checkStatus;
+              })
+            });
+          } else {
+            removeAnyPreviousChecks(i);
+            toggleClass(i, "revealed-overlay", true);
+            markSquare(i, "revealed");
+            markSquare(i, "verified");
+          }
+        }
+      });
+    }
+  })
 
 
   React.useEffect(() => {
@@ -68,9 +157,11 @@ export default function Board(props) {
   React.useEffect(() => {
     clearPuzzle.current = () => {
       setUserInput(Array(numRows * numCols).fill(''));
+      setCheckRequest(Array(numRows * numCols).fill(false));
       setSquareMarked(Array(numRows * numCols).fill({
         verified: false,
-        incorrect: false
+        incorrect: false,
+        revealed: false
       }));
       setAutocheck(false);
     };
@@ -226,6 +317,20 @@ export default function Board(props) {
       })
     }
 
+    function markSquare(id, property) {
+      setSquareMarked(prevState => {
+        return prevState.map((square, index) => {
+          return (index === id ?
+            {
+              ...square,
+              [property]: true
+            }
+            : square
+          )
+        });
+      })
+    }
+
     function removeAnyPreviousChecks(id) {
       setSquareMarked(prevState => {
         return prevState.map((square, index) => {
@@ -237,18 +342,12 @@ export default function Board(props) {
             : square
           )
         });
-      })
-      setUserInput(prevState => {
-        return prevState.map((square, index) => {
-          return (index === id ?
-            {
-              ...square,
-              requestCheck: false
-            }
-            : square
-          )
+      });
+      setCheckRequest(prevState => {
+        return prevState.map((checkStatus, index) => {
+          return (index === id ? false : checkStatus);
         });
-      })
+      });
     }
   
 
@@ -340,6 +439,7 @@ export default function Board(props) {
           {...square}
           isPlayableSquare={isPlayableSquare(square.id)}
           autocheck={autocheck}
+          checkRequest={checkRequest[square.id]}
           overwriteMode={overwriteMode}
           deleteMode={deleteMode}
           userInput={userInput[square.id]}

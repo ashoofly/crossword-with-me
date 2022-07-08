@@ -32,7 +32,6 @@ function App() {
   let clueDictionary = setupClueDictionary();
 
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
-  const [ showAnswers, setShowAnswers ] = React.useState(false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ activeWord, setActiveWord ] = React.useState({
     orientation: "across",
@@ -97,10 +96,6 @@ function App() {
           start: findWordStart(prevWord.focus, newOrientation),
           end: findWordEnd(prevWord.focus, newOrientation)
       }});
-  }
-
-  function toggleAnswers() {
-    setShowAnswers( prevState => !prevState );
   }
 
   /**
@@ -258,10 +253,22 @@ function App() {
       <div className="App">
         <Navbar
               clearPuzzle={() => clearPuzzle.current()}
+              checkSquare={() => checkSquare.current()}
+              checkWord={() => checkWord.current()}
+              checkPuzzle={() => checkPuzzle.current()}
+              revealSquare={() => revealSquare.current()}
+              revealWord={() => revealWord.current()}
+              revealPuzzle={() => revealPuzzle.current()}
               autocheck={autocheck}
               setAutocheck={setAutocheck} 
          />
         <Board 
+              checkSquare={checkSquare}
+              checkWord={checkWord}
+              checkPuzzle={checkPuzzle}
+              revealSquare={revealSquare}
+              revealWord={revealWord}
+              revealPuzzle={revealPuzzle}
               clearPuzzle={clearPuzzle}
               autocheck={autocheck}
               setAutocheck={setAutocheck}
