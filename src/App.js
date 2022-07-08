@@ -263,6 +263,7 @@ function App() {
               setAutocheck={setAutocheck} 
          />
         <Board 
+              initializeState={initializeState}
               checkSquare={checkSquare}
               checkWord={checkWord}
               checkPuzzle={checkPuzzle}

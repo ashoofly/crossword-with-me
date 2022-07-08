@@ -27,13 +27,14 @@ export default function Board(props) {
     checkPuzzle,
     revealSquare,
     revealWord,
-    revealPuzzle
+    revealPuzzle,
+    initializeState
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
   const [overwriteMode, setOverwriteMode] = React.useState(false);
   const [userInput, setUserInput] = useLocalStorage("userInput", Array(numRows * numCols).fill(""));
-  const [checkRequest, setCheckRequest] = useLocalStorage("checkRequest", Array(numRows * numCols).fill(false)); //TODO: move to local storage when ready
+  const [checkRequest, setCheckRequest] = useLocalStorage("checkRequest", Array(numRows * numCols).fill(false));
   const [squareMarked, setSquareMarked] = useLocalStorage("squareMarked", Array(numRows * numCols).fill({
     verified: false,
     incorrect: false,
@@ -96,7 +97,6 @@ export default function Board(props) {
       if (userInput[activeWord.focus] === squareProps[activeWord.focus].answer) {
         checkActiveSquare();
       } else {
-        toggleClass(activeWord.focus, "revealed-overlay", true);
         markSquare(activeWord.focus, "revealed");
         markSquare(activeWord.focus, "verified");
       }
@@ -115,7 +115,6 @@ export default function Board(props) {
               })
             });
           } else {
-            toggleClass(i, "revealed-overlay", true);
             markSquare(i, "revealed");
             markSquare(i, "verified");
           }
@@ -127,7 +126,7 @@ export default function Board(props) {
   React.useEffect(() => {
     revealPuzzle.current = () => {
       userInput.forEach( (square, i) => {
-        if (!squareMarked[i].revealed && !squareMarked[i].verified) {
+        if (isPlayableSquare(i) && !squareMarked[i].revealed && !squareMarked[i].verified) {
           if (userInput[i] === squareProps[i].answer) {
             setCheckRequest( prevState => {
               return prevState.map( (checkStatus, index) => {
@@ -136,7 +135,6 @@ export default function Board(props) {
             });
           } else {
             removeAnyPreviousChecks(i);
-            toggleClass(i, "revealed-overlay", true);
             markSquare(i, "revealed");
             markSquare(i, "verified");
           }
@@ -164,6 +162,7 @@ export default function Board(props) {
         revealed: false
       }));
       setAutocheck(false);
+      setSquareProps(initializeState());
     };
   }, []);
 

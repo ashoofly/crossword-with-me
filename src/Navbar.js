@@ -2,6 +2,7 @@ import React from "react";
 import './styles.css';
 import info from './images/info.svg';
 import HintMenu from './HintMenu';
+import InfoPage from './InfoPage';
 
 export default function Navbar(props) {
 
@@ -17,15 +18,20 @@ export default function Navbar(props) {
     revealPuzzle
   } = props;
 
+  const [ open, setOpen ] = React.useState(false);
+
+  function handleClickOpen() {
+    setOpen(true);
+  }
+
+  function handleClose() {
+    setOpen(false);
+  }
+
   return (
     <div className="navbar">
       <h1>Crossword with Friends</h1>
-      {/* <p>{nyt.title}</p>
-      <p>Author: {nyt.author}</p>
-      <p>Ed: {nyt.editor}</p>
-      <small>	&copy; {nyt.copyright}</small> */}
       <div className="rebus-button">REBUS</div>
-      {/* <img onClick={toggleAnswers} className="check-puzzle" src={lifebuoy} alt="check_puzzle" /> */}
       <HintMenu
         autocheck={autocheck}
         setAutocheck={setAutocheck} 
@@ -37,8 +43,11 @@ export default function Navbar(props) {
         revealWord={revealWord}
         revealPuzzle={revealPuzzle}
       />
-      <img className="info" src={info} alt="info" />
-
+      <img className="info" src={info} alt="info" onClick={handleClickOpen} />
+      <InfoPage
+        open={open}
+        handleClose={handleClose}
+      />
     </div>
   )
 }

@@ -35,6 +35,7 @@ export default function Square(props) {
 
   let [squareText, setSquareText] = React.useState('');
   let [squareValueClasses, setSquareValueClasses] = React.useState(["square-value"]);
+  let [squareRootClasses, setSquareRootClasses] = React.useState(classNames);
 
   React.useEffect(displaySquare, [userInput, squareMarked]);
   React.useEffect(goToNextSquareAfterInput, [userInput]);
@@ -47,7 +48,12 @@ export default function Square(props) {
         if (!prevState.includes("verified")) {
           return [...prevState, "verified"];
         }
-      } else if (squareMarked.incorrect) {
+      } else {
+        if (prevState.includes("verified")) {
+          return prevState.filter( cn => cn !== "verified");
+        }
+      } 
+      if (squareMarked.incorrect) {
         return [...prevState, "checked-incorrect"];
 
       } else if (!squareMarked.incorrect) {
@@ -90,6 +96,13 @@ export default function Square(props) {
     console.log(squareMarked);
   }
 
+
+  React.useEffect(() => {
+    setSquareRootClasses(() => {
+      return squareMarked.revealed && !classNames.includes("revealed-overlay") ? [...classNames, "revealed-overlay"] : classNames;
+    });
+  }, [squareMarked, classNames]);
+
   return (
     <div 
         ref={squareRef} 
@@ -97,12 +110,12 @@ export default function Square(props) {
         onKeyDown={handleKeyDown} 
         onFocus={handleFocus}
         onMouseDown={handleMouseDown} 
-        className={classNames.join(" ")} 
+        className={squareRootClasses.join(" ")} 
         onClick={log}
     >
       {(squareMarked.incorrect || (shouldCheckAnswer() && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
-      {squareMarked.revealed && <div className="revealed-marker"></div>}
+      {isPlayableSquare && squareMarked.revealed && <div className="revealed-marker"></div>}
       <div className={squareValueClasses.join(' ')}>{squareText}</div>
     </div>
   )

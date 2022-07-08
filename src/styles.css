@@ -10,6 +10,9 @@ hr {
   border: 0.25px solid gray;
 }
 
+.info-page {
+}
+
 .App {
   max-width: 525px;
   margin: 0 auto;
@@ -44,7 +47,7 @@ hr {
 
 
 .check-puzzle {
-  height: 20px;
+  height: 25px;
   background-color: white;
   border-radius: 50%;
   padding: 5px;
@@ -52,7 +55,7 @@ hr {
 }
 
 .info {
-  height: 20px;
+  height: 25px;
   background-color: white;
   border-radius: 5px;
   padding: 5px;
@@ -153,6 +156,11 @@ hr {
 
 .focused-letter {
   background-color: rgb(22, 61, 237);
+
+  transform: scale(1.25);
+  background-color: rgb(63, 5, 115);
+  z-index: 10;
+  font-size: 14px;
 
 }
 .focused-word {
