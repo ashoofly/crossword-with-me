@@ -1,5 +1,5 @@
 import React from "react";
-import data from "../data/wednesday";
+import data from "../api/wednesday";
 import Dialog from '@mui/material/Dialog';
 
 

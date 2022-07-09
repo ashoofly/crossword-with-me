@@ -1,7 +1,5 @@
 import React from "react";
-import StarsIcon from '@mui/icons-material/Stars';
-import SvgIcon from '@mui/material/SvgIcon';
-import "./Square.css";
+import "../styles/Square.css";
 
 export default function Square(props) {
   const { 
@@ -9,8 +7,6 @@ export default function Square(props) {
     isPlayableSquare,
     autocheck,
     goToNextSquareAfterInput, 
-    overwriteMode,
-    deleteMode, 
     squareRef, 
     gridNum, 
     answer, 
@@ -50,20 +46,14 @@ export default function Square(props) {
   function markCheckedSquare() {
     setSquareValueClasses( prevState => {
       if (squareMarked.verified) {
-        if (!prevState.includes("verified")) {
-          return [...prevState, "verified"];
+        if (!prevState.includes("verified-overlay")) {
+          return [...prevState, "verified-overlay"];
         }
       } else {
-        if (prevState.includes("verified")) {
-          return prevState.filter( cn => cn !== "verified");
+        if (prevState.includes("verified-overlay")) {
+          return prevState.filter( cn => cn !== "verified-overlay");
         }
       } 
-      if (squareMarked.incorrect) {
-        return [...prevState, "checked-incorrect"];
-
-      } else if (!squareMarked.incorrect) {
-        return prevState.filter( cn => cn !== "checked-incorrect");
-      }
       return prevState;
     })
   };

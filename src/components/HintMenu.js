@@ -2,7 +2,7 @@ import React from 'react';
 import lifebuoy from '../images/life-buoy.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import "./HintMenu.css";
+import "../styles/HintMenu.css";
 
 export default function HintMenu(props) {
 

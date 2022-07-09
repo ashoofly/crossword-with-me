@@ -3,8 +3,8 @@ import info from '../images/info.svg';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Button from '@mui/material/Button';
-import './App.css';
-import "./Navbar.css";
+import '../styles/App.css';
+import "../styles/Navbar.css";
 
 export default function Navbar(props) {
 
@@ -25,7 +25,6 @@ export default function Navbar(props) {
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
-  // const [ rebusIndex, setRebusIndex ] = React.useState(-1);
 
   function handleClickOpen() {
     setOpen(true);
@@ -39,16 +38,6 @@ export default function Navbar(props) {
     console.log(`Rebus active: ${rebusActive}`);
     setRebusActive(prevState => !prevState);
     jumpToSquare(activeWord.focus);
-    // if (rebusIndex !== activeWord.focus) {
-    //   console.log(`Setting reebus active to: ${!rebusActive} and index to ${activeWord.focus}`);
-    //   setRebusActive(prevState => !prevState);
-    //   setRebusIndex(activeWord.focus);
-    //   jumpToSquare(activeWord.focus);
-    // } else {
-    //   // else, the blur event from active square will have already reset the rebusActive state to false
-    //   console.log("Same rebus index as before. Resetting index")
-    //   setRebusIndex(-1);
-    // }
   }
 
   function isRebusButtonDisabled() {

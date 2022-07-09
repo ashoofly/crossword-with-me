@@ -3,8 +3,8 @@ import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
-import './App.css';
-import data from "../data/wednesday";
+import '../styles/App.css';
+import data from "../api/wednesday";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import useLocalStorage from "../hooks/useLocalStorage";
 

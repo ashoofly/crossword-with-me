@@ -1,7 +1,7 @@
 import React from "react";
 import Square from "./Square";
 import useLocalStorage from "../hooks/useLocalStorage";
-import "./Board.css";
+import "../styles/Board.css";
 
 export default function Board(props) {
   const {
