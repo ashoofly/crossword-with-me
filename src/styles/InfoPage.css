@@ -1,0 +1,24 @@
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.info-page .MuiDialog-paper {
+  max-width: 400px;
+  max-height: 75%;
+  padding: 15px;
+  background-color: papayawhip;
+  color: black;
+}

@@ -8,16 +8,17 @@ import '../styles/App.css';
 import data from "../api/wednesday";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import useLocalStorage from "../hooks/useLocalStorage";
+import { calculateNewValue } from "@testing-library/user-event/dist/utils";
 
 const theme = createTheme({
   components: {
-    // MuiMenuItem: {
+    // MuiDialog: {
     //   styleOverrides: {
-    //     // root: ({ ownerState, theme }) => ({
-    //     //   ...(ownerState.disabled && {
-    //     //     color: theme.palette.grey[500]
-    //     //   })
-    //     // })
+    //     paper: {
+    //       // maxWidth: "400px",
+    //       // maxHeight: "75%",
+    //       // padding: "15px"
+    //     }
     //   }
     // }
   }

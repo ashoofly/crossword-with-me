@@ -121,7 +121,7 @@ export default function HintMenu(props) {
   }
 
   return (
-    <div>
+    <React.Fragment>
       <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
       <Menu
         id="hint-menu"
@@ -139,6 +139,6 @@ export default function HintMenu(props) {
       >
         {menuItems}
       </Menu>
-    </div>
+    </React.Fragment>
   )
 }

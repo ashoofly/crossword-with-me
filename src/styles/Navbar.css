@@ -11,20 +11,27 @@
 
 }
 
-.rebus-button {
+.navbar .MuiButton-root {
   font-family: 'PT Sans Narrow', sans-serif;
   font-size: 12px;
   font-weight: 300;
   border: 1px solid white;
-  padding: 5px;
+  background-color: black;
+  color: white;
+  padding: 0px;
+  min-width: 40px;
   border-radius: 5px;
   cursor: pointer;
 }
 
-.rebus-active {
+.navbar .MuiButton-root.Mui-disabled {
   background-color: gray;
   color: black;
   border-color: black;
+}
+
+.navbar .MuiButton-root:hover {
+  background-color: pink;
 }
 
 .info-icon, .pencil-icon, .hint-icon {
