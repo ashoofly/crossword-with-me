@@ -17,7 +17,7 @@ export default function InfoPage(props) {
       <h3>Edited by {data.editor.toUpperCase()}</h3>
       <small>	&copy; {data.copyright}</small>
       <h3>What is Rebus?</h3>
-      <p>This button is for some tricky puzzles that may have more than one character per square. Activate this button when you need to input more than one letter into a square.</p>
+      <p>Some puzzles have rebus puzzles within them, which are squares that aren't part of the usual spelling of the word (e.g., I C U for "I see you"). They may even have more than one character per square. For this use case, you can activate the "rebus" button to input multiple characters in a square. </p>
       <p>If you see a yellow (instead of the typical red) slash when checking your puzzle, it means you got the square partially correct (which can happen on a rebus square).</p>
       <h3>Keyboard Shortcuts</h3>
       <ul>
