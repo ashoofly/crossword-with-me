@@ -1,4 +1,5 @@
 import React from "react";
+import '../styles/common.css';
 import "../styles/Square.css";
 
 export default function Square(props) {
@@ -20,7 +21,8 @@ export default function Square(props) {
     checkRequest,
     focused,
     rebusActive,
-    resetRebus
+    resetRebus,
+    pencilActive
    } = props;
 
   function displaySquare() {
@@ -54,6 +56,15 @@ export default function Square(props) {
           return prevState.filter( cn => cn !== "verified-overlay");
         }
       } 
+      if (squareMarked.penciled) {
+        if (!prevState.includes("penciled-overlay")) {
+          return [...prevState, "penciled-overlay"];
+        }
+      } else {
+        if (prevState.includes("penciled-overlay")) {
+          return prevState.filter( cn => cn !== "penciled-overlay");
+        }
+      }         
       return prevState;
     })
   };
@@ -61,12 +72,8 @@ export default function Square(props) {
 
   function checkAnswer() {
     if (shouldCheckAnswer()) {
-      if (isPlayableSquare && userInput !== '') {
-        if (verifyLetter()) {
-          markSquare(id, "verified");
-        } else {
-          markSquare(id, "incorrect");
-        }
+      if (verifyLetter()) {
+        markSquare(id, verifyLetter());
       }
     }
   }
@@ -77,22 +84,26 @@ export default function Square(props) {
 
 
   function verifyLetter() {
-    return userInput === answer;
-  }
+    if (!isPlayableSquare || userInput === '') return;
+    if (userInput === answer) {
+      return "verified";
 
-  function isIncorrect() {
-    //TODO: incomplete rebus, mark yellow instead of red. 
-    return isPlayableSquare && userInput !== '' && userInput !== answer;
+    } else if (answer.length > 1) {
+      // rebus
+      if (userInput.length >= 1 && userInput.charAt(0) === answer.charAt(0)) {
+        return "partial";
+      } else {
+        return "incorrect";
+      }
+    } else {
+      return "incorrect";
+    }
   }
-
 
   function log() {
     console.log(`Index: ${id}. Check request: ${checkRequest}`);
     console.log(squareMarked);
   }
-
-
-
 
   React.useEffect(() => {
     setSquareRootClasses(() => {
@@ -120,7 +131,9 @@ export default function Square(props) {
         onClick={log}
         onBlur={resetRebus}
     >
-      {(squareMarked.incorrect || (shouldCheckAnswer() && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
+      {(squareMarked.incorrect || (shouldCheckAnswer() && verifyLetter() === "incorrect")) && <div className="wrong-answer-overlay"></div>}
+      {(squareMarked.partial || (shouldCheckAnswer() && verifyLetter() === "partial")) && <div className="partially-correct-overlay"></div>}
+
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
       {isPlayableSquare && squareMarked.revealed && <div className="revealed-marker"></div>}
       <div className={squareValueClasses.join(' ')}>{squareText}</div>

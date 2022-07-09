@@ -3,6 +3,7 @@ import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
+import '../styles/common.css';
 import '../styles/App.css';
 import data from "../api/wednesday";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -34,6 +35,7 @@ function App() {
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ rebusActive, setRebusActive ] = React.useState(false);
+  const [ pencilActive, setPencilActive ] = React.useState(false);
   const [ activeWord, setActiveWord ] = React.useState({
     orientation: "across",
     focus: 0,
@@ -276,6 +278,8 @@ function App() {
               setRebusActive={setRebusActive}
               activeWord={activeWord}
               jumpToSquare={jumpToSquare}
+              pencilActive={pencilActive}
+              setPencilActive={setPencilActive}
          />
         <Board 
               rebusActive={rebusActive}
@@ -306,6 +310,7 @@ function App() {
               goToPreviousWord={goToPreviousWord}
               isLastClueSquare={isLastClueSquare}
               jumpToSquare={jumpToSquare}
+              pencilActive={pencilActive}
               />
         <Clue 
               clueDictionary={clueDictionary}

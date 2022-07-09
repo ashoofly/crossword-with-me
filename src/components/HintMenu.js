@@ -2,11 +2,13 @@ import React from 'react';
 import lifebuoy from '../images/life-buoy.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import '../styles/common.css';
 import "../styles/HintMenu.css";
 
 export default function HintMenu(props) {
 
   const {
+    className,
     autocheck,
     setAutocheck,
     clearPuzzle,
@@ -120,7 +122,7 @@ export default function HintMenu(props) {
 
   return (
     <div>
-      <img onClick={handleClick} className="hint-menu" src={lifebuoy} alt="check_puzzle" />
+      <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
       <Menu
         id="hint-menu"
         anchorEl={anchorEl}

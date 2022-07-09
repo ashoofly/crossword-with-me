@@ -19,16 +19,20 @@
   color: white;
 }
 
+.penciled-overlay {
+  opacity: 50%;
+}
+
 .square:focus {
   outline: none;
 }
 
 .focused-letter {
-  background-color: rgb(121, 139, 218);
+  background-color: rgb(58, 78, 170);
 }
 
 .focused-word {
-  background-color: rgb(151, 190, 237);
+  background-color: rgb(95, 122, 154);
 }
 
 .rebus-square {
@@ -66,7 +70,7 @@
 }
 
 .verified-overlay {
-  color:rgb(12, 194, 67)
+  color:rgb(163, 188, 219);
 }
 
 .revealed-overlay {

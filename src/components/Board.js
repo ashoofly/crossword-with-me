@@ -1,6 +1,7 @@
 import React from "react";
 import Square from "./Square";
 import useLocalStorage from "../hooks/useLocalStorage";
+import '../styles/common.css';
 import "../styles/Board.css";
 
 export default function Board(props) {
@@ -31,7 +32,8 @@ export default function Board(props) {
     initializeState,
     rebusActive,
     setRebusActive,
-    jumpToSquare
+    jumpToSquare,
+    pencilActive
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -41,7 +43,9 @@ export default function Board(props) {
   const [squareMarked, setSquareMarked] = useLocalStorage("squareMarked", Array(numRows * numCols).fill({
     verified: false,
     incorrect: false,
-    revealed: false
+    revealed: false,
+    partial: false,
+    penciled: false
   }));
 
   function jumpToPreviousWord() {
@@ -162,7 +166,8 @@ export default function Board(props) {
       setSquareMarked(Array(numRows * numCols).fill({
         verified: false,
         incorrect: false,
-        revealed: false
+        revealed: false,
+        partial: false
       }));
       setAutocheck(false);
       setSquareProps(initializeState());
@@ -291,17 +296,24 @@ export default function Board(props) {
             return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
         })
+        if (pencilActive) {
+          console.log(`Square ${activeWord.focus} should be pencil active`);
+          markSquare(activeWord.focus, "penciled");
+        } else {
+          console.log(`Square ${activeWord.focus} should NOT be pencil active`);
+          markSquare(activeWord.focus, "penciled", false);
+        }
       }
     }
   }
 
-    function markSquare(id, property) {
+    function markSquare(id, property, value) {
       setSquareMarked(prevState => {
         return prevState.map((square, index) => {
           return (index === id ?
             {
               ...square,
-              [property]: true
+              [property]: value ?? true
             }
             : square
           )
@@ -315,7 +327,8 @@ export default function Board(props) {
           return (index === id ?
             {
               ...square,
-              incorrect: false
+              incorrect: false,
+              partial: false
             }
             : square
           )
@@ -434,6 +447,7 @@ export default function Board(props) {
           focused={square.id===activeWord.focus}
           rebusActive={rebusActive}
           resetRebus={() => resetRebus(square.id)}
+          pencilActive={pencilActive}
         />
       )
     });

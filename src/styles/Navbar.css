@@ -1,5 +1,4 @@
 .navbar {
-  border: 1px solid greenyellow;
   color: white;
   display: flex;
   justify-content: space-around;
@@ -28,10 +27,14 @@
   border-color: black;
 }
 
-.info {
+.info-icon, .pencil-icon, .hint-icon {
   height: 25px;
   background-color: white;
   border-radius: 5px;
   padding: 5px;
   cursor: pointer;
+}
+
+.pencil-active {
+  background-color: pink;
 }

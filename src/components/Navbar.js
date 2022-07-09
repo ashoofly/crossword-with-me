@@ -1,9 +1,10 @@
 import React from "react";
 import info from '../images/info.svg';
+import pencil from '../images/pencil.svg';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Button from '@mui/material/Button';
-import '../styles/App.css';
+import '../styles/common.css';
 import "../styles/Navbar.css";
 
 export default function Navbar(props) {
@@ -21,7 +22,9 @@ export default function Navbar(props) {
     rebusActive,
     setRebusActive,
     activeWord,
-    jumpToSquare
+    jumpToSquare,
+    pencilActive,
+    setPencilActive
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
@@ -44,11 +47,18 @@ export default function Navbar(props) {
     return rebusActive;
   }
 
+  function handlePencilClick() {
+    console.log("setting pencil state");
+    setPencilActive(prevState => !prevState);
+    jumpToSquare(activeWord.focus);
+  }
+
   return (
     <div className="navbar">
       <h1>Crossword with Friends</h1>
       <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
-      <HintMenu
+      <img className={`pencil-icon ${pencilActive ? "pencil-active": ''}`} src={pencil} alt="pencil" onClick={handlePencilClick} />
+      <HintMenu className="hint-icon"
         autocheck={autocheck}
         setAutocheck={setAutocheck} 
         clearPuzzle={clearPuzzle}
@@ -59,7 +69,7 @@ export default function Navbar(props) {
         revealWord={revealWord}
         revealPuzzle={revealPuzzle}
       />
-      <img className="info" src={info} alt="info" onClick={handleClickOpen} />
+      <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />
       <InfoPage
         open={open}
         handleClose={handleClose}
