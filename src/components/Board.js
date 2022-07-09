@@ -1,7 +1,7 @@
 import React from "react";
 import Square from "./Square";
-import useLocalStorage from "./hooks/useLocalStorage";
-
+import useLocalStorage from "../hooks/useLocalStorage";
+import "./Board.css";
 
 export default function Board(props) {
   const {
@@ -28,7 +28,10 @@ export default function Board(props) {
     revealSquare,
     revealWord,
     revealPuzzle,
-    initializeState
+    initializeState,
+    rebusActive,
+    setRebusActive,
+    jumpToSquare
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -241,6 +244,7 @@ export default function Board(props) {
 
   function handleKeyDown(e) {
     e.preventDefault();
+    console.log(e.key);
 
     if (e.key === " ") {
       toggleOrientation();
@@ -254,7 +258,11 @@ export default function Board(props) {
     } else if (squareMarked[activeWord.focus].verified) {
       goToNextSquareAfterInput();
 
-    } else if (e.key === "Backspace") {
+    } else if (rebusActive && e.key === "Enter") {
+      setRebusActive(false);
+      goToNextSquareAfterInput();
+    }
+      else if (e.key === "Backspace") {
       setDeleteMode(true);
       let currentIndex = activeWord.focus;
       if (userInput[activeWord.focus] === '') {
@@ -280,41 +288,12 @@ export default function Board(props) {
         }
         setUserInput(prevState => {
           return prevState.map((square, index) => {
-            return (index === activeWord.focus ? e.key.toUpperCase() : square);
+            return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
         })
       }
     }
   }
-
-
-    function markSquareVerified(id) {
-      setSquareMarked(prevState => {
-        return prevState.map((square, index) => {
-          return (index === id ?
-            {
-              ...square,
-              verified: true
-            }
-            : square
-          )
-        });
-      })
-    }
-
-    function markSquareIncorrect(id) {
-      setSquareMarked(prevState => {
-        return prevState.map((square, index) => {
-          return (index === id ?
-            {
-              ...square,
-              incorrect: true
-            }
-            : square
-          )
-        });
-      })
-    }
 
     function markSquare(id, property) {
       setSquareMarked(prevState => {
@@ -351,9 +330,7 @@ export default function Board(props) {
   
 
 
-    function jumpToSquare(index) {
-      squareProps[index].squareRef.current.focus();
-    }
+
 
 
     function backspace() {
@@ -363,7 +340,7 @@ export default function Board(props) {
     }
 
     function goToNextSquareAfterInput() {
-      if (!deleteMode) {
+      if (!deleteMode && !rebusActive) {
         let index = getNextEmptySquare(activeWord.focus);
         jumpToSquare(index);
       }
@@ -432,6 +409,12 @@ export default function Board(props) {
       }
     }
 
+    function resetRebus(index) {
+      console.log(`Blur on ${index}. Resetting rebus to false`)
+      setRebusActive(false);
+
+    }
+
     const squares = squareProps.map(square => {
       return (
         <Square key={square.id}
@@ -446,9 +429,11 @@ export default function Board(props) {
           handleFocus={(event) => handleFocus(event, square.id)}
           handleKeyDown={handleKeyDown}
           goToNextSquareAfterInput={goToNextSquareAfterInput}
-          markSquareVerified={() => markSquareVerified(square.id)}
-          markSquareIncorrect={() => markSquareIncorrect(square.id)}
+          markSquare={(index, mark) => markSquare(index, mark)}
           squareMarked={squareMarked[square.id]}
+          focused={square.id===activeWord.focus}
+          rebusActive={rebusActive}
+          resetRebus={() => resetRebus(square.id)}
         />
       )
     });

@@ -1,7 +1,8 @@
 import React from 'react';
-import lifebuoy from './images/life-buoy.svg';
+import lifebuoy from '../images/life-buoy.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import "./HintMenu.css";
 
 export default function HintMenu(props) {
 
@@ -119,7 +120,7 @@ export default function HintMenu(props) {
 
   return (
     <div>
-      <img onClick={handleClick} className="check-puzzle" src={lifebuoy} alt="check_puzzle" />
+      <img onClick={handleClick} className="hint-menu" src={lifebuoy} alt="check_puzzle" />
       <Menu
         id="hint-menu"
         anchorEl={anchorEl}

@@ -3,10 +3,10 @@ import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
-import './styles.css';
-import data from "./data/wednesday";
+import './App.css';
+import data from "../data/wednesday";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import useLocalStorage from "./hooks/useLocalStorage";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 const theme = createTheme({
   components: {
@@ -33,6 +33,7 @@ function App() {
 
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
+  const [ rebusActive, setRebusActive ] = React.useState(false);
   const [ activeWord, setActiveWord ] = React.useState({
     orientation: "across",
     focus: 0,
@@ -49,6 +50,11 @@ function App() {
   const revealWord = React.useRef(null);
   const revealPuzzle = React.useRef(null);
 
+  function handleRebusButtonOnMouseDown() {
+    console.log(`Rebus active: ${rebusActive}`);
+    setRebusActive(prevState => !prevState);
+    squareProps[activeWord.focus].squareRef.current.focus();
+  }
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
@@ -246,6 +252,10 @@ function App() {
     }
   }
 
+  function jumpToSquare(index) {
+    squareProps[index].squareRef.current.focus();
+  }
+
 
 
   return (
@@ -261,8 +271,15 @@ function App() {
               revealPuzzle={() => revealPuzzle.current()}
               autocheck={autocheck}
               setAutocheck={setAutocheck} 
+              handleRebusButtonOnMouseDown={handleRebusButtonOnMouseDown}
+              rebusActive={rebusActive}
+              setRebusActive={setRebusActive}
+              activeWord={activeWord}
+              jumpToSquare={jumpToSquare}
          />
         <Board 
+              rebusActive={rebusActive}
+              setRebusActive={setRebusActive}
               initializeState={initializeState}
               checkSquare={checkSquare}
               checkWord={checkWord}
@@ -288,6 +305,7 @@ function App() {
               goToNextWord={goToNextWord}
               goToPreviousWord={goToPreviousWord}
               isLastClueSquare={isLastClueSquare}
+              jumpToSquare={jumpToSquare}
               />
         <Clue 
               clueDictionary={clueDictionary}

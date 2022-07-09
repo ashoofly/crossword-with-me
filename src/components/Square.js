@@ -1,6 +1,7 @@
 import React from "react";
 import StarsIcon from '@mui/icons-material/Stars';
 import SvgIcon from '@mui/material/SvgIcon';
+import "./Square.css";
 
 export default function Square(props) {
   const { 
@@ -17,11 +18,13 @@ export default function Square(props) {
     handleMouseDown, 
     userInput, 
     handleKeyDown,
-    markSquareVerified,
+    markSquare,
     classNames,
-    markSquareIncorrect,
     squareMarked,
-    checkRequest
+    checkRequest,
+    focused,
+    rebusActive,
+    resetRebus
    } = props;
 
   function displaySquare() {
@@ -38,9 +41,11 @@ export default function Square(props) {
   let [squareRootClasses, setSquareRootClasses] = React.useState(classNames);
 
   React.useEffect(displaySquare, [userInput, squareMarked]);
-  React.useEffect(goToNextSquareAfterInput, [userInput]);
+  React.useEffect(goToNextSquareAfterInput, [userInput, rebusActive]);
   React.useEffect(checkAnswer, [autocheck, userInput, checkRequest]);
   React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
+
+
 
   function markCheckedSquare() {
     setSquareValueClasses( prevState => {
@@ -68,9 +73,9 @@ export default function Square(props) {
     if (shouldCheckAnswer()) {
       if (isPlayableSquare && userInput !== '') {
         if (verifyLetter()) {
-          markSquareVerified(id);
+          markSquare(id, "verified");
         } else {
-          markSquareIncorrect(id);
+          markSquare(id, "incorrect");
         }
       }
     }
@@ -97,11 +102,22 @@ export default function Square(props) {
   }
 
 
+
+
   React.useEffect(() => {
     setSquareRootClasses(() => {
-      return squareMarked.revealed && !classNames.includes("revealed-overlay") ? [...classNames, "revealed-overlay"] : classNames;
+      let classNamesWithRevealedStatus = squareMarked.revealed && !classNames.includes("revealed-overlay") ? [...classNames, "revealed-overlay"] : classNames;
+      if (focused && rebusActive) {
+        if (!classNames.includes("rebus-active")) {
+          return [...classNamesWithRevealedStatus, "rebus-square"];
+        } else {
+          return classNamesWithRevealedStatus;
+        }
+      } else {
+        return classNamesWithRevealedStatus.filter (cn => cn !== "rebus-square");
+      }
     });
-  }, [squareMarked, classNames]);
+  }, [squareMarked, classNames, rebusActive, focused]);
 
   return (
     <div 
@@ -112,6 +128,7 @@ export default function Square(props) {
         onMouseDown={handleMouseDown} 
         className={squareRootClasses.join(" ")} 
         onClick={log}
+        onBlur={resetRebus}
     >
       {(squareMarked.incorrect || (shouldCheckAnswer() && isIncorrect())) && <div className="wrong-answer-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>

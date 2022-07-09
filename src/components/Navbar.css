@@ -1,0 +1,37 @@
+.navbar {
+  border: 1px solid greenyellow;
+  color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.navbar h1 {
+  font-size: 1rem;
+
+}
+
+.rebus-button {
+  font-family: 'PT Sans Narrow', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  border: 1px solid white;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.rebus-active {
+  background-color: gray;
+  color: black;
+  border-color: black;
+}
+
+.info {
+  height: 25px;
+  background-color: white;
+  border-radius: 5px;
+  padding: 5px;
+  cursor: pointer;
+}

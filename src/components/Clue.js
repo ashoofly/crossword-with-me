@@ -1,6 +1,7 @@
 import React from "react";
-import prev from "./images/prev.svg";
-import next from "./images/next.svg";
+import prev from "../images/prev.svg";
+import next from "../images/next.svg";
+import "./Clue.css";
 
 export default function Clue(props) {
   const { 

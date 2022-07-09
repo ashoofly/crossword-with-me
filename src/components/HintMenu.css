@@ -1,0 +1,7 @@
+.hint-menu {
+  height: 25px;
+  background-color: white;
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+}

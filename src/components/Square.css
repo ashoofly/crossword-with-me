@@ -1,0 +1,82 @@
+/** Square **/
+.revealed-overlay {
+  background: linear-gradient(to top right, transparent 85%,#970b0b 10%) top right/40px 40px no-repeat; 
+  overflow: hidden;
+}
+
+.square {
+  border: 0.25px solid black;
+  background-color: #595963;
+  display: grid;
+  padding-bottom: 5px;
+  overflow: hidden;
+  position: relative;
+  font-size: 18px;
+
+}
+
+.wrong-answer-overlay {
+  position: absolute;
+  border: 1px solid red;
+  background: red;
+  width: calc(1.414 * 100%);
+  transform: rotate(-45deg);
+  transform-origin: bottom left;
+  bottom: -2px; 
+  left: -1px;
+
+}
+
+.revealed-marker {
+  background: white;
+  border-radius: 50%;
+  height: 3px;
+  width: 3px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 9;
+  margin: 2px;
+}
+
+.square-gridnum {
+  height: 12px;
+  font-size: 10px;
+  display: flex;
+  color: white;
+}
+
+.square-value {
+  color: white;
+
+}
+
+.verified {
+  color:  blue;
+}
+
+.block {
+  background-color: black;
+  border: none;
+}
+.square:focus {
+  outline: none;
+}
+
+.focused-letter {
+  background-color: rgb(22, 61, 237);
+}
+.focused-word {
+  background-color: rgb(21, 120, 242);
+}
+
+.rebus-square {
+  transform: scale(1.25);
+  background-color: rgb(63, 5, 115);
+  z-index: 10;
+  font-size: 14px;
+}
+
+.verified {
+  color:rgb(176, 207, 245)
+}
