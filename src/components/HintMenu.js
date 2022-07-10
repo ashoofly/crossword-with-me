@@ -71,7 +71,7 @@ export default function HintMenu(props) {
       text: "Clear Puzzle",
       onClick: clearPuzzle,
       style: {
-        color: "red"
+        color: "rgb(220,50,47)"
       }
     }
   ];

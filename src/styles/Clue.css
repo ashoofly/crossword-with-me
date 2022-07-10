@@ -1,7 +1,7 @@
 .clue {
-  background-color: #3a3261;
+  background-color: #063642;
   height: 60px;
-  color: white;
+  color: #DCD7C9;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -15,5 +15,5 @@
 .arrows {
   height: 25px;
   padding: 0 20px;
-  filter: invert(100%);
+  filter: invert(95%) sepia(12%) saturate(221%) hue-rotate(1deg) brightness(92%) contrast(87%);
 }

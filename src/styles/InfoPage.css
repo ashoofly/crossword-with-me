@@ -8,6 +8,7 @@ h2 {
 
 h3 {
   font-size: 1.15rem;
+  margin-bottom: 0.5rem;
 }
 
 header {
@@ -19,6 +20,7 @@ header {
   max-width: 400px;
   max-height: 75%;
   padding: 15px;
-  background-color: papayawhip;
-  color: black;
+  background-color: rgb(238,232,213);
+  color: rgb(134, 84, 57);
+  font-size: 14px;
 }

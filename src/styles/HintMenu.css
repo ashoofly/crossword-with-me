@@ -1,7 +1,12 @@
 .hint-icon {
   height: 25px;
-  background-color: white;
+  background-color: rgb(253,246,227);
   border-radius: 50%;
   padding: 5px;
   cursor: pointer;
+}
+
+#hint-menu .MuiPaper-root {
+  background-color: rgb(238,232,213);
+  color: rgb(134, 84, 57);
 }
