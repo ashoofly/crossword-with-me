@@ -57,8 +57,8 @@ export default function Navbar(props) {
     <div className="navbar">
       <h1>Crossword with Friends</h1>
       <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
-      <div className="icon-bg">
-        <img className={`pencil-icon ${pencilActive ? "pencil-active": ''}`} src={pencil} alt="pencil" onClick={handlePencilClick} />
+      <div className={`icon-bg ${pencilActive ? "pencil-active": ''}`}>
+        <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
       </div>
       <HintMenu className="hint-icon"
         autocheck={autocheck}
