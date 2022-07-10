@@ -1,0 +1,7 @@
+.Board {
+  height: 525px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(15, 35px);
+  grid-template-rows: repeat(15, 35px);
+}
