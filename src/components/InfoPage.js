@@ -11,14 +11,10 @@ export default function InfoPage(props) {
 
   const sourceAndDateRegex = /([A-Za-z\s]+), (.+)/;
   const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(data.title);
-  console.log(source);
-  console.log(dailyTitle);
 
   return (
     <Dialog onClose={handleClose} open={open}
-      className="info-page"
-      >
-
+      className="info-page">
       <header>
         <h1>{dailyTitle}</h1>
         <h3>By {data.author}</h3>
@@ -41,8 +37,6 @@ export default function InfoPage(props) {
         <li><a href="https://www.xwordinfo.com/">xword.info</a> for the daily crossword data</li>
         <li>Ethan Schoonover for the <a href="https://ethanschoonover.com/solarized/">Solarized</a> color scheme</li>
       </ul>
-
-
     </Dialog>
   )
 }

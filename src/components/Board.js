@@ -249,7 +249,6 @@ export default function Board(props) {
 
   function handleKeyDown(e) {
     e.preventDefault();
-    console.log(e.key);
 
     if (e.key === " ") {
       toggleOrientation();
@@ -297,10 +296,8 @@ export default function Board(props) {
           })
         })
         if (pencilActive) {
-          console.log(`Square ${activeWord.focus} should be pencil active`);
           markSquare(activeWord.focus, "penciled");
         } else {
-          console.log(`Square ${activeWord.focus} should NOT be pencil active`);
           markSquare(activeWord.focus, "penciled", false);
         }
       }
@@ -422,10 +419,8 @@ export default function Board(props) {
       }
     }
 
-    function resetRebus(index) {
-      console.log(`Blur on ${index}. Resetting rebus to false`)
+    function resetRebus() {
       setRebusActive(false);
-
     }
 
     const squares = squareProps.map(square => {
@@ -446,8 +441,7 @@ export default function Board(props) {
           squareMarked={squareMarked[square.id]}
           focused={square.id===activeWord.focus}
           rebusActive={rebusActive}
-          resetRebus={() => resetRebus(square.id)}
-          pencilActive={pencilActive}
+          resetRebus={() => resetRebus()}
         />
       )
     });

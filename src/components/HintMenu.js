@@ -8,7 +8,6 @@ import "../styles/HintMenu.css";
 export default function HintMenu(props) {
 
   const {
-    className,
     autocheck,
     setAutocheck,
     clearPuzzle,

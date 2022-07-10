@@ -22,7 +22,6 @@ export default function Square(props) {
     focused,
     rebusActive,
     resetRebus,
-    pencilActive
    } = props;
 
   function displaySquare() {

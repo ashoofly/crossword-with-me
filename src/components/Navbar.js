@@ -38,7 +38,6 @@ export default function Navbar(props) {
   }
 
   function handleRebusButtonClick() {
-    console.log(`Rebus active: ${rebusActive}`);
     setRebusActive(prevState => !prevState);
     jumpToSquare(activeWord.focus);
   }
@@ -48,7 +47,6 @@ export default function Navbar(props) {
   }
 
   function handlePencilClick() {
-    console.log("setting pencil state");
     setPencilActive(prevState => !prevState);
     jumpToSquare(activeWord.focus);
   }

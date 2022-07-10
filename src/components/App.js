@@ -6,23 +6,7 @@ import Keyboard from './Keyboard';
 import '../styles/common.css';
 import '../styles/App.css';
 import data from "../api/wednesday";
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import useLocalStorage from "../hooks/useLocalStorage";
-import { calculateNewValue } from "@testing-library/user-event/dist/utils";
-
-const theme = createTheme({
-  components: {
-    // MuiDialog: {
-    //   styleOverrides: {
-    //     paper: {
-    //       // maxWidth: "400px",
-    //       // maxHeight: "75%",
-    //       // padding: "15px"
-    //     }
-    //   }
-    // }
-  }
-});
 
 function App() {
   const numRows = data.size.rows;
@@ -54,7 +38,6 @@ function App() {
   const revealPuzzle = React.useRef(null);
 
   function handleRebusButtonOnMouseDown() {
-    console.log(`Rebus active: ${rebusActive}`);
     setRebusActive(prevState => !prevState);
     squareProps[activeWord.focus].squareRef.current.focus();
   }
@@ -262,7 +245,6 @@ function App() {
 
 
   return (
-    <ThemeProvider theme={theme}>
       <div className="App">
         <Navbar
               clearPuzzle={() => clearPuzzle.current()}
@@ -323,7 +305,6 @@ function App() {
         />
         <Keyboard />
       </div>
-    </ThemeProvider>
   );
 }
 
