@@ -122,7 +122,9 @@ export default function HintMenu(props) {
 
   return (
     <React.Fragment>
-      <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
+      <div className="icon-round-bg">
+        <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
+      </div>
       <Menu
         id="hint-menu"
         anchorEl={anchorEl}
