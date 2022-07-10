@@ -1,0 +1,52 @@
+.navbar {
+  color: rgb(238,232,213);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+  background-color: rgb(6,54,66);
+  border: 1px solid rgb(6,54,66);
+}
+
+.navbar h1 {
+  font-size: 1rem;
+
+}
+
+.navbar .MuiButton-root {
+  font-family: 'PT Sans Narrow', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  background-color: rgb(253,246,227);
+  color: rgb(0,44,54);
+  padding: 0px;
+  min-width: 35px;
+  border-radius: 5px;
+  cursor: pointer;
+  min-height: 25px;
+}
+
+.navbar .MuiButton-root.Mui-disabled {
+  background-color:  rgb(38,139,210);
+  color: rgb(0,44,54);
+}
+
+.navbar .MuiButton-root:hover {
+  background-color:  rgb(253,246,227);
+}
+
+.icon-bg {
+  background-color: rgb(253,246,227);
+  border-radius: 5px;
+  height: 25px;
+  cursor: pointer;
+}
+.info-icon, .pencil-icon {
+  padding: 5px;
+  height: 25px;
+  filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+}
+
+.pencil-active {
+  background-color: rgb(38,139,210);
+}

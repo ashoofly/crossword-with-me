@@ -1,0 +1,19 @@
+.clue {
+  background-color: #063642;
+  height: 60px;
+  color: #DCD7C9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.clue-text {
+  padding: 20px 100px;
+}
+
+.arrows {
+  height: 25px;
+  padding: 0 20px;
+  filter: invert(95%) sepia(12%) saturate(221%) hue-rotate(1deg) brightness(92%) contrast(87%);
+}
