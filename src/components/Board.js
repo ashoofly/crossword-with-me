@@ -35,7 +35,8 @@ export default function Board(props) {
     jumpToSquare,
     pencilActive,
     zoomActive,
-    scrollToWord
+    scrollToWord,
+    handleVirtualKeydown
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -78,6 +79,10 @@ export default function Board(props) {
   React.useEffect(() => {
     checkPuzzle.current = checkEntirePuzzle;
   }, [activeWord]); 
+
+  React.useEffect(() => {
+    handleVirtualKeydown.current = handleKeyDown;
+  }, [activeWord]);
 
   function checkActiveWord() {
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
@@ -205,7 +210,6 @@ export default function Board(props) {
   }
 
   function centerActiveSquareOnZoom() {
-    console.log("Centering active square");
     let firstLetterOfWord = squareProps[activeWord.focus].squareRef.current;
     firstLetterOfWord.scrollIntoView({
       behavior: "smooth", 
@@ -224,7 +228,7 @@ export default function Board(props) {
       end: findWordEnd(index, prevState.orientation),
     }));
   }
-
+  console.log(activeWord);
   /**
    * This event is fired before 'onFocus', so we can toggle orientation before changing active word
    * @param {int} index 
@@ -259,6 +263,8 @@ export default function Board(props) {
   }
 
   function handleKeyDown(e) {
+    console.log(e);
+    console.log(activeWord);
     e.preventDefault();
 
     if (e.key === " ") {
@@ -271,13 +277,14 @@ export default function Board(props) {
       jumpToPreviousWord();
 
     } else if (squareMarked[activeWord.focus].verified) {
+      console.log(squareMarked);
       goToNextSquareAfterInput();
 
     } else if (rebusActive && e.key === "Enter") {
       setRebusActive(false);
       goToNextSquareAfterInput();
-    }
-      else if (e.key === "Backspace") {
+
+    } else if (e.key === "Backspace") {
       setDeleteMode(true);
       let currentIndex = activeWord.focus;
       if (userInput[activeWord.focus] === '') {
@@ -302,6 +309,7 @@ export default function Board(props) {
           setOverwriteMode(true);
         }
         setUserInput(prevState => {
+          console.log(`Setting index ${activeWord.focus} to ${e.key.toUpperCase()}`);
           return prevState.map((square, index) => {
             return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
@@ -314,6 +322,7 @@ export default function Board(props) {
       }
     }
   }
+  console.log(userInput);
 
     function markSquare(id, property, value) {
       setSquareMarked(prevState => {

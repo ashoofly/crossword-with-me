@@ -10,7 +10,8 @@ export default function Keyboard(props) {
     rebusActive,
     setRebusActive,
     activeWord,
-    jumpToSquare
+    jumpToSquare,
+    handleKeyDown
   } = props;
 
   function handleRebusButtonClick() {
@@ -19,14 +20,20 @@ export default function Keyboard(props) {
   }
 
   function isRebusButtonDisabled() {
-    return rebusActive;
+    return false;
   }
 
+  function handleClick(e) {
+    handleKeyDown({
+      key: e.target.id,
+      preventDefault: () => {}
+    })
+  }
 
   return (
     <div className="Keyboard">
       <div className="first-row">
-        <Button id="keyboard-key">Q</Button>
+        <Button id="q" onClick={handleClick}>Q</Button>
         <Button>W</Button>
         <Button>E</Button>
         <Button>R</Button>

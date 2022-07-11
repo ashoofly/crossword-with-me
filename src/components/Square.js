@@ -143,7 +143,7 @@ export default function Square(props) {
         onMouseDown={handleMouseDown} 
         className={squareRootClasses.join(" ")} 
         onClick={log}
-        onBlur={resetRebus}
+        // onBlur={resetRebus}
     >
       {(squareMarked.incorrect || (shouldCheckAnswer() && verifyLetter() === "incorrect")) && <div className="wrong-answer-overlay"></div>}
       {(squareMarked.partial || (shouldCheckAnswer() && verifyLetter() === "partial")) && <div className="partially-correct-overlay"></div>}

@@ -9,7 +9,7 @@
   grid-template-columns: repeat(10, 1fr);
   justify-content: space-between;
   margin-bottom: 1px;
-  padding: 0 5px;
+  padding: 0 2px;
 }
 
 .second-row {
@@ -47,7 +47,7 @@
  
 .Keyboard .MuiButtonBase-root {
   min-width: 10px;
-  height: 37px;
+  height: 43px;
 }
 
 @media (min-width: 600px) {
@@ -57,11 +57,22 @@
 }
 
 
+/* .Keyboard Button:hover {
+  background-color: rgb(131,148,150);
+} */
+
 .Keyboard Button:active {
   background-color: #576E75;
+  transform: scale(1.25);
+	transition: 0.1s;
 }
 
 .Keyboard .MuiButton-root.Mui-disabled {
+  background-color:  rgb(38,139,210);
+  color: rgb(0,44,54);
+}
+
+.navbar .MuiButton-root.rebus-active {
   background-color:  rgb(38,139,210);
   color: rgb(0,44,54);
 }

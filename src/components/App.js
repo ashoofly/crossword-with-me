@@ -39,6 +39,7 @@ function App() {
   const revealSquare = React.useRef(null);
   const revealWord = React.useRef(null);
   const revealPuzzle = React.useRef(null);
+  const handleKeyDown = React.useRef(null);
 
   // React.useEffect(() => {
   //   const board = document.querySelector('.Board');
@@ -292,8 +293,6 @@ function App() {
   }
 
   function nearBottomOfScreen(element) {
-    console.log(element.getBoundingClientRect().top);
-    console.log(0.75*document.querySelector('.Board').getBoundingClientRect().bottom);
     return element.getBoundingClientRect().top > 0.8*document.querySelector('.Board').getBoundingClientRect().bottom;
   }
 
@@ -353,6 +352,7 @@ function App() {
               pencilActive={pencilActive}
               zoomActive={zoomActive}
               scrollToWord={scrollToWord}
+              handleVirtualKeydown={handleKeyDown}
               />
         <Clue 
               clueDictionary={clueDictionary}
@@ -366,7 +366,8 @@ function App() {
               rebusActive={rebusActive}
               setRebusActive={setRebusActive}
               activeWord={activeWord}
-              jumpToSquare={jumpToSquare}        
+              jumpToSquare={jumpToSquare}  
+              handleKeyDown={(e) => handleKeyDown.current(e)}      
         />
       </div>
     </div>
