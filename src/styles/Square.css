@@ -6,8 +6,17 @@
   overflow: hidden;
   position: relative;
   font-size: 14px;
+  min-height: 28px; 
+}
+
+.zoomed {
   min-width: 38px;
   min-height: 40px;
+}
+
+@media (max-width: 599px) {
+  .square {
+  }
 }
 
 @media (min-width: 600px) {

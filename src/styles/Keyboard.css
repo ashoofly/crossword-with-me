@@ -35,7 +35,7 @@
   background-color: rgb(131,148,150);
   color: rgb(238,232,213);
   border: 1px solid rgb(6,54,66);
-  margin: 2px;
+  margin: 1.5px;
   font-size: 20px;
   font-weight: normal;
 }
@@ -47,7 +47,7 @@
  
 .Keyboard .MuiButtonBase-root {
   min-width: 10px;
-  height: 36px;
+  height: 37px;
 }
 
 @media (min-width: 600px) {

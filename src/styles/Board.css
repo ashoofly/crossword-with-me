@@ -9,9 +9,9 @@
 @media (max-width: 599px) {
   .Board {
     grid-template-rows: repeat(15, 3fr);
-    max-height: 50vh;
+    max-height: 52vh;
     overflow: scroll;
-    touch-action: pinch-zoom;
+    touch-action: pinch-zoom pan-x pan-y;
   }
 }
 

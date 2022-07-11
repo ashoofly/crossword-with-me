@@ -1,6 +1,6 @@
 import React from "react";
 import Square from "./Square";
-import useLocalStorage from "../hooks/useLocalStorage";
+import useLocalStorage from "../utils/useLocalStorageHook";
 import '../styles/common.css';
 import "../styles/Board.css";
 
@@ -33,7 +33,9 @@ export default function Board(props) {
     rebusActive,
     setRebusActive,
     jumpToSquare,
-    pencilActive
+    pencilActive,
+    zoomActive,
+    scrollToWord
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -202,6 +204,15 @@ export default function Board(props) {
     })
   }
 
+  function centerActiveSquareOnZoom() {
+    console.log("Centering active square");
+    let firstLetterOfWord = squareProps[activeWord.focus].squareRef.current;
+    firstLetterOfWord.scrollIntoView({
+      behavior: "smooth", 
+      block: activeWord.orientation === "down" ? "start": "center",
+      inline: "center"
+    });
+  }
 
   function handleFocus(event, index) {
     console.log("Focused index: " + index);
@@ -442,6 +453,8 @@ export default function Board(props) {
           focused={square.id===activeWord.focus}
           rebusActive={rebusActive}
           resetRebus={() => resetRebus()}
+          zoomActive={zoomActive}
+          handleRerender={centerActiveSquareOnZoom}
         />
       )
     });

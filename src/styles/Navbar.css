@@ -48,6 +48,10 @@
   filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
 }
 
+.zoom-icon {
+  filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+}
+
 .pencil-active {
   background-color: rgb(38,139,210);
 }
