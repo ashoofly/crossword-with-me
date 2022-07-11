@@ -1,6 +1,13 @@
 * {
   box-sizing: border-box;
 }
+
+body, html {
+  margin: 0;
+  padding: 0;
+  background-color: rgb(238,232,213);
+}
+
 body {
   font-family: 'Roboto', sans-serif;
 }

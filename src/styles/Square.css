@@ -8,6 +8,12 @@
   font-size: 14px;
 }
 
+@media (min-width: 600px) {
+  .square {
+    font-size: 18px;
+  }
+}
+
 .square-gridnum {
   height: 12px;
   font-size: 8px;

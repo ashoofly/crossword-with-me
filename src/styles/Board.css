@@ -1,6 +1,11 @@
 .Board {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(15, 25px);
-  grid-template-rows: repeat(15, 30px);
+  grid-template-columns: repeat(15, 1fr);
+}
+
+@media (max-width: 600px) {
+  .Board {
+    grid-template-rows: repeat(15, 30px);
+  }
 }

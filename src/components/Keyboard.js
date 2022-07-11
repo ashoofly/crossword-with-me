@@ -2,8 +2,27 @@ import React from "react";
 import '../styles/common.css';
 import "../styles/Keyboard.css";
 import Button from '@mui/material/Button';
+import backspace from '../images/backspace-outline.png';
 
-export default function Keyboard() {
+export default function Keyboard(props) {
+
+  const { 
+    rebusActive,
+    setRebusActive,
+    activeWord,
+    jumpToSquare
+  } = props;
+
+  function handleRebusButtonClick() {
+    setRebusActive(prevState => !prevState);
+    jumpToSquare(activeWord.focus);
+  }
+
+  function isRebusButtonDisabled() {
+    return rebusActive;
+  }
+
+
   return (
     <div className="Keyboard">
       <div className="first-row">
@@ -19,7 +38,7 @@ export default function Keyboard() {
         <Button>P</Button>
       </div>
       <div className="second-row">
-        <Button>A</Button>
+        <Button className="first-letter">A</Button>
         <Button>S</Button>
         <Button>D</Button>
         <Button>F</Button>
@@ -30,7 +49,7 @@ export default function Keyboard() {
         <Button>L</Button>
       </div>
       <div className="third-row">
-        <Button>Rebus</Button>
+        <Button className={`rebus ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
         <Button>Z</Button>
         <Button>X</Button>
         <Button>C</Button>
@@ -38,7 +57,7 @@ export default function Keyboard() {
         <Button>B</Button>
         <Button>N</Button>
         <Button>M</Button>
-        <Button>BACK</Button>
+        <Button><img className="backspace" src={backspace} alt="backspace" /></Button>
       </div>
     </div>
   )

@@ -245,6 +245,7 @@ function App() {
 
 
   return (
+    <div className="container">
       <div className="App">
         <Navbar
               clearPuzzle={() => clearPuzzle.current()}
@@ -256,7 +257,6 @@ function App() {
               revealPuzzle={() => revealPuzzle.current()}
               autocheck={autocheck}
               setAutocheck={setAutocheck} 
-              handleRebusButtonOnMouseDown={handleRebusButtonOnMouseDown}
               rebusActive={rebusActive}
               setRebusActive={setRebusActive}
               activeWord={activeWord}
@@ -303,8 +303,14 @@ function App() {
               goToNextWord={() => goToNextWord.current()}
               goToPrevWord={() => goToPreviousWord.current()}
         />
-        <Keyboard />
+        <Keyboard
+              rebusActive={rebusActive}
+              setRebusActive={setRebusActive}
+              activeWord={activeWord}
+              jumpToSquare={jumpToSquare}        
+        />
       </div>
+    </div>
   );
 }
 
