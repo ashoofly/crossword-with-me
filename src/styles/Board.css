@@ -4,8 +4,14 @@
   grid-template-columns: repeat(15, 1fr);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 599px) {
   .Board {
     grid-template-rows: repeat(15, 30px);
+  }
+}
+
+@media (min-width: 600px) {
+  .Board {
+    grid-template-rows: repeat(15, 40px);
   }
 }
