@@ -4,7 +4,7 @@
   text-align: center;
   background-color: rgb(0,44,54);
   /* height: 100vh; */
-  max-height: fit-content;
+  /* max-height: 90vh; */
 }
 
 @media (min-width: 600px) {

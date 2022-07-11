@@ -47,7 +47,7 @@
  
 .Keyboard .MuiButtonBase-root {
   min-width: 10px;
-  height: 35px;
+  height: 36px;
 }
 
 @media (min-width: 600px) {
