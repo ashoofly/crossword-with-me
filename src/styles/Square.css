@@ -6,6 +6,8 @@
   overflow: hidden;
   position: relative;
   font-size: 14px;
+  min-width: 38px;
+  min-height: 40px;
 }
 
 @media (min-width: 600px) {
