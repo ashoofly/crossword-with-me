@@ -6,7 +6,9 @@ import Keyboard from './Keyboard';
 import '../styles/common.css';
 import '../styles/App.css';
 import data from "../api/wednesday";
-import useLocalStorage from "../hooks/useLocalStorage";
+import useLocalStorage from "../utils/useLocalStorageHook";
+import pinchZoom from "../utils/pinchZoom";
+
 
 function App() {
   const numRows = data.size.rows;
@@ -21,6 +23,7 @@ function App() {
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ rebusActive, setRebusActive ] = React.useState(false);
   const [ pencilActive, setPencilActive ] = React.useState(false);
+  const [ zoomActive, setZoomActive ] = React.useState(false);
   const [ activeWord, setActiveWord ] = React.useState({
     orientation: "across",
     focus: 0,
@@ -36,6 +39,12 @@ function App() {
   const revealSquare = React.useRef(null);
   const revealWord = React.useRef(null);
   const revealPuzzle = React.useRef(null);
+  const handleKeyDown = React.useRef(null);
+
+  // React.useEffect(() => {
+  //   const board = document.querySelector('.Board');
+  //   pinchZoom(board);
+  // }, []);
 
   function handleRebusButtonOnMouseDown() {
     setRebusActive(prevState => !prevState);
@@ -240,11 +249,57 @@ function App() {
 
   function jumpToSquare(index) {
     squareProps[index].squareRef.current.focus();
+    if (zoomActive) {
+      scrollToWord(index, activeWord.orientation);
+    }
+  }
+
+
+
+  function scrollToWord(index, orientation) {
+    let firstLetterOfWord = squareProps[index].squareRef.current;
+    let startBoundary = orientation === "across" ? 
+      firstLetterOfWord.getBoundingClientRect().left : firstLetterOfWord.getBoundingClientRect().top;
+    let lastLetterOfWord = squareProps[findWordEnd(index, orientation)].squareRef.current;
+    let endBoundary = orientation === "across" ?
+      lastLetterOfWord.getBoundingClientRect().right : lastLetterOfWord.getBoundingClientRect().bottom;
+    let outOfBounds = orientation === "across" ? 
+      window.innerWidth : document.querySelector('.Board').getBoundingClientRect().bottom;
+    if (endBoundary > outOfBounds) {
+      let lengthOfWord = endBoundary - startBoundary;
+      let validBoundaries = orientation === "across" ?
+        window.innerWidth : document.querySelector('.Board').offsetHeight;
+      if (lengthOfWord <= validBoundaries) {
+        lastLetterOfWord.scrollIntoView({
+          behavior: "smooth", 
+          block: orientation === "across" ? (nearBottomOfScreen(firstLetterOfWord) ? "center" : "nearest") : "end", 
+          inline: orientation === "across"? "end" : "nearest"
+        });
+      } else {
+        firstLetterOfWord.scrollIntoView({
+          behavior: "smooth", 
+          block: orientation === "across" ? "nearest" : "start", 
+          inline: orientation === "across" ? "start" : "nearest"
+        });
+      }
+    } 
+    if (orientation === "across" && nearBottomOfScreen(firstLetterOfWord)) {
+      firstLetterOfWord.scrollIntoView({
+        behavior: "smooth", 
+        block: "center",
+        inline: "nearest"
+      });
+    }
+  }
+
+  function nearBottomOfScreen(element) {
+    return element.getBoundingClientRect().top > 0.8*document.querySelector('.Board').getBoundingClientRect().bottom;
   }
 
 
 
   return (
+    <div className="container">
       <div className="App">
         <Navbar
               clearPuzzle={() => clearPuzzle.current()}
@@ -256,13 +311,14 @@ function App() {
               revealPuzzle={() => revealPuzzle.current()}
               autocheck={autocheck}
               setAutocheck={setAutocheck} 
-              handleRebusButtonOnMouseDown={handleRebusButtonOnMouseDown}
               rebusActive={rebusActive}
               setRebusActive={setRebusActive}
               activeWord={activeWord}
               jumpToSquare={jumpToSquare}
               pencilActive={pencilActive}
               setPencilActive={setPencilActive}
+              zoomActive={zoomActive}
+              setZoomActive={setZoomActive}
          />
         <Board 
               rebusActive={rebusActive}
@@ -294,6 +350,9 @@ function App() {
               isLastClueSquare={isLastClueSquare}
               jumpToSquare={jumpToSquare}
               pencilActive={pencilActive}
+              zoomActive={zoomActive}
+              scrollToWord={scrollToWord}
+              handleVirtualKeydown={handleKeyDown}
               />
         <Clue 
               clueDictionary={clueDictionary}
@@ -303,8 +362,15 @@ function App() {
               goToNextWord={() => goToNextWord.current()}
               goToPrevWord={() => goToPreviousWord.current()}
         />
-        <Keyboard />
+        <Keyboard
+              rebusActive={rebusActive}
+              setRebusActive={setRebusActive}
+              activeWord={activeWord}
+              jumpToSquare={jumpToSquare}  
+              handleKeyDown={(e) => handleKeyDown.current(e)}      
+        />
       </div>
+    </div>
   );
 }
 

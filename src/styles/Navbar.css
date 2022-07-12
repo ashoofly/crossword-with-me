@@ -6,6 +6,7 @@
   padding: 0 10px;
   background-color: rgb(6,54,66);
   border: 1px solid rgb(6,54,66);
+  width: 100%;
 }
 
 .navbar h1 {
@@ -36,7 +37,7 @@
 }
 
 .icon-bg {
-  background-color: rgb(253,246,227);
+  background-color: #fdf6e3;
   border-radius: 5px;
   height: 25px;
   cursor: pointer;
@@ -44,6 +45,10 @@
 .info-icon, .pencil-icon {
   padding: 5px;
   height: 25px;
+  filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+}
+
+.zoom-icon {
   filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
 }
 

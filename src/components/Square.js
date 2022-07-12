@@ -22,6 +22,8 @@ export default function Square(props) {
     focused,
     rebusActive,
     resetRebus,
+    zoomActive,
+    handleRerender
    } = props;
 
   function displaySquare() {
@@ -104,20 +106,33 @@ export default function Square(props) {
     console.log(squareMarked);
   }
 
+  function updateClassNames(originalClassNames, conditional, className) {
+    if (conditional) {
+      if (!originalClassNames.includes(className)) {
+        return [...originalClassNames, className];
+      } else {
+        return originalClassNames;
+      }
+    } else {
+      return originalClassNames.filter (cn => cn !== className);
+    }
+  }
+
   React.useEffect(() => {
     setSquareRootClasses(() => {
-      let classNamesWithRevealedStatus = squareMarked.revealed && !classNames.includes("revealed-overlay") ? [...classNames, "revealed-overlay"] : classNames;
-      if (focused && rebusActive) {
-        if (!classNames.includes("rebus-active")) {
-          return [...classNamesWithRevealedStatus, "rebus-square"];
-        } else {
-          return classNamesWithRevealedStatus;
-        }
-      } else {
-        return classNamesWithRevealedStatus.filter (cn => cn !== "rebus-square");
-      }
+      let revealedStatus = updateClassNames(classNames, squareMarked.revealed, "revealed-overlay");
+      let rebusStatus = updateClassNames(revealedStatus, focused && rebusActive, "rebus-square");
+      let zoomStatus = updateClassNames(rebusStatus, zoomActive, "zoomed");
+      let finalClassNames = zoomStatus;
+      return finalClassNames;
     });
-  }, [squareMarked, classNames, rebusActive, focused]);
+  }, [squareMarked, classNames, rebusActive, focused, zoomActive]);
+
+  React.useEffect(() => {
+    if (zoomActive) {
+        handleRerender();
+    }
+  }, [zoomActive, squareRootClasses]);
 
   return (
     <div 
@@ -128,7 +143,7 @@ export default function Square(props) {
         onMouseDown={handleMouseDown} 
         className={squareRootClasses.join(" ")} 
         onClick={log}
-        onBlur={resetRebus}
+        // onBlur={resetRebus}
     >
       {(squareMarked.incorrect || (shouldCheckAnswer() && verifyLetter() === "incorrect")) && <div className="wrong-answer-overlay"></div>}
       {(squareMarked.partial || (shouldCheckAnswer() && verifyLetter() === "partial")) && <div className="partially-correct-overlay"></div>}

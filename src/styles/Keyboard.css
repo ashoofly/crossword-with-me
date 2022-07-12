@@ -1,5 +1,86 @@
 .Keyboard {
   width: 100%;
-  height: 200px;
   background-color: rgb(0,44,54);
+  padding-bottom: 5px;
+}
+
+.firstRow {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  justify-content: space-between;
+  margin-bottom: 1px;
+  padding: 0 2px;
+}
+
+.secondRow {
+  display: grid;
+  grid-template-columns: 0.5fr repeat(9, 1fr) 0.5fr;
+  justify-content: space-evenly;
+  margin-bottom: 1px;
+}
+
+.secondRow .firstLetter {
+  grid-column-start: 2;
+}
+
+.thirdRow {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(7, 1fr) 1.25fr;
+  justify-content: space-evenly;
+}
+
+
+
+.Keyboard Button {
+  background-color: rgb(131,148,150);
+  color: rgb(238,232,213);
+  border: 1px solid rgb(6,54,66);
+  margin: 1.5px;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+.Keyboard Button.rebus {
+  font-size: 14px;
+  font-family: 'PT Sans Narrow', sans-serif;
+}
+ 
+.Keyboard .MuiButtonBase-root {
+  min-width: 10px;
+  height: 43px;
+}
+
+@media (min-width: 600px) {
+  .Keyboard .MuiButtonBase-root {
+    height: 50px;
+  }
+}
+
+
+.Keyboard Button:hover {
+  background-color: rgb(131,148,150);
+}
+
+.Keyboard Button:active {
+  background-color: #576E75;
+  transform: scale(1.25);
+	transition: 0.1s;
+}
+
+.Keyboard .MuiButton-root.Mui-disabled {
+  background-color:  rgb(38,139,210);
+  color: rgb(0,44,54);
+}
+
+.Keyboard Button.rebus-active {
+  background-color:  rgb(38,139,210);
+  color: rgb(0,44,54);
+}
+
+/* .Keyboard Button:hover {
+  background-color: rgb(131,148,150);
+} */
+
+.Keyboard .backspace {
+  filter: invert(87%) sepia(12%) saturate(432%) hue-rotate(337deg) brightness(111%) contrast(98%);
 }

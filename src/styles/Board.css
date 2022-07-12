@@ -1,7 +1,22 @@
 .Board {
-  height: 525px;
-  width: 100%;
+  min-width: 100%;
   display: grid;
-  grid-template-columns: repeat(15, 35px);
-  grid-template-rows: repeat(15, 35px);
+  grid-template-columns: repeat(15, 3fr);
+  grid-auto-columns: max-content;
+  overflow-x: auto;
+}
+
+@media (max-width: 599px) {
+  .Board {
+    grid-template-rows: repeat(15, 3fr);
+    max-height: 50vh;
+    overflow: scroll;
+    touch-action: pinch-zoom pan-x pan-y;
+  }
+}
+
+@media (min-width: 600px) {
+  .Board {
+    grid-template-rows: repeat(15, 40px);
+  }
 }

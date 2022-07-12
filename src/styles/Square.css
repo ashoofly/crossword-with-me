@@ -1,16 +1,33 @@
 .square {
-  border: 0.25px solid rgb(6,54,66);
+  border: 0.1px solid rgb(6,54,66);
   background-color: rgb(60, 85, 92);
   display: grid;
   padding-bottom: 5px;
   overflow: hidden;
   position: relative;
-  font-size: 18px;
+  font-size: 14px;
+  min-height: 28px; 
+}
+
+.zoomed {
+  min-width: 38px;
+  min-height: 40px;
+}
+
+@media (max-width: 599px) {
+  .square {
+  }
+}
+
+@media (min-width: 600px) {
+  .square {
+    font-size: 18px;
+  }
 }
 
 .square-gridnum {
-  height: 12px;
-  font-size: 10px;
+  height: 9px;
+  font-size: 8px;
   display: flex;
   color: rgb(253,246,227);
 }

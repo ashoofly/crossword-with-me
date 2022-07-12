@@ -1,6 +1,8 @@
 import React from "react";
 import info from '../images/info.svg';
 import pencil from '../images/pencil.svg';
+import zoomIn from '../images/zoom-in.png';
+import zoomOut from '../images/zoom-out.png';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Button from '@mui/material/Button';
@@ -24,7 +26,9 @@ export default function Navbar(props) {
     activeWord,
     jumpToSquare,
     pencilActive,
-    setPencilActive
+    setPencilActive,
+    zoomActive,
+    setZoomActive
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
@@ -35,6 +39,10 @@ export default function Navbar(props) {
 
   function handleClose() {
     setOpen(false);
+  }
+
+  function handleZoom() {
+    setZoomActive( prevState => !prevState);
   }
 
   function handleRebusButtonClick() {
@@ -54,7 +62,10 @@ export default function Navbar(props) {
   return (
     <div className="navbar">
       <h1>Crossword with Friends</h1>
-      <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
+      {/* <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button> */}
+      <div className="icon-bg">
+        <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />
+      </div>
       <div className={`icon-bg ${pencilActive ? "pencil-active": ''}`}>
         <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
       </div>

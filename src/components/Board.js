@@ -1,6 +1,6 @@
 import React from "react";
 import Square from "./Square";
-import useLocalStorage from "../hooks/useLocalStorage";
+import useLocalStorage from "../utils/useLocalStorageHook";
 import '../styles/common.css';
 import "../styles/Board.css";
 
@@ -33,7 +33,10 @@ export default function Board(props) {
     rebusActive,
     setRebusActive,
     jumpToSquare,
-    pencilActive
+    pencilActive,
+    zoomActive,
+    scrollToWord,
+    handleVirtualKeydown
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -76,6 +79,10 @@ export default function Board(props) {
   React.useEffect(() => {
     checkPuzzle.current = checkEntirePuzzle;
   }, [activeWord]); 
+
+  React.useEffect(() => {
+    handleVirtualKeydown.current = handleKeyDown;
+  }, [activeWord]);
 
   function checkActiveWord() {
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
@@ -202,9 +209,16 @@ export default function Board(props) {
     })
   }
 
+  function centerActiveSquareOnZoom() {
+    let firstLetterOfWord = squareProps[activeWord.focus].squareRef.current;
+    firstLetterOfWord.scrollIntoView({
+      behavior: "smooth", 
+      block: activeWord.orientation === "down" ? "start": "center",
+      inline: "center"
+    });
+  }
 
   function handleFocus(event, index) {
-    console.log("Focused index: " + index);
     if (squareProps[index].answer === ".") return;
     setActiveWord(prevState => ({
       ...prevState,
@@ -265,8 +279,8 @@ export default function Board(props) {
     } else if (rebusActive && e.key === "Enter") {
       setRebusActive(false);
       goToNextSquareAfterInput();
-    }
-      else if (e.key === "Backspace") {
+
+    } else if (e.key === "Backspace") {
       setDeleteMode(true);
       let currentIndex = activeWord.focus;
       if (userInput[activeWord.focus] === '') {
@@ -442,6 +456,8 @@ export default function Board(props) {
           focused={square.id===activeWord.focus}
           rebusActive={rebusActive}
           resetRebus={() => resetRebus()}
+          zoomActive={zoomActive}
+          handleRerender={centerActiveSquareOnZoom}
         />
       )
     });
