@@ -10,7 +10,6 @@ export default function (element) {
   }
 
   element.addEventListener('touchstart', (event) => {
-    console.log('touchstart', event);
     if (event.touches.length === 2) {
       event.preventDefault();
 
@@ -21,7 +20,6 @@ export default function (element) {
   })
 
   element.addEventListener('touchmove', (event) => {
-    console.log('touchmove', event);
     if (event.touches.length === 2) {
       event.preventDefault();
       let scale;

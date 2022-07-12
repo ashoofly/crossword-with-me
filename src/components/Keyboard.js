@@ -14,13 +14,18 @@ export default function Keyboard(props) {
     handleKeyDown
   } = props;
 
+  const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
+  const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
+  const thirdRowKeys = ['rebus', 'z', 'x', 'c', 'v', 'b', 'n', 'm', "Backspace"];
+  const rows = {
+    firstRow: firstRowKeys,
+    secondRow: secondRowKeys,
+    thirdRow: thirdRowKeys
+  };
+
   function handleRebusButtonClick() {
     setRebusActive(prevState => !prevState);
     jumpToSquare(activeWord.focus);
-  }
-
-  function isRebusButtonDisabled() {
-    return false;
   }
 
   function handleClick(e) {
@@ -30,42 +35,43 @@ export default function Keyboard(props) {
     })
   }
 
+  const keys = Object.entries(rows).map( 
+    ([row, keys]) => {
+      return (
+        <div key={row} className={row}>
+          {displayRow(keys)}
+        </div>
+      )
+    }
+  );
+
+  function displayRow(keys) {
+    return keys.map( key => {
+        if (key === "rebus") {
+          return (<Button 
+                    key={key}
+                    className={`rebus ${rebusActive ? "rebus-active": ''}`} 
+                    onClick={handleRebusButtonClick}>
+                      {key.toUpperCase()}
+                  </Button>);
+
+        } else if (key === "Backspace") {
+          return (<Button key={key}>
+                    <img className="backspace" src={backspace} alt="backspace" />
+                  </Button>);
+
+        } else if (key === "a") {
+          return <Button key={key} id={key} className="firstLetter" onClick={handleClick}>{key.toUpperCase()}</Button>
+
+        } else {
+          return <Button key={key} id={key} onClick={handleClick}>{key.toUpperCase()}</Button>
+        }
+    });
+  }
+
   return (
     <div className="Keyboard">
-      <div className="first-row">
-        <Button id="q" onClick={handleClick}>Q</Button>
-        <Button>W</Button>
-        <Button>E</Button>
-        <Button>R</Button>
-        <Button>T</Button>
-        <Button>Y</Button>
-        <Button>U</Button>
-        <Button>I</Button>
-        <Button>O</Button>
-        <Button>P</Button>
-      </div>
-      <div className="second-row">
-        <Button className="first-letter">A</Button>
-        <Button>S</Button>
-        <Button>D</Button>
-        <Button>F</Button>
-        <Button>G</Button>
-        <Button>H</Button>
-        <Button>J</Button>
-        <Button>K</Button>
-        <Button>L</Button>
-      </div>
-      <div className="third-row">
-        <Button className={`rebus ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
-        <Button>Z</Button>
-        <Button>X</Button>
-        <Button>C</Button>
-        <Button>V</Button>
-        <Button>B</Button>
-        <Button>N</Button>
-        <Button>M</Button>
-        <Button><img className="backspace" src={backspace} alt="backspace" /></Button>
-      </div>
+      {keys}
     </div>
   )
 }

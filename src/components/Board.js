@@ -219,7 +219,6 @@ export default function Board(props) {
   }
 
   function handleFocus(event, index) {
-    console.log("Focused index: " + index);
     if (squareProps[index].answer === ".") return;
     setActiveWord(prevState => ({
       ...prevState,
@@ -228,7 +227,7 @@ export default function Board(props) {
       end: findWordEnd(index, prevState.orientation),
     }));
   }
-  console.log(activeWord);
+
   /**
    * This event is fired before 'onFocus', so we can toggle orientation before changing active word
    * @param {int} index 
@@ -263,8 +262,6 @@ export default function Board(props) {
   }
 
   function handleKeyDown(e) {
-    console.log(e);
-    console.log(activeWord);
     e.preventDefault();
 
     if (e.key === " ") {
@@ -277,7 +274,6 @@ export default function Board(props) {
       jumpToPreviousWord();
 
     } else if (squareMarked[activeWord.focus].verified) {
-      console.log(squareMarked);
       goToNextSquareAfterInput();
 
     } else if (rebusActive && e.key === "Enter") {
@@ -309,7 +305,6 @@ export default function Board(props) {
           setOverwriteMode(true);
         }
         setUserInput(prevState => {
-          console.log(`Setting index ${activeWord.focus} to ${e.key.toUpperCase()}`);
           return prevState.map((square, index) => {
             return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
@@ -322,7 +317,6 @@ export default function Board(props) {
       }
     }
   }
-  console.log(userInput);
 
     function markSquare(id, property, value) {
       setSquareMarked(prevState => {

@@ -4,7 +4,7 @@
   padding-bottom: 5px;
 }
 
-.first-row {
+.firstRow {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   justify-content: space-between;
@@ -12,18 +12,18 @@
   padding: 0 2px;
 }
 
-.second-row {
+.secondRow {
   display: grid;
   grid-template-columns: 0.5fr repeat(9, 1fr) 0.5fr;
   justify-content: space-evenly;
   margin-bottom: 1px;
 }
 
-.second-row .first-letter {
+.secondRow .firstLetter {
   grid-column-start: 2;
 }
 
-.third-row {
+.thirdRow {
   display: grid;
   grid-template-columns: 1.25fr repeat(7, 1fr) 1.25fr;
   justify-content: space-evenly;
@@ -57,9 +57,9 @@
 }
 
 
-/* .Keyboard Button:hover {
+.Keyboard Button:hover {
   background-color: rgb(131,148,150);
-} */
+}
 
 .Keyboard Button:active {
   background-color: #576E75;
@@ -72,7 +72,7 @@
   color: rgb(0,44,54);
 }
 
-.navbar .MuiButton-root.rebus-active {
+.Keyboard Button.rebus-active {
   background-color:  rgb(38,139,210);
   color: rgb(0,44,54);
 }
