@@ -1,8 +1,8 @@
 import React from "react";
 import info from '../images/info.svg';
 import pencil from '../images/pencil.svg';
-import zoomIn from '../images/zoom-in.png';
-import zoomOut from '../images/zoom-out.png';
+import zoomIn from '../images/zoom-in.svg';
+import zoomOut from '../images/zoom-out.svg';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Button from '@mui/material/Button';
@@ -63,6 +63,7 @@ export default function Navbar(props) {
     <div className="navbar">
       <h1>Crossword with Friends</h1>
       {/* <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button> */}
+      {/* TODO: display zoom only for mobile. */}
       <div className="icon-bg">
         <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />
       </div>

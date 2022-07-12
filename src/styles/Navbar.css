@@ -42,14 +42,14 @@
   height: 25px;
   cursor: pointer;
 }
-.info-icon, .pencil-icon {
-  padding: 5px;
+.info-icon, .pencil-icon, .zoom-icon {
+  padding: 3px;
   height: 25px;
   filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
 }
 
 .zoom-icon {
-  filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+  padding: 1px;
 }
 
 .pencil-active {
