@@ -77,6 +77,10 @@
   color: rgb(0,44,54);
 }
 
+.Keyboard .backspace {
+  padding: 15px 25px;
+}
+
 /* .Keyboard Button:hover {
   background-color: rgb(131,148,150);
 } */

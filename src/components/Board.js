@@ -82,7 +82,7 @@ export default function Board(props) {
 
   React.useEffect(() => {
     handleVirtualKeydown.current = handleKeyDown;
-  }, [activeWord]);
+  }, [activeWord, userInput]);
 
   function checkActiveWord() {
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;

@@ -57,14 +57,14 @@ export default function Keyboard(props) {
 
         } else if (key === "Backspace") {
           return (<Button key={key}>
-                    <img className="backspace" src={backspace} alt="backspace" />
+                    <img id={key} onClick={handleClick} className="backspace" src={backspace} alt="backspace" />
                   </Button>);
 
         } else if (key === "a") {
           return <Button key={key} id={key} className="firstLetter" onClick={handleClick}>{key.toUpperCase()}</Button>
 
         } else {
-          return <Button key={key} id={key} onClick={handleClick}>{key.toUpperCase()}</Button>
+          return <Button key={key} id={key} onClick={handleClick}>{key.toUpperCase()}</Button> 
         }
     });
   }
