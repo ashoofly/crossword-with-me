@@ -41,10 +41,16 @@ function App() {
   const revealPuzzle = React.useRef(null);
   const handleKeyDown = React.useRef(null);
 
+  //TODO: can't find a way to prevent accidental back / forward swiping on mobile
   // React.useEffect(() => {
   //   const board = document.querySelector('.Board');
-  //   pinchZoom(board);
-  // }, []);
+  //   console.log(window.innerWidth);
+  //   board.addEventListener('touchmove', (e) => {
+  //     console.log(e.touches[0].pageX, e.touches[0].pageY);
+  //     if ((e.touches[0].pageX < 0.12*window.innerWidth) || (e.touches[0].pageX > 0.88*window.innerWidth)) {
+  //       e.preventDefault();
+  //     }
+  //   });  }, []);
 
   function handleRebusButtonOnMouseDown() {
     setRebusActive(prevState => !prevState);

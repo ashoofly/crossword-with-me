@@ -51,8 +51,10 @@ export default function Board(props) {
     penciled: false
   }));
 
+
+
   function jumpToPreviousWord() {
-    jumpToSquare(getNextEmptySquare(getPrevWord(activeWord.focus)));
+    jumpToSquare(getNextEmptySquare(getPrevWord(activeWord.focus), true));
   }
   function jumpToNextWord() {
     jumpToSquare(getNextEmptySquare(getNextWord(activeWord.focus)));
@@ -400,7 +402,7 @@ export default function Board(props) {
       return userInput.filter(square => square === "").length === 0 ? true : false;
     }
 
-    function getNextEmptySquare(index) {
+    function getNextEmptySquare(index, previous) {
       // If puzzle is all filled out, return current index
       if (isPuzzleFilled()) {
         console.log("Puzzle is filled.");
@@ -409,7 +411,7 @@ export default function Board(props) {
 
       // If last square in orientation, start search at beginning
       // TODO: edge case where(0,0) square is not valid
-      if (isLastClueSquare(index, activeWord.orientation)) return 0;
+      if (index === 0 || isLastClueSquare(index, activeWord.orientation)) return 0;
 
       if (overwriteMode) {
         // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
@@ -419,6 +421,7 @@ export default function Board(props) {
         let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
         let currentWordStart = findWordStart(index, activeWord.orientation);
         let currentWordEnd = findWordEnd(index, activeWord.orientation);
+
         // Start at current square and go to next empty letter in word
         for (let i = index; i <= currentWordEnd; i = (i + incrementInterval)) {
           if (userInput[i] === "") return i;
@@ -429,7 +432,11 @@ export default function Board(props) {
         }
 
         // If word is all filled out, find next word 
-        return getNextEmptySquare(getNextWord(index));
+        if (previous) {
+          return getNextEmptySquare(getPrevWord(index), true);
+        } else {
+          return getNextEmptySquare(getNextWord(index));
+        }
       }
     }
 

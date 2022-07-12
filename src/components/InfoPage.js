@@ -21,6 +21,10 @@ export default function InfoPage(props) {
         <h4>Edited by {data.editor}</h4>
         <small>	&copy; {data.copyright}</small>
       </header>
+      <h3>Mobile Tips</h3>
+      <ul>
+        <li>When dragging board around in zoomed-in mode, best to do it from the center of the screen to avoid triggering the automatic browser swipe navigation.</li>
+      </ul>
       <h3>Keyboard Shortcuts</h3>
       <ul>
         <li><b>Tab</b> or <b>Shift + Right Arrow</b> to go to next word</li>

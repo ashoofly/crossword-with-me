@@ -4,6 +4,7 @@
   grid-template-columns: repeat(15, 3fr);
   grid-auto-columns: max-content;
   overflow-x: auto;
+  padding: 5px;
 }
 
 @media (max-width: 599px) {

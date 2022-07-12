@@ -14,7 +14,7 @@
 }
 
 .arrows {
-  height: 25px;
+  height: 30px;
   padding: 0 20px;
   filter: invert(95%) sepia(12%) saturate(221%) hue-rotate(1deg) brightness(92%) contrast(87%);
 }
