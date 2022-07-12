@@ -24,9 +24,13 @@ export default function Clue(props) {
 
   return (
     <div className="clue">
-      <img onClick={goToPrevWord} className="arrows" src={prev} alt="prev_clue" />
+      <div className="arrow-container" onClick={goToPrevWord}>
+        <img className="arrows" src={prev} alt="prev_clue" />
+      </div>
       <div onClick={toggleOrientation} className="clue-text">{clueText}</div>
-      <img onClick={goToNextWord} className="arrows" src={next} alt="next_clue" />
+      <div className="arrow-container" onClick={goToNextWord}>
+        <img className="arrows" src={next} alt="next_clue" />
+      </div>
     </div>
   )
 }
