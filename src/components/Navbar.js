@@ -5,7 +5,7 @@ import zoomIn from '../images/zoom-in.svg';
 import zoomOut from '../images/zoom-out.svg';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
-import Button from '@mui/material/Button';
+import Account from './Account';
 import '../styles/common.css';
 import "../styles/Navbar.css";
 
@@ -28,7 +28,8 @@ export default function Navbar(props) {
     pencilActive,
     setPencilActive,
     zoomActive,
-    setZoomActive
+    setZoomActive,
+    auth
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
@@ -61,6 +62,8 @@ export default function Navbar(props) {
 
   return (
     <div className="navbar">
+      <Account 
+        auth={auth} />
       <h1>Crossword with Friends</h1>
       {/* <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button> */}
       {/* TODO: display zoom only for mobile. */}
@@ -70,7 +73,7 @@ export default function Navbar(props) {
       <div className={`icon-bg ${pencilActive ? "pencil-active": ''}`}>
         <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
       </div>
-      <HintMenu className="hint-icon"
+      <HintMenu 
         autocheck={autocheck}
         setAutocheck={setAutocheck} 
         clearPuzzle={clearPuzzle}

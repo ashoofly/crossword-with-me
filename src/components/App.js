@@ -6,9 +6,10 @@ import Keyboard from './Keyboard';
 import '../styles/common.css';
 import '../styles/App.css';
 import data from "../api/wednesday";
-import useLocalStorage from "../utils/useLocalStorageHook";
-import pinchZoom from "../utils/pinchZoom";
-
+import useLocalStorage from "../hooks/useLocalStorage";
+import { getFirebaseConfig } from '../firebase-config.js';
+import { initializeApp } from "firebase/app";
+import { initializeAuth } from '../auth';
 
 function App() {
   const numRows = data.size.rows;
@@ -19,6 +20,7 @@ function App() {
   const answers = data.answers;
   let clueDictionary = setupClueDictionary();
 
+  const [auth, setAuth] = React.useState(null);
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ rebusActive, setRebusActive ] = React.useState(false);
@@ -52,10 +54,18 @@ function App() {
   //     }
   //   });  }, []);
 
-  function handleRebusButtonOnMouseDown() {
-    setRebusActive(prevState => !prevState);
-    squareProps[activeWord.focus].squareRef.current.focus();
-  }
+ /**
+  * Initialize Firebase
+  */
+  React.useEffect(() => {
+    const firebaseAppConfig = getFirebaseConfig();
+    const app = initializeApp(firebaseAppConfig);
+    console.log("Initialized Firebase app");
+    setAuth(initializeAuth(app));
+    console.log("Initialized Firebase authentication");
+  }, []);
+
+
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
@@ -302,8 +312,6 @@ function App() {
     return element.getBoundingClientRect().top > 0.8*document.querySelector('.Board').getBoundingClientRect().bottom;
   }
 
-
-
   return (
     <div className="container">
       <div className="App">
@@ -325,6 +333,7 @@ function App() {
               setPencilActive={setPencilActive}
               zoomActive={zoomActive}
               setZoomActive={setZoomActive}
+              auth={auth}
          />
         <Board 
               rebusActive={rebusActive}

@@ -3,7 +3,7 @@ import lifebuoy from '../images/life-buoy.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
-import "../styles/HintMenu.css";
+import "../styles/Navbar.css";
 
 export default function HintMenu(props) {
 
@@ -125,7 +125,7 @@ export default function HintMenu(props) {
         <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
       </div>
       <Menu
-        id="hint-menu"
+        className="menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
