@@ -1,6 +1,6 @@
 import React from "react";
 import Square from "./Square";
-import useLocalStorage from "../utils/useLocalStorageHook";
+import useLocalStorage from "../hooks/useLocalStorage";
 import '../styles/common.css';
 import "../styles/Board.css";
 

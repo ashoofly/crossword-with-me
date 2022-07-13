@@ -39,19 +39,57 @@
 .icon-bg {
   background-color: #fdf6e3;
   border-radius: 5px;
-  height: 25px;
+  height: 30px;
   cursor: pointer;
 }
-.info-icon, .pencil-icon, .zoom-icon {
+.info-icon, .pencil-icon, .zoom-icon, .account-icon {
   padding: 3px;
-  height: 25px;
+  height: 30px;
   filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
 }
 
-.zoom-icon {
+.zoom-icon, .account-icon {
   padding: 1px;
 }
 
 .pencil-active {
   background-color: rgb(38,139,210);
+}
+
+.hint-icon {
+  height: 30px;
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+  filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+}
+
+.icon-round-bg {
+  background-color: #fdf6e3;
+  border-radius: 50%;
+  height: 30px;
+  cursor: pointer;
+}
+
+.menu .MuiPaper-root {
+  background-color: rgb(238,232,213);
+  color: rgb(0,44,54);
+}
+
+.navbar .MuiAvatar-root {
+  background-color: rgb(211,55,130);
+  height: 30px;
+  width: 30px;
+  cursor: pointer;
+}
+
+.displayName.MuiMenuItem-root {
+  cursor: default;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: rgb(89,110,117);
+}
+
+.avatar-img {
+  width: 100%;
 }
