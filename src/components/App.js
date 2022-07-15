@@ -10,8 +10,11 @@ import useLocalStorage from "../hooks/useLocalStorage";
 import { getFirebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
+import { io } from 'socket.io-client';
+
 
 function App() {
+
   const numRows = data.size.rows;
   const numCols = data.size.cols;
   const grid = data.grid;
@@ -21,6 +24,7 @@ function App() {
   let clueDictionary = setupClueDictionary();
 
   const [auth, setAuth] = React.useState(null);
+  const [socket, setSocket] = React.useState(null);
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
   const [ rebusActive, setRebusActive ] = React.useState(false);
@@ -63,6 +67,18 @@ function App() {
     console.log("Initialized Firebase app");
     setAuth(initializeAuth(app));
     console.log("Initialized Firebase authentication");
+  }, []);
+
+  /**
+   * Initialize Socket.io
+   */
+  React.useEffect(() => {
+    const s = io("http://localhost:3001");
+    setSocket(s);
+
+    return () => {
+      s.disconnect();
+    }
   }, []);
 
 
@@ -368,6 +384,7 @@ function App() {
               zoomActive={zoomActive}
               scrollToWord={scrollToWord}
               handleVirtualKeydown={handleKeyDown}
+              socket={socket}
               />
         <Clue 
               clueDictionary={clueDictionary}

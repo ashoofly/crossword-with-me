@@ -1,8 +1,11 @@
 import React from "react";
 import '../styles/common.css';
 import "../styles/Square.css";
+import { useSelector } from 'react-redux';
+
 
 export default function Square(props) {
+
   const { 
     id,
     isPlayableSquare,
@@ -23,15 +26,22 @@ export default function Square(props) {
     rebusActive,
     resetRebus,
     zoomActive,
-    handleRerender
+    handleRerender,
+    socket
    } = props;
+
+
+   const reduxSquareState = useSelector(state => {
+    return state.square[id]
+   });
+
 
   function displaySquare() {
     if (!isPlayableSquare) return;
     if (squareMarked.revealed) {
       setSquareText(answer);
     } else {    
-      setSquareText(userInput);
+      setSquareText(reduxSquareState.input);
     }
   }
 
@@ -43,6 +53,30 @@ export default function Square(props) {
   React.useEffect(goToNextSquareAfterInput, [userInput, rebusActive]);
   React.useEffect(checkAnswer, [autocheck, userInput, checkRequest]);
   React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
+
+//TODO: Currently infinite loop
+  // React.useEffect(() => {
+  //   if (socket === null) return;
+  //   const handler = (state) => {
+  //     console.log(state);
+  //     if (state.id === id) {
+  //       console.log("Found ID");
+  //       setSquareText(state.input); 
+  //     }
+  //   }
+  //   socket.on("receive-changes", handler);
+
+  //   return () => {
+  //     socket.off("receive-changes", handler)
+  //   }
+    
+  // }, []);
+
+  React.useEffect(() => {
+    if (socket === null) return;
+    socket.emit("send-changes", reduxSquareState);
+
+  }, [reduxSquareState]);
 
 
 
@@ -136,8 +170,9 @@ export default function Square(props) {
 
   return (
     <div 
-        ref={squareRef} 
+        id={id}
         tabIndex="0"
+        ref={squareRef} 
         onKeyDown={handleKeyDown} 
         onFocus={handleFocus}
         onMouseDown={handleMouseDown} 

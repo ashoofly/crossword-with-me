@@ -3,16 +3,18 @@ import Square from "./Square";
 import useLocalStorage from "../hooks/useLocalStorage";
 import '../styles/common.css';
 import "../styles/Board.css";
+import { useDispatch } from 'react-redux';
+import { changeInput } from '../redux/squareSlice';
 
 export default function Board(props) {
   const {
     autocheck,
-    setAutocheck,
+    setAutocheck,                   // event that changes square states
     numRows,
     numCols,
-    toggleOrientation,
+    toggleOrientation,              // event that changes square classNames (focused-letter, focused-word), Clue text
     squareProps,
-    setSquareProps,
+    setSquareProps,                 // used to navigate board (finding word start and end for both orientations)
     activeWord,
     setActiveWord,
     findWordStart,
@@ -36,7 +38,8 @@ export default function Board(props) {
     pencilActive,
     zoomActive,
     scrollToWord,
-    handleVirtualKeydown
+    handleVirtualKeydown,
+    socket
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -50,7 +53,7 @@ export default function Board(props) {
     partial: false,
     penciled: false
   }));
-
+  const dispatch = useDispatch();
 
 
   function jumpToPreviousWord() {
@@ -311,6 +314,7 @@ export default function Board(props) {
             return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
         })
+        dispatch(changeInput({id: activeWord.focus, value: e.key.toUpperCase()}));
         if (pencilActive) {
           markSquare(activeWord.focus, "penciled");
         } else {
@@ -465,6 +469,7 @@ export default function Board(props) {
           resetRebus={() => resetRebus()}
           zoomActive={zoomActive}
           handleRerender={centerActiveSquareOnZoom}
+          socket={socket}
         />
       )
     });
