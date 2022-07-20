@@ -27,7 +27,8 @@ export default function Square(props) {
     resetRebus,
     zoomActive,
     handleRerender,
-    socket
+    socket,
+    saveGame
    } = props;
 
 
@@ -61,6 +62,7 @@ export default function Square(props) {
     if (!reduxSquareState.initial && reduxSquareState.source === socket.id) {
       console.log("[Client] Sending changes");
       socket.emit("send-changes", reduxSquareState);
+      saveGame();
     }
   }, [socket, reduxSquareState]);
 

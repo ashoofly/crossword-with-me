@@ -17,6 +17,9 @@ export const squareSlice = createSlice({
     classNames: ["square"]
   })),
   reducers: {
+    'loadGame': (state, action) => {
+      return action.payload.board;
+    },
     'changeInput': (state, action) => {
         state[action.payload.id].initial = false;
         state[action.payload.id].source = action.payload.source;
@@ -57,6 +60,7 @@ export const squareSlice = createSlice({
 })
 
 export const { 
+  loadGame,
   changeInput, 
   requestCheck, 
   requestReveal, 

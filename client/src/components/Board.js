@@ -39,7 +39,8 @@ export default function Board(props) {
     zoomActive,
     scrollToWord,
     handleVirtualKeydown,
-    socket
+    socket,
+    saveGame
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
@@ -470,6 +471,7 @@ export default function Board(props) {
           zoomActive={zoomActive}
           handleRerender={centerActiveSquareOnZoom}
           socket={socket}
+          saveGame={saveGame}
         />
       )
     });

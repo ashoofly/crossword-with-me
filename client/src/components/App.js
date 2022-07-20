@@ -7,22 +7,21 @@ import '../styles/common.css';
 import '../styles/App.css';
 import data from "../api/wednesday";
 import useLocalStorage from "../hooks/useLocalStorage";
-import { getFirebaseConfig } from '../firebase-config.js';
+import { getFirebaseConfig } from '../firebase-config';
 import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
-import { getDatabase } from "firebase/database";
 import { io } from 'socket.io-client';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { changeInput } from '../redux/squareSlice';
+import { changeInput, loadGame } from '../redux/squareSlice';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 function App() {
-
-  const GAME_SAVE_INTERVAL_MS = 2000;
 
   const { id: gameId } = useParams();
   const numRows = data.size.rows;
   const numCols = data.size.cols;
+  const numSquares = numRows * numCols;
   const grid = data.grid;
   const gridNums = data.gridnums;
   const clues = data.clues;
@@ -30,7 +29,6 @@ function App() {
   let clueDictionary = setupClueDictionary();
 
   const [auth, setAuth] = React.useState(null);
-  const [db, setDb] = React.useState(null);
   const [socket, setSocket] = React.useState(null);
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
@@ -58,6 +56,8 @@ function App() {
   const reduxBoardState = useSelector(state => {
     return state.square
    });
+   const user = useAuthenticatedUser(auth);
+
 
   //TODO: can't find a way to prevent accidental back / forward swiping on mobile
   // React.useEffect(() => {
@@ -79,8 +79,6 @@ function App() {
     console.log("Initialized Firebase app");
     setAuth(initializeAuth(app));
     console.log("Initialized Firebase authentication");
-    setDb(getDatabase(app));
-    console.log("Initialized Firebase realtime database");
   }, []);
 
   /**
@@ -99,13 +97,16 @@ function App() {
     if (socket === null) return;
     socket.once('load-game', game => {
       console.log(`[Client] Loaded game ${gameId}`);
+      dispatch(loadGame({board: game.board}));
+      console.log(game);
     });
-    socket.emit('get-game', gameId);
-  }, [socket, gameId]);
+    socket.emit('get-game', gameId, numSquares);
+  }, [socket, gameId, user, numSquares]);
 
   React.useEffect(() => {
     if (socket === null) return;
     const handler = (state) => {
+      console.log("Received external change, updating Redux state.");
       dispatch(changeInput({id: state.index, value: state.input, source: 'external'}));
     }
     socket.on("receive-changes", handler);
@@ -116,20 +117,20 @@ function App() {
     
   }, [dispatch, socket]);
 
-  /**
-   * Auto-save game to back-end database
-   */
-  React.useEffect(() => {
+  // /**
+  //  * Auto-save game to back-end database
+  //  */
+  // React.useEffect(() => {
+  //   if (socket === null) return;
+  //   console.log("Saving game...");
+  //   socket.emit("save-game", gameId, reduxBoardState);
+
+  // }, [socket, gameId, reduxBoardState]);
+
+  function saveGame() {
     if (socket === null) return;
-    const interval = setInterval(() => {
-      socket.emit("save-document", {...gameId, reduxBoardState});
-    }, GAME_SAVE_INTERVAL_MS);
-
-    return() => {
-      clearInterval(interval);
-    }
-
-  }, [socket, gameId]);
+    socket.emit("save-game", gameId, reduxBoardState);
+  }
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
@@ -433,6 +434,7 @@ function App() {
               scrollToWord={scrollToWord}
               handleVirtualKeydown={handleKeyDown}
               socket={socket}
+              saveGame={saveGame}
               />
         <Clue 
               clueDictionary={clueDictionary}
