@@ -1,8 +1,14 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import squareReducer from './squareSlice';
 
-export default configureStore({
-  reducer: {
-    square: squareReducer
-  }
-})
+const rootReducer = combineReducers({
+  square: squareReducer
+});
+
+
+export const setupStore = preloadedState => {
+  return configureStore({
+    reducer: rootReducer,
+    preloadedState
+  });
+}

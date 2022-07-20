@@ -5,7 +5,9 @@ export const numSquares = data.size.rows * data.size.cols;
 
 export const squareSlice = createSlice({
   name: 'square',
-  initialState: Array(numSquares).fill({
+  initialState: [...Array(numSquares).keys()].map( num => ({
+    initial: true,
+    index: num,
     input: '',
     reveal: false,
     check: false,
@@ -13,10 +15,12 @@ export const squareSlice = createSlice({
     incorrect: false,
     partial: false,
     classNames: ["square"]
-  }),
+  })),
   reducers: {
     'changeInput': (state, action) => {
-        state[action.payload.id].input = action.payload.value
+        state[action.payload.id].initial = false;
+        state[action.payload.id].source = action.payload.source;
+        state[action.payload.id].input = action.payload.value;
     },
     'requestCheck': (state, action) => {
         state[action.payload.id].request = true

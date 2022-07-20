@@ -11,10 +11,13 @@ import { getFirebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
 import { io } from 'socket.io-client';
-
+import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { changeInput } from '../redux/squareSlice';
 
 function App() {
 
+  const { id: gameId } = useParams();
   const numRows = data.size.rows;
   const numCols = data.size.cols;
   const grid = data.grid;
@@ -45,7 +48,10 @@ function App() {
   const revealSquare = React.useRef(null);
   const revealWord = React.useRef(null);
   const revealPuzzle = React.useRef(null);
-  const handleKeyDown = React.useRef(null);
+  const handleKeyDown = React.useRef(null);  
+  
+  const dispatch = useDispatch();
+
 
   //TODO: can't find a way to prevent accidental back / forward swiping on mobile
   // React.useEffect(() => {
@@ -80,6 +86,27 @@ function App() {
       s.disconnect();
     }
   }, []);
+
+  React.useEffect(() => {
+    if (socket === null) return;
+    socket.once('load-game', game => {
+      console.log(`[Client] Loaded game ${gameId}`);
+    });
+    socket.emit('get-game', gameId);
+  }, [socket, gameId]);
+
+  React.useEffect(() => {
+    if (socket === null) return;
+    const handler = (state) => {
+      dispatch(changeInput({id: state.index, value: state.input, source: 'external'}));
+    }
+    socket.on("receive-changes", handler);
+
+    return () => {
+      socket.off("receive-changes", handler)
+    }
+    
+  }, [dispatch, socket]);
 
 
 
@@ -350,7 +377,7 @@ function App() {
               zoomActive={zoomActive}
               setZoomActive={setZoomActive}
               auth={auth}
-         />
+        />
         <Board 
               rebusActive={rebusActive}
               setRebusActive={setRebusActive}

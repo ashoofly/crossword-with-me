@@ -1,24 +1,28 @@
 /* eslint-disable testing-library/no-node-access */
 import React from "react";
-import { render } from "@testing-library/react";
+import { renderWithProviders } from "./test-utils";
 import userEvent from "@testing-library/user-event";
 import App from "../components/App";
 
 describe("App component", () => {
-  // TODO: Need to wrap provider for Redux: https://redux.js.org/usage/writing-tests
   it("renders App", () => {
-    const { container } = render(<App />);
+    const { container } = renderWithProviders(<App />);
     expect(container).toMatchSnapshot();
-  })
+  });
   it("When user presses key, active square will show key value", () => {
-    render(<App />);
+    renderWithProviders(<App />);
     const qButton = document.querySelector('#q');
     const activeSquareValue = document.querySelector('.focused-letter .square-value')
     expect(activeSquareValue.textContent).toMatch('');
     userEvent.click(qButton);
     expect(activeSquareValue.textContent).toMatch('Q');
   });
-  // TODO: Why is socket.io infinite looping on receive? 
+});
+
+describe("Socket io", () => {
+  it("When different browser agent changes crossword, all other browser agents receive changes", () => {
+
+  });
 });
 
 

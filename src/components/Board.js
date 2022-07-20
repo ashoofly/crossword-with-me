@@ -314,7 +314,7 @@ export default function Board(props) {
             return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
           })
         })
-        dispatch(changeInput({id: activeWord.focus, value: e.key.toUpperCase()}));
+        dispatch(changeInput({id: activeWord.focus, value: e.key.toUpperCase(), source: socket.id}));
         if (pencilActive) {
           markSquare(activeWord.focus, "penciled");
         } else {

@@ -49,34 +49,20 @@ export default function Square(props) {
   let [squareValueClasses, setSquareValueClasses] = React.useState(["square-value"]);
   let [squareRootClasses, setSquareRootClasses] = React.useState(classNames);
 
-  React.useEffect(displaySquare, [userInput, squareMarked]);
+  React.useEffect(displaySquare, [reduxSquareState, userInput, squareMarked]);
   React.useEffect(goToNextSquareAfterInput, [userInput, rebusActive]);
   React.useEffect(checkAnswer, [autocheck, userInput, checkRequest]);
   React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
 
-//TODO: Currently infinite loop
-  // React.useEffect(() => {
-  //   if (socket === null) return;
-  //   const handler = (state) => {
-  //     console.log(state);
-  //     if (state.id === id) {
-  //       console.log("Found ID");
-  //       setSquareText(state.input); 
-  //     }
-  //   }
-  //   socket.on("receive-changes", handler);
 
-  //   return () => {
-  //     socket.off("receive-changes", handler)
-  //   }
-    
-  // }, []);
 
   React.useEffect(() => {
     if (socket === null) return;
-    socket.emit("send-changes", reduxSquareState);
-
-  }, [reduxSquareState]);
+    if (!reduxSquareState.initial && reduxSquareState.source === socket.id) {
+      console.log("[Client] Sending changes");
+      socket.emit("send-changes", reduxSquareState);
+    }
+  }, [socket, reduxSquareState]);
 
 
 
