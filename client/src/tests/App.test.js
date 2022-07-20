@@ -20,9 +20,13 @@ describe("App component", () => {
 });
 
 describe("Socket io", () => {
-  it("When different browser agent changes crossword, all other browser agents receive changes", () => {
+  it("When different browser agent changes crossword, all other browser agents with same game id receive changes", () => {
 
   });
+  it("When different browser agents within same game id change same thing, the most recent one will always persist and be the same for all instances of the game", () => {
+
+  });
+  it("When new browser agent signs into game in progress, loads current state", () => {});
 });
 
 

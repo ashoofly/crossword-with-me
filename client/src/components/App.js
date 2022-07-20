@@ -10,12 +10,15 @@ import useLocalStorage from "../hooks/useLocalStorage";
 import { getFirebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
+import { getDatabase } from "firebase/database";
 import { io } from 'socket.io-client';
 import { useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { changeInput } from '../redux/squareSlice';
 
 function App() {
+
+  const GAME_SAVE_INTERVAL_MS = 2000;
 
   const { id: gameId } = useParams();
   const numRows = data.size.rows;
@@ -27,6 +30,7 @@ function App() {
   let clueDictionary = setupClueDictionary();
 
   const [auth, setAuth] = React.useState(null);
+  const [db, setDb] = React.useState(null);
   const [socket, setSocket] = React.useState(null);
   const [ autocheck, setAutocheck ] = useLocalStorage("autocheck", false);
   const [ squareProps, setSquareProps ] = React.useState(initializeState());
@@ -51,7 +55,9 @@ function App() {
   const handleKeyDown = React.useRef(null);  
   
   const dispatch = useDispatch();
-
+  const reduxBoardState = useSelector(state => {
+    return state.square
+   });
 
   //TODO: can't find a way to prevent accidental back / forward swiping on mobile
   // React.useEffect(() => {
@@ -73,6 +79,8 @@ function App() {
     console.log("Initialized Firebase app");
     setAuth(initializeAuth(app));
     console.log("Initialized Firebase authentication");
+    setDb(getDatabase(app));
+    console.log("Initialized Firebase realtime database");
   }, []);
 
   /**
@@ -108,7 +116,20 @@ function App() {
     
   }, [dispatch, socket]);
 
+  /**
+   * Auto-save game to back-end database
+   */
+  React.useEffect(() => {
+    if (socket === null) return;
+    const interval = setInterval(() => {
+      socket.emit("save-document", {...gameId, reduxBoardState});
+    }, GAME_SAVE_INTERVAL_MS);
 
+    return() => {
+      clearInterval(interval);
+    }
+
+  }, [socket, gameId]);
 
   function findWordStart(index, orientation) {
     let currentIndex = index;
