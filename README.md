@@ -20,4 +20,8 @@
 
 # Managing State
 
-This app uses Redux to keep track of multi-user changes in real-time, and it saves every 1 second to a back-end NoSQL database (Firebase Real-Time Database (RTD)) for persistence so games will be saved beyond browser refresh or restart. 
+This app uses Redux to keep track of multi-user changes in real-time, and it uses a back-end NoSQL database (Firebase Real-Time Database (RTD)) for persistence so games will be saved beyond browser refresh or restart. 
+
+# TODO
+
+* Convert rest of state to Redux

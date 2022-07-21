@@ -36,7 +36,7 @@
   color: rgb(253,246,227);
 }
 
-.penciled-overlay {
+.penciled-color {
   opacity: 50%;
 }
 
@@ -86,7 +86,7 @@
   left: -1px;
 }
 
-.verified-overlay {
+.verified-color {
   color:rgb(42,161,152);
 }
 

@@ -1,32 +1,61 @@
 [
-  {
-    "game_id": "1234",
-    "players": [
-      "ayh123@gmail.com",
-      "allisor@gmail.com"
-    ],
-    "board": [
-      {
-        "initial": false,
-        "index": 0,
-        "input": "K",
-        "reveal": false,
-        "check": false,
-        "verified": false,
-        "incorrect": false,
-        "partial": false,
-        "classNames": [
-          "square"
-        ]
-      }
-    ]
-  },
-  {
-    "game_id": "3455",
-    "players": [
-      "ayh123@gmail.com",
-      "allisor@gmail.com"
-    ],
-    "board": []
+  {"games": [
+    {
+      "game_id": "1234",
+      "players": [{
+          "ayh123@gmail.com": {
+            "color": "asdfasdfasf"
+          }
+        },
+
+        "allisor@gmail.com"
+      ],
+      "board": [
+        {
+          "initial": false,
+          "index": 0,
+          "input": "K",
+          "reveal": false,
+          "check": false,
+          "verified": false,
+          "incorrect": false,
+          "partial": false,
+          "classNames": [
+            "square"
+          ]
+        }
+      ]
+    },
+    {
+      "game_id": "3455",
+      "players": [
+        "ayh123@gmail.com",
+        "allisor@gmail.com"
+      ],
+      "board": []
+    }
+  ],
+  "puzzles": [
+    {
+      "monday": {
+
+      },
+    }
+
+    "tuesday": {
+
+    }
+  ],
+  "players": [
+    "ayh123@gmail.com": {
+      "email": "ayh123@gmail.com",
+      "color": "#sdfsadf",
+      "games": [
+        "asdfasdfa", "asdfasdfad", "asdfasdfads"
+      ]
+    }
+  ]
+
   }
+ 
 ]

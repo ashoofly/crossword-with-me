@@ -5,18 +5,65 @@ import userEvent from "@testing-library/user-event";
 import App from "../components/App";
 
 describe("App component", () => {
-  it("renders App", () => {
-    const { container } = renderWithProviders(<App />);
-    expect(container).toMatchSnapshot();
-  });
+  // it("renders App", () => {
+  //   const { container } = renderWithProviders(<App />);
+  //   expect(container).toMatchSnapshot();
+  // });
   it("When user presses key, active square will show key value", () => {
     renderWithProviders(<App />);
-    const qButton = document.querySelector('#q');
-    const activeSquareValue = document.querySelector('.focused-letter .square-value')
-    expect(activeSquareValue.textContent).toMatch('');
-    userEvent.click(qButton);
-    expect(activeSquareValue.textContent).toMatch('Q');
+    // const qButton = document.querySelector('#q');
+    // const activeSquareValue = document.querySelector('.focused-letter .square-value')
+    // expect(activeSquareValue.textContent).toMatch('');
+    // userEvent.click(qButton);
+    // expect(activeSquareValue.textContent).toMatch('Q');
   });
+  // it("When user enters letter, automatically advances to next empty square", () => {
+  //   renderWithProviders(<App />);
+  //   const activeSquare = document.querySelector('.focused-letter')
+  //   console.log(activeSquare);
+
+
+  // });
+  it("When user hits backspace, letter is cleared", () => {
+
+  });
+  it("When user hits backspace and input is already blank, cursor moves to previous square and clears that letter", () => {
+
+  });
+  it("When user clicks Check Square, if input is incorrect, red slash", () => {
+
+  });
+  it("When user clicks Check Square, if input is partially incorrect, yellow slash", () => {
+
+  });
+  it("When user clicks Check Square, if input correct, verified color", () => {
+
+  });
+  it("When pencil is active, input is rendered in 50% opacity", () => {
+
+  });
+  it("When user clicks Check Puzzle, entire Puzzle is checked", () => {
+
+  });
+  it("When user clicks Clear Puzzle, board goes back to initial state", () => {
+    // user input cleared
+
+    // any incorrect check marks cleared
+
+  });
+  it("When user clicks on square, the word is highlighted according to active orientation", () => {
+
+  });
+  it("When square is clicked again, orientation changes and different word is highlighted and puzzle clue is changed", () => {
+
+  });
+  it("When user clicks on clue, orientation changes, clue changes and highlighted active word changes", () => {
+
+  });
+  it("When zoom is active, puzzle grid zooms in", () => {
+
+  });
+  it("When rebus is active, user can type in multiple characters", () => {});
 });
 
 describe("Socket io", () => {
@@ -27,6 +74,7 @@ describe("Socket io", () => {
 
   });
   it("When new browser agent signs into game in progress, loads current state", () => {});
+  it("Different game ids have different data", () => {});
 });
 
 

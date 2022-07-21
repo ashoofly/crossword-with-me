@@ -3,16 +3,24 @@ import '../styles/common.css';
 import "../styles/Keyboard.css";
 import Button from '@mui/material/Button';
 import backspace from '../images/backspace-outline.png';
-
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  toggleRebus
+} from '../redux/slices/playerSlice';
 export default function Keyboard(props) {
 
   const { 
-    rebusActive,
-    setRebusActive,
-    activeWord,
     jumpToSquare,
     handleKeyDown
   } = props;
+
+  const dispatch = useDispatch();
+  const reduxPlayerState = useSelector(state => {
+    return state.player
+  });
+
+  const rebusActive = reduxPlayerState.rebusActive;
+  const activeWord = reduxPlayerState.activeWord;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
@@ -24,7 +32,7 @@ export default function Keyboard(props) {
   };
 
   function handleRebusButtonClick() {
-    setRebusActive(prevState => !prevState);
+    dispatch(toggleRebus());
     jumpToSquare(activeWord.focus);
   }
 

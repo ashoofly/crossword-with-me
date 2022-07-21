@@ -1,191 +1,74 @@
 import React from "react";
 import Square from "./Square";
-import useLocalStorage from "../hooks/useLocalStorage";
 import '../styles/common.css';
 import "../styles/Board.css";
-import { useDispatch } from 'react-redux';
-import { changeInput } from '../redux/squareSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  changeInput,
+  removeCheck
+} from '../redux/slices/gameSlice';
+
+import {
+  toggleRebus,
+  setActiveWord,
+  markActiveWord,
+  markActiveLetter,
+  clearAllFocus
+} from '../redux/slices/playerSlice';
+
+import { populateGrid, addSquareRefs } from '../redux/slices/puzzleSlice';
 
 export default function Board(props) {
   const {
-    autocheck,
-    setAutocheck,                   // event that changes square states
-    numRows,
-    numCols,
-    toggleOrientation,              // event that changes square classNames (focused-letter, focused-word), Clue text
-    squareProps,
-    setSquareProps,                 // used to navigate board (finding word start and end for both orientations)
-    activeWord,
-    setActiveWord,
-    findWordStart,
-    findWordEnd,
-    getNextWord,
-    getPrevWord,
+    socket,
+    jumpToSquare,
+    doToggleOrientation,
     goToNextWord,
     goToPreviousWord,
-    isLastClueSquare,
-    clearPuzzle,
-    checkSquare,
-    checkWord,
-    checkPuzzle,
-    revealSquare,
-    revealWord,
-    revealPuzzle,
-    initializeState,
-    rebusActive,
-    setRebusActive,
-    jumpToSquare,
-    pencilActive,
-    zoomActive,
-    scrollToWord,
-    handleVirtualKeydown,
-    socket,
-    saveGame
+    doHandleKeyDown
   } = props;
 
   const [deleteMode, setDeleteMode] = React.useState(false);
   const [overwriteMode, setOverwriteMode] = React.useState(false);
-  const [userInput, setUserInput] = useLocalStorage("userInput", Array(numRows * numCols).fill(""));
-  const [checkRequest, setCheckRequest] = useLocalStorage("checkRequest", Array(numRows * numCols).fill(false));
-  const [squareMarked, setSquareMarked] = useLocalStorage("squareMarked", Array(numRows * numCols).fill({
-    verified: false,
-    incorrect: false,
-    revealed: false,
-    partial: false,
-    penciled: false
-  }));
   const dispatch = useDispatch();
+  const reduxGameState = useSelector(state => {
+    return state.game
+  });
 
+  const reduxBoardState = reduxGameState.board;
+  const gameId = reduxGameState.gameId;
+
+  const reduxPlayerState = useSelector(state => {
+    return state.player
+  });
+  const reduxPuzzleState = useSelector(state => {
+    return state.puzzle
+  });
+  const gridInfo = reduxPuzzleState.gridInfo;
+  const numCols = reduxPuzzleState.numCols;
+  const numRows = reduxPuzzleState.numRows;
+  const clueDictionary = reduxPuzzleState.clueDictionary;
+
+  const zoomActive = reduxPlayerState.zoomActive;
+  const rebusActive = reduxPlayerState.rebusActive;
+  const pencilActive = reduxPlayerState.pencilActive;
+  const activeWord = reduxPlayerState.activeWord;
+
+  const [squareRefs, setSquareRefs] = React.useState(Array(numRows*numCols).fill(0).map(() => {
+    return React.createRef();
+  }));
 
   function jumpToPreviousWord() {
-    jumpToSquare(getNextEmptySquare(getPrevWord(activeWord.focus), true));
+    jumpToSquareOnBoard(getNextEmptySquare(getPrevWord(activeWord.focus), true));
   }
   function jumpToNextWord() {
-    jumpToSquare(getNextEmptySquare(getNextWord(activeWord.focus)));
+    jumpToSquareOnBoard(getNextEmptySquare(getNextWord(activeWord.focus)));
   }
 
-  function checkActiveSquare() {
-    if (userInput[activeWord.focus] !== '') {
-      setCheckRequest( prevState => {
-        return prevState.map( (checkStatus, index) => {
-          return index === activeWord.focus ? true : checkStatus;
-        })
-      });
-    }
+  function saveBoard() {
+    if (socket === null) return;
+    socket.emit("save-board", gameId, reduxBoardState);
   }
-
-  React.useEffect(() => {
-    checkSquare.current = checkActiveSquare;
-  }, [activeWord]); 
-  
-  React.useEffect(() => {
-    checkWord.current = checkActiveWord;
-  }, [activeWord]); 
-
-  React.useEffect(() => {
-    checkPuzzle.current = checkEntirePuzzle;
-  }, [activeWord]); 
-
-  React.useEffect(() => {
-    handleVirtualKeydown.current = handleKeyDown;
-  }, [activeWord, userInput]);
-
-  function checkActiveWord() {
-    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-    for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-      if (userInput[i] !== '') {
-        setCheckRequest( prevState => {
-          return prevState.map( (checkStatus, index) => {
-            return index === i ? true : checkStatus;
-          })
-        });
-      }
-    }
-  }
-
-  function checkEntirePuzzle() {
-    setCheckRequest( prevState => {
-      return prevState.map( (checkStatus, index) => {
-        return userInput[index] !== '' ? true : checkStatus;
-      })
-    });
-  }
-
-
-  React.useEffect(() => {
-    revealSquare.current = () => {
-      if (userInput[activeWord.focus] === squareProps[activeWord.focus].answer) {
-        checkActiveSquare();
-      } else {
-        markSquare(activeWord.focus, "revealed");
-        markSquare(activeWord.focus, "verified");
-      }
-    }
-  }, [activeWord]);
-
-  React.useEffect(() => {
-    revealWord.current = () => {
-      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-      for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-        if (!squareMarked[i].revealed && !squareMarked[i].verified) {
-          if (userInput[i] === squareProps[i].answer) {
-            setCheckRequest( prevState => {
-              return prevState.map( (checkStatus, index) => {
-                return index === i ? true : checkStatus;
-              })
-            });
-          } else {
-            markSquare(i, "revealed");
-            markSquare(i, "verified");
-          }
-        }
-      }
-    }
-  }, [activeWord]);
-
-  React.useEffect(() => {
-    revealPuzzle.current = () => {
-      userInput.forEach( (square, i) => {
-        if (isPlayableSquare(i) && !squareMarked[i].revealed && !squareMarked[i].verified) {
-          if (userInput[i] === squareProps[i].answer) {
-            setCheckRequest( prevState => {
-              return prevState.map( (checkStatus, index) => {
-                return index === i ? true : checkStatus;
-              })
-            });
-          } else {
-            removeAnyPreviousChecks(i);
-            markSquare(i, "revealed");
-            markSquare(i, "verified");
-          }
-        }
-      });
-    }
-  })
-
-
-  React.useEffect(() => {
-    goToNextWord.current = jumpToNextWord
-  }, [activeWord]);
-
-  React.useEffect(() => {
-    goToPreviousWord.current = jumpToPreviousWord
-  }, [activeWord]);
-
-  React.useEffect(() => {
-    clearPuzzle.current = () => {
-      setUserInput(Array(numRows * numCols).fill(''));
-      setCheckRequest(Array(numRows * numCols).fill(false));
-      setSquareMarked(Array(numRows * numCols).fill({
-        verified: false,
-        incorrect: false,
-        revealed: false,
-        partial: false
-      }));
-      setAutocheck(false);
-      setSquareProps(initializeState());
-    };
-  }, []);
 
   React.useEffect(highlightActiveWord, [activeWord])
 
@@ -195,42 +78,52 @@ export default function Board(props) {
     }
   }, [activeWord]);
 
-  /**
-   * Toggles class on/off for square.
-   * @param {int} index - Square index in grid
-   * @param {string} className - Name of CSS class to toggle
-   * @param {boolean} on - Whether we want class on or off 
-   */
-  function toggleClass(index, className, on) {
-    setSquareProps(prevState => {
-      return prevState.map(square => {
-        return (square.id === index ?
-          {
-            ...square,
-            classNames: on ? [...square.classNames, className]
-              : square.classNames.filter(c => c !== className)
-          } :
-          square);
-      });
-    })
+  React.useEffect(() => {
+    jumpToSquare.current = jumpToSquareOnBoard;
+  }, [gridInfo, zoomActive, activeWord]);
+
+  React.useEffect(() => {
+    doToggleOrientation.current = toggleOrientation
+  }, [activeWord]);
+
+  React.useEffect(() => {
+    doHandleKeyDown.current = handleKeyDown
+  }, [activeWord, reduxBoardState]);
+
+  React.useEffect(() => {
+    goToNextWord.current = jumpToNextWord
+  }, [activeWord]);
+
+  React.useEffect(() => {
+    goToPreviousWord.current = jumpToPreviousWord
+  }, [activeWord]);
+
+  function jumpToSquareOnBoard(index) {
+    squareRefs[index].current.focus();
+    if (zoomActive) {
+      scrollToWord(index, activeWord.orientation);
+    }
   }
 
   function centerActiveSquareOnZoom() {
-    let firstLetterOfWord = squareProps[activeWord.focus].squareRef.current;
+    let firstLetterOfWord = squareRefs[activeWord.focus].current;
     firstLetterOfWord.scrollIntoView({
-      behavior: "smooth", 
-      block: activeWord.orientation === "down" ? "start": "center",
+      behavior: "smooth",
+      block: activeWord.orientation === "down" ? "start" : "center",
       inline: "center"
     });
   }
 
   function handleFocus(event, index) {
-    if (squareProps[index].answer === ".") return;
-    setActiveWord(prevState => ({
-      ...prevState,
+    if (gridInfo[index].answer === ".") return;
+    let start = findWordStart(index, activeWord.orientation);
+    let end = findWordEnd(index, activeWord.orientation);
+    console.log(`Focus on index: ${index}. Changing active word to start ${start} and end ${end}`);
+    dispatch(setActiveWord({
+      ...activeWord,
       focus: index,
-      start: findWordStart(index, prevState.orientation),
-      end: findWordEnd(index, prevState.orientation),
+      start: findWordStart(index, activeWord.orientation),
+      end: findWordEnd(index, activeWord.orientation),
     }));
   }
 
@@ -245,29 +138,20 @@ export default function Board(props) {
   }
 
   function highlightActiveWord() {
-    clearAllFocus();
+    dispatch(clearAllFocus());
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
     for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
       if (activeWord.focus === i) {
-        toggleClass(i, "focused-letter", true);
+        dispatch(markActiveLetter({ id: i }));
       } else {
-        toggleClass(i, "focused-word", true);
+        dispatch(markActiveWord({ id: i }));
       }
     }
   }
 
-  function clearAllFocus() {
-    setSquareProps(prevState => {
-      return prevState.map(square => {
-        return ({
-          ...square,
-          classNames: square.classNames.filter(c => c !== "focused-letter" && c !== "focused-word")
-        });
-      })
-    })
-  }
 
   function handleKeyDown(e) {
+    console.log(e);
     e.preventDefault();
 
     if (e.key === " ") {
@@ -279,206 +163,276 @@ export default function Board(props) {
     } else if (e.shiftKey && e.key === "ArrowLeft") {
       jumpToPreviousWord();
 
-    } else if (squareMarked[activeWord.focus].verified) {
+    } else if (reduxBoardState[activeWord.focus].verified) {
       goToNextSquareAfterInput();
 
     } else if (rebusActive && e.key === "Enter") {
-      setRebusActive(false);
+      dispatch(toggleRebus());
       goToNextSquareAfterInput();
 
     } else if (e.key === "Backspace") {
       setDeleteMode(true);
       let currentIndex = activeWord.focus;
-      if (userInput[activeWord.focus] === '') {
+      if (reduxBoardState[activeWord.focus].input === '') {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
       removeAnyPreviousChecks(currentIndex);
-      if (!squareMarked[currentIndex].verified) {
-        setUserInput(prevState => {
-          return prevState.map((square, index) => {
-            return (index === currentIndex ? '' : square);
-          });
-        });
+      if (!reduxBoardState[currentIndex].verified) {
+        dispatch(changeInput({ id: currentIndex, value: '', source: socket.id }));
       }
     } else {
       setDeleteMode(false);
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
-        if (userInput[activeWord.focus] !== "") {
+        if (reduxBoardState[activeWord.focus].input !== "") {
           removeAnyPreviousChecks(activeWord.focus);
           setOverwriteMode(true);
         }
-        setUserInput(prevState => {
-          return prevState.map((square, index) => {
-            return (index === activeWord.focus ? (rebusActive ? `${square}${e.key.toUpperCase()}` : e.key.toUpperCase()) : square);
-          })
-        })
-        dispatch(changeInput({id: activeWord.focus, value: e.key.toUpperCase(), source: socket.id}));
-        if (pencilActive) {
-          markSquare(activeWord.focus, "penciled");
-        } else {
-          markSquare(activeWord.focus, "penciled", false);
-        }
+        dispatch(changeInput({ id: activeWord.focus, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive }));
       }
     }
   }
 
-    function markSquare(id, property, value) {
-      setSquareMarked(prevState => {
-        return prevState.map((square, index) => {
-          return (index === id ?
-            {
-              ...square,
-              [property]: value ?? true
-            }
-            : square
-          )
-        });
-      })
+  function removeAnyPreviousChecks(id) {
+    dispatch(removeCheck({ id: id }));
+  }
+
+  function backspace() {
+    let index = getPreviousSquare();
+    jumpToSquareOnBoard(index);
+    return index;
+  }
+
+  function goToNextSquareAfterInput() {
+    if (!deleteMode && !rebusActive) {
+      let index = getNextEmptySquare(activeWord.focus);
+      jumpToSquareOnBoard(index);
     }
+  }
 
-    function removeAnyPreviousChecks(id) {
-      setSquareMarked(prevState => {
-        return prevState.map((square, index) => {
-          return (index === id ?
-            {
-              ...square,
-              incorrect: false,
-              partial: false
-            }
-            : square
-          )
-        });
-      });
-      setCheckRequest(prevState => {
-        return prevState.map((checkStatus, index) => {
-          return (index === id ? false : checkStatus);
-        });
-      });
+  function isPlayableSquare(index) {
+    return gridInfo[index].answer !== '.';
+  }
+
+  function getPreviousSquare() {
+    if (activeWord.focus === 0) return 0;
+
+    if (activeWord.orientation === "across") {
+      let current = activeWord.focus - 1;
+      while (!isPlayableSquare(current)) {
+        current--;
+      }
+      return current;
+    } else {
+      // orientation: down
+      if (activeWord.focus > activeWord.start) {
+        return activeWord.focus - numCols;
+      } else {
+        let prevWordEndIndex = findWordEnd(getPrevWord(activeWord.focus), activeWord.orientation);
+        return prevWordEndIndex;
+      }
     }
-  
+  }
 
+  function isPuzzleFilled() {
+    return reduxBoardState.filter(square => square.input === "").length === 0 ? true : false;
+  }
 
-
-
-
-    function backspace() {
-      let index = getPreviousSquare();
-      jumpToSquare(index);
+  function getNextEmptySquare(index, previous) {
+    // If puzzle is all filled out, return current index
+    if (isPuzzleFilled()) {
+      console.log("Puzzle is filled.");
       return index;
     }
 
-    function goToNextSquareAfterInput() {
-      if (!deleteMode && !rebusActive) {
-        let index = getNextEmptySquare(activeWord.focus);
-        jumpToSquare(index);
+    // If last square in orientation, start search at beginning
+    // TODO: edge case where(0,0) square is not valid
+    if (index === 0 || isLastClueSquare(index, activeWord.orientation)) return 0;
+
+    if (overwriteMode) {
+      // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
+      return activeWord.orientation === "across" ? index + 1 : index + numCols;
+
+    } else {
+      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+      let currentWordStart = findWordStart(index, activeWord.orientation);
+      let currentWordEnd = findWordEnd(index, activeWord.orientation);
+
+      // Start at current square and go to next empty letter in word
+      for (let i = index; i <= currentWordEnd; i = (i + incrementInterval)) {
+        if (reduxBoardState[i].input === "") return i;
       }
-    }
+      // If all filled, go back to any empty letters at the beginning of the word
+      for (let i = currentWordStart; i < index; i = (i + incrementInterval)) {
+        if (reduxBoardState[i].input === "") return i;
+      }
 
-    function isPlayableSquare(index) {
-      return squareProps[index].answer !== '.';
-    }
-
-
-
-    function getPreviousSquare() {
-      if (activeWord.focus === 0) return 0;
-
-      if (activeWord.orientation === "across") {
-        let current = activeWord.focus - 1;
-        while (!isPlayableSquare(current)) {
-          current--;
-        }
-        return current;
+      // If word is all filled out, find next word 
+      if (previous) {
+        return getNextEmptySquare(getPrevWord(index), true);
       } else {
-        // orientation: down
-        if (activeWord.focus > activeWord.start) {
-          return activeWord.focus - numCols;
-        } else {
-          let prevWordEndIndex = findWordEnd(getPrevWord(activeWord.focus), activeWord.orientation);
-          return prevWordEndIndex;
-        }
+        return getNextEmptySquare(getNextWord(index));
       }
     }
-
-    function isPuzzleFilled() {
-      return userInput.filter(square => square === "").length === 0 ? true : false;
-    }
-
-    function getNextEmptySquare(index, previous) {
-      // If puzzle is all filled out, return current index
-      if (isPuzzleFilled()) {
-        console.log("Puzzle is filled.");
-        return index;
-      }
-
-      // If last square in orientation, start search at beginning
-      // TODO: edge case where(0,0) square is not valid
-      if (index === 0 || isLastClueSquare(index, activeWord.orientation)) return 0;
-
-      if (overwriteMode) {
-        // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
-        return activeWord.orientation === "across" ? index + 1 : index + numCols;
-
-      } else {
-        let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-        let currentWordStart = findWordStart(index, activeWord.orientation);
-        let currentWordEnd = findWordEnd(index, activeWord.orientation);
-
-        // Start at current square and go to next empty letter in word
-        for (let i = index; i <= currentWordEnd; i = (i + incrementInterval)) {
-          if (userInput[i] === "") return i;
-        }
-        // If all filled, go back to any empty letters at the beginning of the word
-        for (let i = currentWordStart; i < index; i = (i + incrementInterval)) {
-          if (userInput[i] === "") return i;
-        }
-
-        // If word is all filled out, find next word 
-        if (previous) {
-          return getNextEmptySquare(getPrevWord(index), true);
-        } else {
-          return getNextEmptySquare(getNextWord(index));
-        }
-      }
-    }
-
-    function resetRebus() {
-      setRebusActive(false);
-    }
-
-    const squares = squareProps.map(square => {
-      return (
-        <Square key={square.id}
-          {...square}
-          isPlayableSquare={isPlayableSquare(square.id)}
-          autocheck={autocheck}
-          checkRequest={checkRequest[square.id]}
-          overwriteMode={overwriteMode}
-          deleteMode={deleteMode}
-          userInput={userInput[square.id]}
-          handleMouseDown={() => handleMouseDown(square.id)}
-          handleFocus={(event) => handleFocus(event, square.id)}
-          handleKeyDown={handleKeyDown}
-          goToNextSquareAfterInput={goToNextSquareAfterInput}
-          markSquare={(index, mark) => markSquare(index, mark)}
-          squareMarked={squareMarked[square.id]}
-          focused={square.id===activeWord.focus}
-          rebusActive={rebusActive}
-          resetRebus={() => resetRebus()}
-          zoomActive={zoomActive}
-          handleRerender={centerActiveSquareOnZoom}
-          socket={socket}
-          saveGame={saveGame}
-        />
-      )
-    });
-
-    return (
-      <div className="Board">
-        {squares}
-      </div>
-    )
   }
+
+  function findWordStart(index, orientation) {
+    let currentIndex = index;
+    if (orientation === "across") {
+      while (!gridInfo[currentIndex].acrossStart) {
+        currentIndex--;
+      }
+    } else {
+      //orientation is "down"
+      while (currentIndex >= numCols && !gridInfo[currentIndex].downStart) {
+        console.log(gridInfo[currentIndex]);
+        currentIndex = currentIndex - numCols;
+      }
+    }
+    return currentIndex;
+  }
+
+  function findWordEnd(index, orientation) {
+    let currentIndex = index;
+    let wordEnd;
+    if (orientation === "across") {
+      while (gridInfo[currentIndex].answer !== '.' && currentIndex % numCols !== (numCols - 1)) {
+        currentIndex++;
+      }
+      wordEnd = gridInfo[currentIndex].answer === '.' ? currentIndex - 1 : currentIndex;
+
+    } else {
+      //orientation is "down"
+      while ((currentIndex + numCols) < (numCols * numRows) && gridInfo[currentIndex].answer !== '.') {
+        currentIndex = currentIndex + numCols;
+      }
+      wordEnd = gridInfo[currentIndex].answer === '.' ? currentIndex - numCols : currentIndex;
+    }
+    return wordEnd;
+  }
+
+  /**
+   * Methods for child components to use to toggle state
+   */
+  function toggleOrientation() {
+    const newOrientation = activeWord.orientation === "across" ? "down" : "across";
+    dispatch(setActiveWord({
+      ...activeWord,
+      orientation: newOrientation,
+      start: findWordStart(activeWord.focus, newOrientation),
+      end: findWordEnd(activeWord.focus, newOrientation)
+    }));
+  }
+
+
+  function isLastClueSquare(index, orientation) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    return currentWordClueDictionaryEntry.isLastClue && findWordEnd(index, orientation) === index;
+  }
+
+
+  function mapGridIndexToClueDictionaryEntry(index) {
+    let currentWordStart = findWordStart(index, activeWord.orientation);
+    return clueDictionary[activeWord.orientation][gridInfo[currentWordStart].gridNum];
+  }
+
+
+  function getPrevWord(index) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    let prevGridNum = currentWordClueDictionaryEntry.prevGridNum;
+    if (prevGridNum !== -1) {
+      let prevWordStartIndex = clueDictionary[activeWord.orientation][prevGridNum].index;
+      return prevWordStartIndex;
+    } else {
+      let currentWordStart = findWordStart(index, activeWord.orientation);
+      return currentWordStart;
+    }
+  }
+
+  function getNextWord(index) {
+    let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
+    let nextGridNum = currentWordClueDictionaryEntry.nextGridNum;
+    if (nextGridNum !== -1) {
+      let nextWordStartIndex = clueDictionary[activeWord.orientation][nextGridNum].index;
+      return nextWordStartIndex;
+    } else {
+      let currentWordEnd = findWordEnd(index, activeWord.orientation);
+      return currentWordEnd;
+    }
+  }
+
+
+
+
+  /**
+   * For zoomed-in view (mobile option)
+   */
+  function scrollToWord(index, orientation) {
+    let firstLetterOfWord = squareRefs[index].current;
+    let startBoundary = orientation === "across" ?
+      firstLetterOfWord.getBoundingClientRect().left : firstLetterOfWord.getBoundingClientRect().top;
+    let lastLetterOfWord = squareRefs[findWordEnd(index, orientation)].current;
+    let endBoundary = orientation === "across" ?
+      lastLetterOfWord.getBoundingClientRect().right : lastLetterOfWord.getBoundingClientRect().bottom;
+    let outOfBounds = orientation === "across" ?
+      window.innerWidth : document.querySelector('.Board').getBoundingClientRect().bottom;
+    if (endBoundary > outOfBounds) {
+      let lengthOfWord = endBoundary - startBoundary;
+      let validBoundaries = orientation === "across" ?
+        window.innerWidth : document.querySelector('.Board').offsetHeight;
+      if (lengthOfWord <= validBoundaries) {
+        lastLetterOfWord.scrollIntoView({
+          behavior: "smooth",
+          block: orientation === "across" ? (nearBottomOfScreen(firstLetterOfWord) ? "center" : "nearest") : "end",
+          inline: orientation === "across" ? "end" : "nearest"
+        });
+      } else {
+        firstLetterOfWord.scrollIntoView({
+          behavior: "smooth",
+          block: orientation === "across" ? "nearest" : "start",
+          inline: orientation === "across" ? "start" : "nearest"
+        });
+      }
+    }
+    if (orientation === "across" && nearBottomOfScreen(firstLetterOfWord)) {
+      firstLetterOfWord.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest"
+      });
+    }
+  }
+
+  function nearBottomOfScreen(element) {
+    return element.getBoundingClientRect().top > 0.8 * document.querySelector('.Board').getBoundingClientRect().bottom;
+  }
+
+
+
+
+  const squares = gridInfo.map((square, index) => {
+    return (
+      <Square key={square.id}
+        {...square}
+        squareRef={squareRefs[index]}
+        isPlayableSquare={isPlayableSquare(square.id)}
+        handleMouseDown={() => handleMouseDown(square.id)}
+        handleFocus={(event) => handleFocus(event, square.id)}
+        handleKeyDown={handleKeyDown}
+        goToNextSquareAfterInput={goToNextSquareAfterInput}
+        focused={square.id === activeWord.focus}
+        handleRerender={centerActiveSquareOnZoom}
+        socket={socket}
+        saveGame={saveBoard}
+      />
+    )
+  });
+
+  return (
+    <div className="Board">
+      {squares}
+    </div>
+  )
+}

@@ -1,61 +1,59 @@
 import React from "react";
 import '../styles/common.css';
 import "../styles/Square.css";
-import { useSelector } from 'react-redux';
-
+import { useSelector, useDispatch } from 'react-redux';
+import { markVerified, markPartial, markIncorrect } from '../redux/slices/gameSlice';
 
 export default function Square(props) {
 
-  const { 
+  const {
     id,
     isPlayableSquare,
-    autocheck,
-    goToNextSquareAfterInput, 
-    squareRef, 
-    gridNum, 
-    answer, 
-    handleFocus, 
-    handleMouseDown, 
-    userInput, 
+    goToNextSquareAfterInput,
+    squareRef,
+    gridNum,
+    answer,
+    handleFocus,
+    handleMouseDown,
     handleKeyDown,
-    markSquare,
-    classNames,
-    squareMarked,
-    checkRequest,
-    focused,
-    rebusActive,
-    resetRebus,
-    zoomActive,
     handleRerender,
     socket,
     saveGame
-   } = props;
+  } = props;
 
 
-   const reduxSquareState = useSelector(state => {
-    return state.square[id]
-   });
+  const reduxPlayerState = useSelector(state => {
+    return state.player
+  });
+  const playerViewClasses = useSelector(state => {
+    return state.player.board[id].playerViewClasses
+  });
+  const reduxGameState = useSelector(state => {
+    return state.game
+  });
+  const reduxSquareState = reduxGameState.board[id];
+  const autocheck = reduxGameState.autocheck;
+  const zoomActive = reduxPlayerState.zoomActive;
+  const rebusActive = reduxPlayerState.rebusActive;
+
+
+  const dispatch = useDispatch();
 
 
   function displaySquare() {
     if (!isPlayableSquare) return;
-    if (squareMarked.revealed) {
+    if (reduxSquareState.reveal) {
       setSquareText(answer);
-    } else {    
+    } else {
       setSquareText(reduxSquareState.input);
     }
   }
 
   let [squareText, setSquareText] = React.useState('');
-  let [squareValueClasses, setSquareValueClasses] = React.useState(["square-value"]);
-  let [squareRootClasses, setSquareRootClasses] = React.useState(classNames);
 
-  React.useEffect(displaySquare, [reduxSquareState, userInput, squareMarked]);
-  React.useEffect(goToNextSquareAfterInput, [userInput, rebusActive]);
-  React.useEffect(checkAnswer, [autocheck, userInput, checkRequest]);
-  React.useEffect(markCheckedSquare, [userInput, autocheck, squareMarked]);
-
-
+  React.useEffect(displaySquare, [reduxSquareState]);
+  React.useEffect(goToNextSquareAfterInput, [reduxSquareState.input, rebusActive]);
+  React.useEffect(checkAnswer, [autocheck, reduxSquareState.check]);
 
   React.useEffect(() => {
     if (socket === null) return;
@@ -67,113 +65,61 @@ export default function Square(props) {
   }, [socket, reduxSquareState]);
 
 
-
-  function markCheckedSquare() {
-    setSquareValueClasses( prevState => {
-      if (squareMarked.verified) {
-        if (!prevState.includes("verified-overlay")) {
-          return [...prevState, "verified-overlay"];
-        }
-      } else {
-        if (prevState.includes("verified-overlay")) {
-          return prevState.filter( cn => cn !== "verified-overlay");
-        }
-      } 
-      if (squareMarked.penciled) {
-        if (!prevState.includes("penciled-overlay")) {
-          return [...prevState, "penciled-overlay"];
-        }
-      } else {
-        if (prevState.includes("penciled-overlay")) {
-          return prevState.filter( cn => cn !== "penciled-overlay");
-        }
-      }         
-      return prevState;
-    })
-  };
-
-
   function checkAnswer() {
     if (shouldCheckAnswer()) {
-      if (verifyLetter()) {
-        markSquare(id, verifyLetter());
-      }
+      verifyLetter();
     }
   }
 
   function shouldCheckAnswer() {
-    return autocheck || checkRequest;
+    return autocheck || reduxSquareState.check;
   }
 
 
   function verifyLetter() {
-    if (!isPlayableSquare || userInput === '') return;
-    if (userInput === answer) {
-      return "verified";
+    if (!isPlayableSquare || reduxSquareState.input === '') return;
+    if (reduxSquareState.input === answer) {
+      dispatch(markVerified({ id: id }));
 
     } else if (answer.length > 1) {
       // rebus
-      if (userInput.length >= 1 && userInput.charAt(0) === answer.charAt(0)) {
-        return "partial";
+      if (reduxSquareState.input.length >= 1 && reduxSquareState.input.charAt(0) === answer.charAt(0)) {
+        dispatch(markPartial({ id: id }));
       } else {
-        return "incorrect";
+        dispatch(markIncorrect({ id: id }));
       }
+
     } else {
-      return "incorrect";
+      dispatch(markIncorrect({ id: id }));
     }
   }
 
   function log() {
-    console.log(`Index: ${id}. Check request: ${checkRequest}`);
-    console.log(squareMarked);
+    console.log(reduxSquareState);
   }
-
-  function updateClassNames(originalClassNames, conditional, className) {
-    if (conditional) {
-      if (!originalClassNames.includes(className)) {
-        return [...originalClassNames, className];
-      } else {
-        return originalClassNames;
-      }
-    } else {
-      return originalClassNames.filter (cn => cn !== className);
-    }
-  }
-
-  React.useEffect(() => {
-    setSquareRootClasses(() => {
-      let revealedStatus = updateClassNames(classNames, squareMarked.revealed, "revealed-overlay");
-      let rebusStatus = updateClassNames(revealedStatus, focused && rebusActive, "rebus-square");
-      let zoomStatus = updateClassNames(rebusStatus, zoomActive, "zoomed");
-      let finalClassNames = zoomStatus;
-      return finalClassNames;
-    });
-  }, [squareMarked, classNames, rebusActive, focused, zoomActive]);
 
   React.useEffect(() => {
     if (zoomActive) {
-        handleRerender();
+      handleRerender();
     }
-  }, [zoomActive, squareRootClasses]);
+  }, [zoomActive]);
 
   return (
-    <div 
-        id={id}
-        tabIndex="0"
-        ref={squareRef} 
-        onKeyDown={handleKeyDown} 
-        onFocus={handleFocus}
-        onMouseDown={handleMouseDown} 
-        className={squareRootClasses.join(" ")} 
-        onClick={log}
-        // onBlur={resetRebus}
+    <div
+      id={id}
+      tabIndex="0"
+      ref={squareRef}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onMouseDown={handleMouseDown}
+      className={reduxSquareState.squareRootClasses.concat(playerViewClasses).join(" ")}
+      onClick={log}
     >
-      {(squareMarked.incorrect || (shouldCheckAnswer() && verifyLetter() === "incorrect")) && <div className="wrong-answer-overlay"></div>}
-      {(squareMarked.partial || (shouldCheckAnswer() && verifyLetter() === "partial")) && <div className="partially-correct-overlay"></div>}
-
+      {reduxSquareState.incorrect && <div className="wrong-answer-overlay"></div>}
+      {reduxSquareState.partial && <div className="partially-correct-overlay"></div>}
       <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
-      {isPlayableSquare && squareMarked.revealed && <div className="revealed-marker"></div>}
-      <div className={squareValueClasses.join(' ')}>{squareText}</div>
+      {isPlayableSquare && reduxSquareState.reveal && <div className="revealed-marker"></div>}
+      <div className={reduxSquareState.squareValueClasses.join(' ')}>{squareText}</div>
     </div>
   )
 } 

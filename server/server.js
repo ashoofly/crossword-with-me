@@ -10,9 +10,25 @@ console.log("Initialized Firebase app");
 const db = getDatabase(app);
 console.log("Initialized Firebase realtime database");
 
-function createNewGame(gameId, numSquares) {
+function saveNewPuzzle(info, clueDictionary, grid) {
+  set(ref(db, 'puzzles/' + info.dow), {
+    dow: info.dow,
+    date: info.date,
+    title: info.title,
+    author: info.author,
+    editor: info.editor,
+    copyright: info.copyright,
+    publisher: info.publisher,
+    clueDictionary: clueDictionary,
+    grid: grid
+  });
+}
+
+
+async function createNewGame(gameId, numSquares) {
   set(ref(db, 'games/' + gameId), {
     gameId: gameId,
+    autocheck: false,
     board: [...Array(numSquares).keys()].map( num => ({
       initial: true,
       index: num,
@@ -22,9 +38,12 @@ function createNewGame(gameId, numSquares) {
       verified: false,
       incorrect: false,
       partial: false,
-      classNames: ["square"]
+      penciled: false,
+      squareRootClasses: ['square'],
+      squareValueClasses: ['square-value']
     }))
   });
+  return (await get(ref(db, 'games/' + gameId))).val();
 }
 
 async function loadGame(gameId) {
@@ -86,8 +105,8 @@ io.on("connection", socket => {
       socket.to(gameId).emit("receive-changes", squareState);
     });
   });
-  socket.on("save-game", async (gameId, board) => {
-    console.log("Saving game..");
+  socket.on("save-board", async (gameId, board) => {
+    console.log("Saving board..");
     await updateGameBoard(gameId, board);
   });
   console.log("connected");

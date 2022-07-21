@@ -4,43 +4,127 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
 import "../styles/Navbar.css";
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  toggleAutocheck,
+  resetGame,
+  requestCheck,
+  requestCheckPuzzle,
+  requestReveal,
+  removeCheck
+} from '../redux/slices/gameSlice';
+
 
 export default function HintMenu(props) {
+  const dispatch = useDispatch();
 
-  const {
-    autocheck,
-    setAutocheck,
-    clearPuzzle,
-    checkSquare,
-    checkWord,
-    checkPuzzle,
-    revealSquare,
-    revealWord,
-    revealPuzzle
-  } = props;
+  /**
+   * Get game state
+   */
+  const reduxGameState = useSelector(state => {
+    return state.game
+  });
+  const reduxBoardState = reduxGameState.board;
+  const autocheck = reduxGameState.autocheck;
+
+  /**
+   * Get puzzle state
+   */
+  const reduxPuzzleState = useSelector(state => {
+    return state.puzzle
+  });
+  const grid = reduxPuzzleState.grid;
+  const numCols = reduxPuzzleState.numCols;
+
+  /**
+   * Get player state
+   */
+  const reduxPlayerState = useSelector(state => {
+    return state.player
+  });
+  const activeWord = reduxPlayerState.activeWord;
+
+
+
+  function checkActiveSquare() {
+    if (reduxBoardState[activeWord.focus].input !== '') {
+      dispatch(requestCheck({ id: activeWord.focus }));
+    }
+  }
+
+  function checkActiveWord() {
+    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+    for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
+      if (reduxBoardState[i].input !== '') {
+        dispatch(requestCheck({ id: i }));
+      }
+    }
+  }
+
+  function revealSquare() {
+      if (reduxBoardState[activeWord.focus].input === grid[activeWord.focus].answer) {
+        checkActiveSquare();
+      } else {
+        dispatch(requestReveal({ id: activeWord.focus }));
+      }
+  }
+
+  function revealWord() {
+      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
+      for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
+        if (!reduxBoardState[i].reveal && !reduxBoardState[i].verified) {
+          if (reduxBoardState[i].input === grid[i].answer) {
+            dispatch(requestCheck({ id: i }));
+          } else {
+            dispatch(requestReveal({ id: i }));
+          }
+        }
+      }
+  }
+
+  function isPlayableSquare(index) {
+    return grid[index].answer !== '.';
+  }
+
+  function revealPuzzle() {
+      reduxBoardState.forEach((square, i) => {
+        if (isPlayableSquare(i) && !reduxBoardState[i].reveal && !reduxBoardState[i].verified) {
+          if (reduxBoardState[i].input === grid[i].answer) {
+            dispatch(requestCheck({ id: i }));
+          } else {
+            dispatch(removeCheck({ id: i }));
+            dispatch(requestReveal({ id: i }));
+          }
+        }
+      });
+  }
+
+  function clearPuzzle() {
+      dispatch(resetGame());
+  };
 
   const mainHintMenuItems = [
     {
       id: 1,
       text: `Turn ${autocheck ? "OFF" : "ON"} Autocheck`,
-      onClick: toggleAutocheck
+      onClick: handleAutocheck
     },
     {
       id: 2,
       text: "Check Square",
-      onClick: checkSquare,
+      onClick: checkActiveSquare,
       disabled: autocheck ? true : false
     },
     {
       id: 3,
       text: "Check Word",
-      onClick: checkWord,
+      onClick: checkActiveWord,
       disabled: autocheck ? true : false
     },
     {
       id: 4,
       text: "Check Puzzle",
-      onClick: checkPuzzle,
+      onClick: () => dispatch(requestCheckPuzzle()),
       disabled: autocheck ? true : false
     },
     {
@@ -90,8 +174,8 @@ export default function HintMenu(props) {
     setShowDetailedMenu(false);
   }
 
-  function toggleAutocheck() {
-    setAutocheck( prevState => !prevState);
+  function handleAutocheck() {
+    dispatch(toggleAutocheck());
   }
 
   function goToRevealMenu() {
