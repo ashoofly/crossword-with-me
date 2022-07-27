@@ -21,33 +21,30 @@ export default function HintMenu(props) {
   /**
    * Get game state
    */
-  const reduxGameState = useSelector(state => {
+  const game = useSelector(state => {
     return state.game
   });
-  const reduxBoardState = reduxGameState.board;
-  const autocheck = reduxGameState.autocheck;
+  const board = game.board;
+  const autocheck = game.autocheck;
 
   /**
    * Get puzzle state
    */
-  const reduxPuzzleState = useSelector(state => {
-    return state.puzzle
-  });
-  const grid = reduxPuzzleState.grid;
-  const numCols = reduxPuzzleState.numCols;
+  const grid = game.gameGrid;
+  const numCols = game.numCols;
 
   /**
    * Get player state
    */
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-  const activeWord = reduxPlayerState.activeWord;
+  const activeWord = pov.activeWord;
 
 
 
   function checkActiveSquare() {
-    if (reduxBoardState[activeWord.focus].input !== '') {
+    if (board[activeWord.focus].input !== '') {
       dispatch(requestCheck({ id: activeWord.focus }));
     }
   }
@@ -55,14 +52,14 @@ export default function HintMenu(props) {
   function checkActiveWord() {
     let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
     for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-      if (reduxBoardState[i].input !== '') {
+      if (board[i].input !== '') {
         dispatch(requestCheck({ id: i }));
       }
     }
   }
 
   function revealSquare() {
-      if (reduxBoardState[activeWord.focus].input === grid[activeWord.focus].answer) {
+      if (board[activeWord.focus].input === grid[activeWord.focus].answer) {
         checkActiveSquare();
       } else {
         dispatch(requestReveal({ id: activeWord.focus }));
@@ -72,8 +69,8 @@ export default function HintMenu(props) {
   function revealWord() {
       let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
       for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-        if (!reduxBoardState[i].reveal && !reduxBoardState[i].verified) {
-          if (reduxBoardState[i].input === grid[i].answer) {
+        if (!board[i].reveal && !board[i].verified) {
+          if (board[i].input === grid[i].answer) {
             dispatch(requestCheck({ id: i }));
           } else {
             dispatch(requestReveal({ id: i }));
@@ -87,9 +84,9 @@ export default function HintMenu(props) {
   }
 
   function revealPuzzle() {
-      reduxBoardState.forEach((square, i) => {
-        if (isPlayableSquare(i) && !reduxBoardState[i].reveal && !reduxBoardState[i].verified) {
-          if (reduxBoardState[i].input === grid[i].answer) {
+      board.forEach((square, i) => {
+        if (isPlayableSquare(i) && !board[i].reveal && !board[i].verified) {
+          if (board[i].input === grid[i].answer) {
             dispatch(requestCheck({ id: i }));
           } else {
             dispatch(removeCheck({ id: i }));

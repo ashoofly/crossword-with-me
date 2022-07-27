@@ -10,7 +10,7 @@ import Button from '@mui/material/Button';
 import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/playerSlice';
+import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
 
 
 export default function Navbar(props) {
@@ -22,13 +22,13 @@ export default function Navbar(props) {
 
   const [ open, setOpen ] = React.useState(false);
   const dispatch = useDispatch();
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-  const zoomActive = reduxPlayerState.zoomActive;
-  const rebusActive = reduxPlayerState.rebusActive;
-  const pencilActive = reduxPlayerState.pencilActive;
-  const activeWord = reduxPlayerState.activeWord;
+  const zoomActive = pov.zoomActive;
+  const rebusActive = pov.rebusActive;
+  const pencilActive = pov.pencilActive;
+  const activeWord = pov.activeWord;
 
   function handleClickOpen() {
     setOpen(true);

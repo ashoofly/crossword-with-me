@@ -12,33 +12,20 @@ import { io } from 'socket.io-client';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { changeInput, loadGame } from '../redux/slices/gameSlice';
+import { initializePlayerView } from '../redux/slices/povSlice';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 function App() {
+  const [auth, setAuth] = React.useState(null);
+  const [socket, setSocket] = React.useState(null);
+
   const { id: gameId } = useParams();
   const dispatch = useDispatch();
 
-  const reduxBoardState = useSelector(state => {
-    return state.game.board
-  });
-
-  const reduxPuzzleState = useSelector(state => {
-    return state.puzzle
-  });
-
-  const grid = reduxPuzzleState.puzzleGrid;
-  const clueDictionary = reduxPuzzleState.clueDictionary;
-  const numCols = reduxPuzzleState.numCols;
-  const numRows = reduxPuzzleState.numRows;
-  const numSquares = numCols * numRows;
-
-  const [auth, setAuth] = React.useState(null);
   const user = useAuthenticatedUser(auth);
-  const [socket, setSocket] = React.useState(null);
-
-
-
-
+  const loaded = useSelector(state => {
+    return state.game.loaded;
+  })
   /**
    * Initialize Firebase
    */
@@ -70,10 +57,12 @@ function App() {
     socket.once('load-game', game => {
       console.log(`[Client] Loaded game ${gameId}`);
       console.log(game);
-      dispatch(loadGame({ board: game.board }));
+      dispatch(loadGame({...game, loaded: true}));
+      let numSquares = game.numRows * game.numCols;
+      dispatch(initializePlayerView({numSquares: numSquares}));
     });
-    socket.emit('get-game', gameId, numSquares);
-  }, [socket, gameId, numSquares]);
+    socket.emit('get-game', gameId);
+  }, [socket, gameId]); 
 
   /**
    * Receive updates on game from other sources
@@ -103,7 +92,8 @@ function App() {
 
   return (
     <div className="container">
-      <div className="App">
+      {!loaded && <h1>Loading...</h1>}
+      {loaded && <div className="App">
         <Navbar
           auth={auth}
           jumpToSquare={() => jumpToSquare.current()}
@@ -125,7 +115,7 @@ function App() {
           jumpToSquare={jumpToSquare}
           handleKeyDown={(e) => handleKeyDown.current(e)}
         />
-      </div>
+      </div>}
     </div>
   );
 }

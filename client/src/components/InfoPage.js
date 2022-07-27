@@ -1,25 +1,27 @@
 import React from "react";
-import data from "../api/wednesday";
 import Dialog from '@mui/material/Dialog';
 import '../styles/common.css';
 import '../styles/InfoPage.css';
+import { useSelector } from 'react-redux';
 
 
 export default function InfoPage(props) {
 
   const { open, handleClose } = props;
-
+  const game = useSelector(state => {
+    return state.game
+  });
   const sourceAndDateRegex = /([A-Za-z\s]+), (.+)/;
-  const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(data.title);
+  const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(game.title);
 
   return (
     <Dialog onClose={handleClose} open={open}
       className="info-page">
       <header>
         <h1>{dailyTitle}</h1>
-        <h3>By {data.author}</h3>
-        <h4>Edited by {data.editor}</h4>
-        <small>	&copy; {data.copyright}</small>
+        <h3>By {game.author}</h3>
+        <h4>Edited by {game.editor}</h4>
+        <small>	&copy; {game.copyright}</small>
       </header>
       <h3>Mobile Tips</h3>
       <ul>

@@ -12,23 +12,23 @@ export default function Clue(props) {
     goToNextWord
   } = props
 
-  const reduxPuzzleState = useSelector(state => {
-    return state.puzzle
+  const game = useSelector(state => {
+    return state.game
   });
-  const clueDictionary = reduxPuzzleState.clueDictionary;
-  const gridNums = reduxPuzzleState.gridNums;
+  const clueDictionary = game.clueDictionary;
+  const gameGrid = game.gameGrid;
 
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-  const activeWord = reduxPlayerState.activeWord;
+  const activeWord = pov.activeWord;
 
 
   const [ clueText, setClueText ] = React.useState("");
-  React.useEffect(displayClue, [activeWord, gridNums, clueDictionary]);
+  React.useEffect(displayClue, [activeWord, gameGrid, clueDictionary]);
 
   function displayClue() {
-    let dictionaryKey = gridNums[activeWord.start];
+    let dictionaryKey = gameGrid[activeWord.start].gridNum;
     setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
   }
 

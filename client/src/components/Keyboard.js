@@ -6,7 +6,7 @@ import backspace from '../images/backspace-outline.png';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   toggleRebus
-} from '../redux/slices/playerSlice';
+} from '../redux/slices/povSlice';
 export default function Keyboard(props) {
 
   const { 
@@ -15,12 +15,11 @@ export default function Keyboard(props) {
   } = props;
 
   const dispatch = useDispatch();
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-
-  const rebusActive = reduxPlayerState.rebusActive;
-  const activeWord = reduxPlayerState.activeWord;
+  const rebusActive = pov.rebusActive;
+  const activeWord = pov.activeWord;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];

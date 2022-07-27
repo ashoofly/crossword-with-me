@@ -1,3 +1,7 @@
+/**
+ * Used for local emulator environment to test scheduled function
+ */
+
 const admin = require("firebase-admin");
 const {PubSub} = require("@google-cloud/pubsub");
 

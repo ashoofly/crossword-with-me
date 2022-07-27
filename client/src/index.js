@@ -19,6 +19,7 @@ root.render(
       <Router>
         <Routes>
           <Route path="/" element={<Navigate replace to={`/crossword-with-friends/${uuidv4()}`} />} />
+          <Route path="/crossword-with-friends" element={<Navigate replace to={`/crossword-with-friends/${uuidv4()}`} />} />
           <Route path="/crossword-with-friends/:id" element={<App />} />
         </Routes>
       </Router>

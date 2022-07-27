@@ -1,19 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import data from "../../api/wednesday";
-
-export const numSquares = data.size.rows * data.size.cols;
-const grid = data.grid;
-
-function getSquareRootClasses(index) {
-  let squareRootClasses = ['square'];
-  if (grid[index] === '.') squareRootClasses.push('block');
-  return squareRootClasses;
-}
-
 
 const defaultState = {
+  loaded: false,
   autocheck: false,
-  board: [...Array(numSquares).keys()].map( num => ({
+  board: [...Array(225).keys()].map( (num) => ({
     initial: true,
     index: num,
     input: '',
@@ -22,23 +12,26 @@ const defaultState = {
     verified: false,
     incorrect: false,
     partial: false,
-    penciled: false,
-    squareRootClasses: getSquareRootClasses(num),
-    squareValueClasses: ['square-value']
-  }))
+    penciled: false
+  })),
+  numCols: 15,
+  numRows: 15,
+  gameGrid: [...Array(225).keys()].map((num) => ({
+    id: num,
+    gridNum: 0,
+    answer: '.'
+  })),
+  title: "New York Times, hello",
+  clueDictionary: {
+    across: {
+
+    },
+    down: {
+
+    }
+  }
 };
 
-function updateClassNames(originalClassNames, conditional, className) {
-  if (conditional) {
-    if (!originalClassNames.includes(className)) {
-      return [...originalClassNames, className];
-    } else {
-      return originalClassNames;
-    }
-  } else {
-    return originalClassNames.filter (cn => cn !== className);
-  }
-}
 
 export const gameSlice = createSlice({
   name: 'game',
@@ -47,8 +40,19 @@ export const gameSlice = createSlice({
     'loadGame': (state, action) => {
       return action.payload;
     },
-    'resetGame': () => {
-      return defaultState;
+    'resetGame': (state) => {
+      state.autocheck = false;
+      state.board = [...Array(state.numRows * state.numCols).keys()].map( (num) => ({
+        initial: true,
+        index: num,
+        input: '',
+        reveal: false,
+        check: false,
+        verified: false,
+        incorrect: false,
+        partial: false,
+        penciled: false
+      }));
     },
     'toggleAutocheck': (state) => {
       state.autocheck = !state.autocheck;
@@ -58,11 +62,6 @@ export const gameSlice = createSlice({
         state.board[action.payload.id].source = action.payload.source;
         state.board[action.payload.id].input = action.payload.value;
         state.board[action.payload.id].penciled = action.payload.penciled;
-        state.board[action.payload.id].squareValueClasses = updateClassNames(
-          state.board[action.payload.id].squareValueClasses,
-          action.payload.penciled,
-          "penciled-color"
-        );
     },
     'requestCheck': (state, action) => {
         state.board[action.payload.id].check = true
@@ -75,31 +74,14 @@ export const gameSlice = createSlice({
     },
     'requestReveal': (state, action) => {
         state.board[action.payload.id].reveal = true
-        state.board[action.payload.id].squareRootClasses = updateClassNames(
-          state.board[action.payload.id].squareRootClasses,
-          true,
-          "revealed-overlay"
-        );
     },
     'removeCheck': (state, action) => {
         state.board[action.payload.id].check = false
         state.board[action.payload.id].incorrect = false
         state.board[action.payload.id].partial = false
     },
-    'markBlock': (state, action) => {
-      state.board[action.payload.id].squareRootClasses = updateClassNames(
-        state.board[action.payload.id].squareRootClasses,
-        true,
-        "block"
-      );
-    },
     'markVerified': (state, action) => {
       state.board[action.payload.id].verified = true
-      state.board[action.payload.id].squareValueClasses = updateClassNames(
-        state.board[action.payload.id].squareValueClasses,
-        true,
-        "verified-color"
-      );
     },
     'markIncorrect': (state, action) => {
       state.board[action.payload.id].incorrect = true

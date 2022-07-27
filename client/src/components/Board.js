@@ -5,7 +5,8 @@ import "../styles/Board.css";
 import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
-  removeCheck
+  removeCheck,
+  markBlock
 } from '../redux/slices/gameSlice';
 
 import {
@@ -14,9 +15,7 @@ import {
   markActiveWord,
   markActiveLetter,
   clearAllFocus
-} from '../redux/slices/playerSlice';
-
-import { populateGrid, addSquareRefs } from '../redux/slices/puzzleSlice';
+} from '../redux/slices/povSlice';
 
 export default function Board(props) {
   const {
@@ -31,28 +30,25 @@ export default function Board(props) {
   const [deleteMode, setDeleteMode] = React.useState(false);
   const [overwriteMode, setOverwriteMode] = React.useState(false);
   const dispatch = useDispatch();
-  const reduxGameState = useSelector(state => {
+  const game = useSelector(state => {
     return state.game
   });
 
-  const reduxBoardState = reduxGameState.board;
-  const gameId = reduxGameState.gameId;
+  const board = game.board;
+  const gameId = game.gameId;
 
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-  const reduxPuzzleState = useSelector(state => {
-    return state.puzzle
-  });
-  const gridInfo = reduxPuzzleState.gridInfo;
-  const numCols = reduxPuzzleState.numCols;
-  const numRows = reduxPuzzleState.numRows;
-  const clueDictionary = reduxPuzzleState.clueDictionary;
+  const gameGrid = game.gameGrid;
+  const numCols = game.numCols;
+  const numRows = game.numRows;
+  const clueDictionary = game.clueDictionary;
 
-  const zoomActive = reduxPlayerState.zoomActive;
-  const rebusActive = reduxPlayerState.rebusActive;
-  const pencilActive = reduxPlayerState.pencilActive;
-  const activeWord = reduxPlayerState.activeWord;
+  const zoomActive = pov.zoomActive;
+  const rebusActive = pov.rebusActive;
+  const pencilActive = pov.pencilActive;
+  const activeWord = pov.activeWord;
 
   const [squareRefs, setSquareRefs] = React.useState(Array(numRows*numCols).fill(0).map(() => {
     return React.createRef();
@@ -67,7 +63,7 @@ export default function Board(props) {
 
   function saveBoard() {
     if (socket === null) return;
-    socket.emit("save-board", gameId, reduxBoardState);
+    socket.emit("save-board", gameId, board);
   }
 
   React.useEffect(highlightActiveWord, [activeWord])
@@ -80,7 +76,7 @@ export default function Board(props) {
 
   React.useEffect(() => {
     jumpToSquare.current = jumpToSquareOnBoard;
-  }, [gridInfo, zoomActive, activeWord]);
+  }, [gameGrid, zoomActive, activeWord]);
 
   React.useEffect(() => {
     doToggleOrientation.current = toggleOrientation
@@ -88,7 +84,7 @@ export default function Board(props) {
 
   React.useEffect(() => {
     doHandleKeyDown.current = handleKeyDown
-  }, [activeWord, reduxBoardState]);
+  }, [activeWord, board]);
 
   React.useEffect(() => {
     goToNextWord.current = jumpToNextWord
@@ -115,7 +111,7 @@ export default function Board(props) {
   }
 
   function handleFocus(event, index) {
-    if (gridInfo[index].answer === ".") return;
+    if (gameGrid[index].answer === ".") return;
     let start = findWordStart(index, activeWord.orientation);
     let end = findWordEnd(index, activeWord.orientation);
     console.log(`Focus on index: ${index}. Changing active word to start ${start} and end ${end}`);
@@ -163,7 +159,7 @@ export default function Board(props) {
     } else if (e.shiftKey && e.key === "ArrowLeft") {
       jumpToPreviousWord();
 
-    } else if (reduxBoardState[activeWord.focus].verified) {
+    } else if (board[activeWord.focus].verified) {
       goToNextSquareAfterInput();
 
     } else if (rebusActive && e.key === "Enter") {
@@ -173,12 +169,12 @@ export default function Board(props) {
     } else if (e.key === "Backspace") {
       setDeleteMode(true);
       let currentIndex = activeWord.focus;
-      if (reduxBoardState[activeWord.focus].input === '') {
+      if (board[activeWord.focus].input === '') {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
       removeAnyPreviousChecks(currentIndex);
-      if (!reduxBoardState[currentIndex].verified) {
+      if (!board[currentIndex].verified) {
         dispatch(changeInput({ id: currentIndex, value: '', source: socket.id }));
       }
     } else {
@@ -186,7 +182,7 @@ export default function Board(props) {
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
-        if (reduxBoardState[activeWord.focus].input !== "") {
+        if (board[activeWord.focus].input !== "") {
           removeAnyPreviousChecks(activeWord.focus);
           setOverwriteMode(true);
         }
@@ -213,7 +209,7 @@ export default function Board(props) {
   }
 
   function isPlayableSquare(index) {
-    return gridInfo[index].answer !== '.';
+    return gameGrid[index].answer !== '.';
   }
 
   function getPreviousSquare() {
@@ -237,7 +233,7 @@ export default function Board(props) {
   }
 
   function isPuzzleFilled() {
-    return reduxBoardState.filter(square => square.input === "").length === 0 ? true : false;
+    return board.filter(square => square.input === "").length === 0 ? true : false;
   }
 
   function getNextEmptySquare(index, previous) {
@@ -262,11 +258,11 @@ export default function Board(props) {
 
       // Start at current square and go to next empty letter in word
       for (let i = index; i <= currentWordEnd; i = (i + incrementInterval)) {
-        if (reduxBoardState[i].input === "") return i;
+        if (board[i].input === "") return i;
       }
       // If all filled, go back to any empty letters at the beginning of the word
       for (let i = currentWordStart; i < index; i = (i + incrementInterval)) {
-        if (reduxBoardState[i].input === "") return i;
+        if (board[i].input === "") return i;
       }
 
       // If word is all filled out, find next word 
@@ -281,13 +277,13 @@ export default function Board(props) {
   function findWordStart(index, orientation) {
     let currentIndex = index;
     if (orientation === "across") {
-      while (!gridInfo[currentIndex].acrossStart) {
+      while (!gameGrid[currentIndex].acrossStart) {
         currentIndex--;
       }
     } else {
       //orientation is "down"
-      while (currentIndex >= numCols && !gridInfo[currentIndex].downStart) {
-        console.log(gridInfo[currentIndex]);
+      while (currentIndex >= numCols && !gameGrid[currentIndex].downStart) {
+        console.log(gameGrid[currentIndex]);
         currentIndex = currentIndex - numCols;
       }
     }
@@ -298,17 +294,17 @@ export default function Board(props) {
     let currentIndex = index;
     let wordEnd;
     if (orientation === "across") {
-      while (gridInfo[currentIndex].answer !== '.' && currentIndex % numCols !== (numCols - 1)) {
+      while (gameGrid[currentIndex].answer !== '.' && currentIndex % numCols !== (numCols - 1)) {
         currentIndex++;
       }
-      wordEnd = gridInfo[currentIndex].answer === '.' ? currentIndex - 1 : currentIndex;
+      wordEnd = gameGrid[currentIndex].answer === '.' ? currentIndex - 1 : currentIndex;
 
     } else {
       //orientation is "down"
-      while ((currentIndex + numCols) < (numCols * numRows) && gridInfo[currentIndex].answer !== '.') {
+      while ((currentIndex + numCols) < (numCols * numRows) && gameGrid[currentIndex].answer !== '.') {
         currentIndex = currentIndex + numCols;
       }
-      wordEnd = gridInfo[currentIndex].answer === '.' ? currentIndex - numCols : currentIndex;
+      wordEnd = gameGrid[currentIndex].answer === '.' ? currentIndex - numCols : currentIndex;
     }
     return wordEnd;
   }
@@ -335,7 +331,7 @@ export default function Board(props) {
 
   function mapGridIndexToClueDictionaryEntry(index) {
     let currentWordStart = findWordStart(index, activeWord.orientation);
-    return clueDictionary[activeWord.orientation][gridInfo[currentWordStart].gridNum];
+    return clueDictionary[activeWord.orientation][gameGrid[currentWordStart].gridNum];
   }
 
 
@@ -412,17 +408,15 @@ export default function Board(props) {
 
 
 
-  const squares = gridInfo.map((square, index) => {
+  const squares = gameGrid.map((square, index) => {
     return (
       <Square key={square.id}
         {...square}
         squareRef={squareRefs[index]}
-        isPlayableSquare={isPlayableSquare(square.id)}
         handleMouseDown={() => handleMouseDown(square.id)}
         handleFocus={(event) => handleFocus(event, square.id)}
         handleKeyDown={handleKeyDown}
         goToNextSquareAfterInput={goToNextSquareAfterInput}
-        focused={square.id === activeWord.focus}
         handleRerender={centerActiveSquareOnZoom}
         socket={socket}
         saveGame={saveBoard}

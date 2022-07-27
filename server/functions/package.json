@@ -8,7 +8,7 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "stop": "lsof -t -i:9000 -i:5001 -i:8085 | xargs kill -9"
+    "stop": "lsof -t -i:4000 -i:9000 -i:5001 -i:8085 | xargs kill -9"
   },
   "engines": {
     "node": "16"

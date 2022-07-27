@@ -1,12 +1,10 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import gameReducer from './slices/gameSlice';
-import puzzleReducer from './slices/puzzleSlice';
-import playerReducer from './slices/playerSlice';
+import povReducer from './slices/povSlice';
 
 const rootReducer = combineReducers({
   game: gameReducer,
-  puzzle: puzzleReducer,
-  player: playerReducer
+  pov: povReducer
 });
 
 export const setupStore = preloadedState => {

@@ -9,9 +9,9 @@
 * Socket.io
   * WebSockets for real-time multi-player collaboration
 * Firebase 
-  * Authentication
-    * Google Sign-in
+  * Authentication (Google sign-in)
   * Real-Time Database (NoSQL)
+  * Scheduled Cloud Functions (to pull daily puzzle)
   * Hosting
 
 * Jest for Tests
@@ -24,4 +24,13 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 
 # TODO
 
-* Convert rest of state to Redux
+* Clean up function upload so only uploads needed index.js file dude
+* If fetch fails, send message
+
+
+
+# Study
+
+* import vs require
+* how to export modules, const, functions
+* async/await vs promise.then

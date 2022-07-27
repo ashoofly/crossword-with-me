@@ -2,6 +2,7 @@ import { getFirebaseConfig } from '../firebase-config.js';
 import { getDatabase, ref, set, get, update } from "firebase/database";
 import { initializeApp } from "firebase/app";
 import { Server } from "socket.io";
+import { isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW } from "./functions/puzzleUtils.js";
 
 
 const firebaseAppConfig = getFirebaseConfig();
@@ -10,26 +11,54 @@ console.log("Initialized Firebase app");
 const db = getDatabase(app);
 console.log("Initialized Firebase realtime database");
 
-function saveNewPuzzle(info, clueDictionary, grid) {
-  set(ref(db, 'puzzles/' + info.dow), {
-    dow: info.dow,
-    date: info.date,
-    title: info.title,
-    author: info.author,
-    editor: info.editor,
-    copyright: info.copyright,
-    publisher: info.publisher,
-    clueDictionary: clueDictionary,
-    grid: grid
+const io = new Server(3001, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST']
+  }
+});
+
+io.on("connection", socket => {
+  socket.on('get-game', async (gameId) => {
+    const game = await findOrCreateGame(gameId);
+    socket.join(gameId);
+    socket.emit('load-game', game);
+    socket.on('send-changes', squareState => {
+      socket.to(gameId).emit("receive-changes", squareState);
+    });
   });
+  socket.on("save-board", async (gameId, board) => {
+    console.log("Saving board..");
+    updateGameBoard(gameId, board);
+  });
+  console.log("connected");
+});
+
+async function loadPuzzle(dow) {
+  console.log(`Loading puzzle for ${dow}...`);
+  const snapshot = await get(ref(db, 'puzzles/' + dow.toLowerCase()));
+  if (snapshot.exists()) {
+    return snapshot.val();
+  } else {
+    console.log("Error loading puzzle: no puzzle available");
+    return null;
+  }
 }
 
-
-async function createNewGame(gameId, numSquares) {
-  set(ref(db, 'games/' + gameId), {
+async function createNewGame(gameId) {
+  let puzzle, dow;
+  if (isCurrentPuzzleSaved(db)) {
+    dow = getCurrentDOW();
+  } else {
+    dow = getPreviousDOW();
+  }
+  puzzle = await loadPuzzle(dow);
+  console.log(`Creating game with ${dow} puzzle...`)
+  let numSquares = puzzle.size.rows * puzzle.size.cols;
+  await set(ref(db, 'games/' + gameId), {
     gameId: gameId,
     autocheck: false,
-    board: [...Array(numSquares).keys()].map( num => ({
+    board: [...Array(numSquares).keys()].map( (num) => ({
       initial: true,
       index: num,
       input: '',
@@ -38,10 +67,17 @@ async function createNewGame(gameId, numSquares) {
       verified: false,
       incorrect: false,
       partial: false,
-      penciled: false,
-      squareRootClasses: ['square'],
-      squareValueClasses: ['square-value']
-    }))
+      penciled: false
+    })),
+    clueDictionary: puzzle.clueDictionary,
+    gameGrid: puzzle.gameGrid,
+    copyright: puzzle.copyright,
+    date: puzzle.date,
+    dow: puzzle.dow,
+    editor: puzzle.editor,
+    title: puzzle.title,
+    numRows: puzzle.size.rows,
+    numCols: puzzle.size.cols
   });
   return (await get(ref(db, 'games/' + gameId))).val();
 }
@@ -87,41 +123,15 @@ function getAllGames(playerId) {
   });
 }
 
-
-
-const io = new Server(3001, {
-  cors: {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST']
-  }
-});
-
-io.on("connection", socket => {
-  socket.on('get-game', async (gameId, numSquares) => {
-    const game = await findOrCreateGame(gameId, numSquares);
-    socket.join(gameId);
-    socket.emit('load-game', game);
-    socket.on('send-changes', squareState => {
-      socket.to(gameId).emit("receive-changes", squareState);
-    });
-  });
-  socket.on("save-board", async (gameId, board) => {
-    console.log("Saving board..");
-    await updateGameBoard(gameId, board);
-  });
-  console.log("connected");
-});
-
-async function findOrCreateGame(id, numSquares) {
+async function findOrCreateGame(id) {
   if (id === null) return;
-
   const game = await loadGame(id);
   if (game) {
     console.log("Found game!");
     return game;
   } else {
     console.log("Could not find game, creating new one");
-    return await createNewGame(id, numSquares);
+    return await createNewGame(id);
   }
 }
 

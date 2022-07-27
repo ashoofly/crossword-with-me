@@ -8,11 +8,8 @@ export default function Square(props) {
 
   const {
     id,
-    isPlayableSquare,
     goToNextSquareAfterInput,
     squareRef,
-    gridNum,
-    answer,
     handleFocus,
     handleMouseDown,
     handleKeyDown,
@@ -22,47 +19,42 @@ export default function Square(props) {
   } = props;
 
 
-  const reduxPlayerState = useSelector(state => {
-    return state.player
+  const pov = useSelector(state => {
+    return state.pov
   });
-  const playerViewClasses = useSelector(state => {
-    return state.player.board[id].playerViewClasses
-  });
-  const reduxGameState = useSelector(state => {
+  const game = useSelector(state => {
     return state.game
   });
-  const reduxSquareState = reduxGameState.board[id];
-  const autocheck = reduxGameState.autocheck;
-  const zoomActive = reduxPlayerState.zoomActive;
-  const rebusActive = reduxPlayerState.rebusActive;
-
-
+  const squareGrid = useSelector(state => {
+    return state.game.gameGrid[id]
+  });
+  const board = game.board[id];
   const dispatch = useDispatch();
 
 
   function displaySquare() {
-    if (!isPlayableSquare) return;
-    if (reduxSquareState.reveal) {
-      setSquareText(answer);
+    if (!squareGrid.isPlayable) return;
+    if (board.reveal) {
+      setSquareText(squareGrid.answer);
     } else {
-      setSquareText(reduxSquareState.input);
+      setSquareText(board.input);
     }
   }
 
   let [squareText, setSquareText] = React.useState('');
 
-  React.useEffect(displaySquare, [reduxSquareState]);
-  React.useEffect(goToNextSquareAfterInput, [reduxSquareState.input, rebusActive]);
-  React.useEffect(checkAnswer, [autocheck, reduxSquareState.check]);
+  React.useEffect(displaySquare, [board]);
+  React.useEffect(goToNextSquareAfterInput, [board, pov.rebusActive]);
+  React.useEffect(checkAnswer, [game.autocheck, board]);
 
   React.useEffect(() => {
     if (socket === null) return;
-    if (!reduxSquareState.initial && reduxSquareState.source === socket.id) {
+    if (!board.initial && board.source === socket.id) {
       console.log("[Client] Sending changes");
-      socket.emit("send-changes", reduxSquareState);
+      socket.emit("send-changes", board);
       saveGame();
     }
-  }, [socket, reduxSquareState]);
+  }, [socket, board]);
 
 
   function checkAnswer() {
@@ -72,18 +64,18 @@ export default function Square(props) {
   }
 
   function shouldCheckAnswer() {
-    return autocheck || reduxSquareState.check;
+    return game.autocheck || board.check;
   }
 
 
   function verifyLetter() {
-    if (!isPlayableSquare || reduxSquareState.input === '') return;
-    if (reduxSquareState.input === answer) {
+    if (!squareGrid.isPlayable || board.input === '') return;
+    if (board.input === squareGrid.answer) {
       dispatch(markVerified({ id: id }));
 
-    } else if (answer.length > 1) {
+    } else if (squareGrid.answer.length > 1) {
       // rebus
-      if (reduxSquareState.input.length >= 1 && reduxSquareState.input.charAt(0) === answer.charAt(0)) {
+      if (board.input.length >= 1 && board.input.charAt(0) === squareGrid.answer.charAt(0)) {
         dispatch(markPartial({ id: id }));
       } else {
         dispatch(markIncorrect({ id: id }));
@@ -95,14 +87,14 @@ export default function Square(props) {
   }
 
   function log() {
-    console.log(reduxSquareState);
+    console.log(board);
   }
 
   React.useEffect(() => {
-    if (zoomActive) {
+    if (pov.zoomActive) {
       handleRerender();
     }
-  }, [zoomActive]);
+  }, [pov.zoomActive]);
 
   return (
     <div
@@ -112,14 +104,31 @@ export default function Square(props) {
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onMouseDown={handleMouseDown}
-      className={reduxSquareState.squareRootClasses.concat(playerViewClasses).join(" ")}
-      onClick={log}
-    >
-      {reduxSquareState.incorrect && <div className="wrong-answer-overlay"></div>}
-      {reduxSquareState.partial && <div className="partially-correct-overlay"></div>}
-      <div className="square-gridnum">{gridNum !== 0 && gridNum}</div>
-      {isPlayableSquare && reduxSquareState.reveal && <div className="revealed-marker"></div>}
-      <div className={reduxSquareState.squareValueClasses.join(' ')}>{squareText}</div>
+      className={`square 
+                  ${!squareGrid.isPlayable ? "block" : ""}
+                  ${board.reveal ? "revealed-overlay" : ""}
+                  ${pov.activeWord ? "focused-word" : ""}
+                  ${pov.activeLetter ? "focused-letter" : ""}
+                  ${pov.zoomActive ? "zoomed" : ""}
+                  ${pov.rebusActive && pov.activeLetter ? "rebus-square" : ""}
+                  `}
+      onClick={log}>
+
+      {board.incorrect && <div className="wrong-answer-overlay"></div>}
+
+      {board.partial && <div className="partially-correct-overlay"></div>}
+
+      <div className="square-gridnum">{squareGrid.gridNum !== 0 && squareGrid.gridNum}</div>
+
+      {squareGrid.isPlayable && board.reveal && <div className="revealed-marker"></div>}
+
+      <div className={`square-value
+                      ${board.penciled ? "penciled-color" : ""}
+                      ${board.verified ? "verified-color" : ""}
+                      `}>
+            {squareText}
+      </div>
+
     </div>
   )
 } 
