@@ -11,8 +11,6 @@ const pubsub = new PubSub({
 });
 
 const SCHEDULED_FUNCTION_TOPIC = "firebase-schedule-fetchNewPuzzle";
-console.log(`Trigger scheduled function via PubSub topic: 
-            ${SCHEDULED_FUNCTION_TOPIC}`);
-pubsub.topic(SCHEDULED_FUNCTION_TOPIC).publishJSON({
-  foo: "bar",
-}, {attr1: "value1"});
+console.log(`Trigger scheduled function via PubSub topic: ${SCHEDULED_FUNCTION_TOPIC}`);
+pubsub.topic(SCHEDULED_FUNCTION_TOPIC).publishMessage({
+  attributes: {trigger: "now"}});

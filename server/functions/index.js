@@ -55,7 +55,11 @@ function saveNewPuzzle(puzzle) {
   set(ref(db, "puzzles/" + puzzle.dow.toLowerCase()), puzzle);
 }
 
-exports.fetchNewPuzzle = functions.pubsub.schedule("5 20 * * *").timeZone("America/Denver")
+exports.fetchNewPuzzle = functions
+    .runWith({
+      memory: "512MB",
+    })
+    .pubsub.schedule("5 20 * * *").timeZone("America/Denver")
     .onRun(async (context) => {
       console.log("Fetching new puzzle");
       if (!(await isCurrentPuzzleSaved())) {
