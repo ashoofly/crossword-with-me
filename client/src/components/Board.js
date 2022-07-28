@@ -1,23 +1,26 @@
 import React from "react";
-import Square from "./Square";
+import { Square } from "./Square";
 import '../styles/common.css';
 import "../styles/Board.css";
 import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
   removeCheck,
-  markBlock
 } from '../redux/slices/gameSlice';
 
 import {
   toggleRebus,
-  setActiveWord,
+  setFocus,
   markActiveWord,
   markActiveLetter,
-  clearAllFocus
+  saveWordHighlight,
+  removeWordHighlight,
+  toggleOrientation
 } from '../redux/slices/povSlice';
 
 export default function Board(props) {
+  console.log("Re-rendering Board component.");
+
   const {
     socket,
     jumpToSquare,
@@ -49,16 +52,19 @@ export default function Board(props) {
   const rebusActive = pov.rebusActive;
   const pencilActive = pov.pencilActive;
   const activeWord = pov.activeWord;
+  const orientation = pov.orientation;
+  const focus = pov.focus;
+  const wordHighlight = pov.wordHighlight;
 
-  const [squareRefs, setSquareRefs] = React.useState(Array(numRows*numCols).fill(0).map(() => {
+  const [squareRefs] = React.useState(Array(numRows*numCols).fill(0).map(() => {
     return React.createRef();
   }));
 
   function jumpToPreviousWord() {
-    jumpToSquareOnBoard(getNextEmptySquare(getPrevWord(activeWord.focus), true));
+    jumpToSquareOnBoard(getNextEmptySquare(getPrevWord(focus), true));
   }
   function jumpToNextWord() {
-    jumpToSquareOnBoard(getNextEmptySquare(getNextWord(activeWord.focus)));
+    jumpToSquareOnBoard(getNextEmptySquare(getNextWord(focus)));
   }
 
   function saveBoard() {
@@ -66,13 +72,15 @@ export default function Board(props) {
     socket.emit("save-board", gameId, board);
   }
 
-  React.useEffect(highlightActiveWord, [activeWord])
-
   React.useEffect(() => {
-    if (overwriteMode && activeWord.end === activeWord.focus) {
+    if (overwriteMode && wordHighlight[wordHighlight.length-1] === focus) {
       setOverwriteMode(false);
     }
   }, [activeWord]);
+
+  React.useEffect(() => {
+    highlightActiveWord();
+  }, [focus, orientation])
 
   React.useEffect(() => {
     jumpToSquare.current = jumpToSquareOnBoard;
@@ -94,64 +102,52 @@ export default function Board(props) {
     goToPreviousWord.current = jumpToPreviousWord
   }, [activeWord]);
 
+  // const memoizedFindWordStart = React.useCallback(findWordStart, [gameGrid, numCols]);
+  // const memoizedFindWordEnd = React.useCallback(findWordEnd, [gameGrid, numRows, numCols]);
+  // const memoizedHighlightActiveWord = React.useCallback(highlightActiveWord, 
+  //   [dispatch, numCols, orientation, memoizedFindWordEnd, memoizedFindWordStart]);
+
+
   function jumpToSquareOnBoard(index) {
     squareRefs[index].current.focus();
     if (zoomActive) {
-      scrollToWord(index, activeWord.orientation);
+      scrollToWord(index, orientation);
     }
   }
 
   function centerActiveSquareOnZoom() {
-    let firstLetterOfWord = squareRefs[activeWord.focus].current;
+    let firstLetterOfWord = squareRefs[focus].current;
     firstLetterOfWord.scrollIntoView({
       behavior: "smooth",
-      block: activeWord.orientation === "down" ? "start" : "center",
+      block: orientation === "down" ? "start" : "center",
       inline: "center"
     });
   }
 
-  function handleFocus(event, index) {
-    if (gameGrid[index].answer === ".") return;
-    let start = findWordStart(index, activeWord.orientation);
-    let end = findWordEnd(index, activeWord.orientation);
-    console.log(`Focus on index: ${index}. Changing active word to start ${start} and end ${end}`);
-    dispatch(setActiveWord({
-      ...activeWord,
-      focus: index,
-      start: findWordStart(index, activeWord.orientation),
-      end: findWordEnd(index, activeWord.orientation),
-    }));
-  }
-
-  /**
-   * This event is fired before 'onFocus', so we can toggle orientation before changing active word
-   * @param {int} index 
-   */
-  function handleMouseDown(index) {
-    if (index === activeWord.focus) {
-      toggleOrientation();
-    }
-  }
-
   function highlightActiveWord() {
-    dispatch(clearAllFocus());
-    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-    for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-      if (activeWord.focus === i) {
+    dispatch(removeWordHighlight());
+    let start = findWordStart(focus, orientation);
+    let end = findWordEnd(focus, orientation);
+    let incrementInterval = orientation === "across" ? 1 : numCols;
+    let wordHighlight = [];
+    for (let i = start; i <= end; i = (i + incrementInterval)) {
+      if (focus === i) {
         dispatch(markActiveLetter({ id: i }));
       } else {
         dispatch(markActiveWord({ id: i }));
       }
+      wordHighlight.push(i);
     }
+    dispatch(saveWordHighlight({word: wordHighlight}));
   }
-
 
   function handleKeyDown(e) {
     console.log(e);
     e.preventDefault();
 
     if (e.key === " ") {
-      toggleOrientation();
+      dispatch(toggleOrientation());
+      highlightActiveWord(focus);
 
     } else if (e.key === "Tab" || (e.shiftKey && e.key === "ArrowRight")) {
       jumpToNextWord();
@@ -159,7 +155,7 @@ export default function Board(props) {
     } else if (e.shiftKey && e.key === "ArrowLeft") {
       jumpToPreviousWord();
 
-    } else if (board[activeWord.focus].verified) {
+    } else if (board[focus].verified) {
       goToNextSquareAfterInput();
 
     } else if (rebusActive && e.key === "Enter") {
@@ -168,8 +164,8 @@ export default function Board(props) {
 
     } else if (e.key === "Backspace") {
       setDeleteMode(true);
-      let currentIndex = activeWord.focus;
-      if (board[activeWord.focus].input === '') {
+      let currentIndex = focus;
+      if (board[focus].input === '') {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
@@ -182,11 +178,11 @@ export default function Board(props) {
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         // if letter already in square, go into 'overwrite' mode
-        if (board[activeWord.focus].input !== "") {
-          removeAnyPreviousChecks(activeWord.focus);
+        if (board[focus].input !== "") {
+          removeAnyPreviousChecks(focus);
           setOverwriteMode(true);
         }
-        dispatch(changeInput({ id: activeWord.focus, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive }));
+        dispatch(changeInput({ id: focus, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive }));
       }
     }
   }
@@ -203,7 +199,7 @@ export default function Board(props) {
 
   function goToNextSquareAfterInput() {
     if (!deleteMode && !rebusActive) {
-      let index = getNextEmptySquare(activeWord.focus);
+      let index = getNextEmptySquare(focus);
       jumpToSquareOnBoard(index);
     }
   }
@@ -213,20 +209,20 @@ export default function Board(props) {
   }
 
   function getPreviousSquare() {
-    if (activeWord.focus === 0) return 0;
+    if (focus === 0) return 0;
 
-    if (activeWord.orientation === "across") {
-      let current = activeWord.focus - 1;
+    if (orientation === "across") {
+      let current = focus - 1;
       while (!isPlayableSquare(current)) {
         current--;
       }
       return current;
     } else {
       // orientation: down
-      if (activeWord.focus > activeWord.start) {
-        return activeWord.focus - numCols;
+      if (focus > wordHighlight[0]) {
+        return focus - numCols;
       } else {
-        let prevWordEndIndex = findWordEnd(getPrevWord(activeWord.focus), activeWord.orientation);
+        let prevWordEndIndex = findWordEnd(getPrevWord(focus), orientation);
         return prevWordEndIndex;
       }
     }
@@ -245,16 +241,16 @@ export default function Board(props) {
 
     // If last square in orientation, start search at beginning
     // TODO: edge case where(0,0) square is not valid
-    if (index === 0 || isLastClueSquare(index, activeWord.orientation)) return 0;
+    if (index === 0 || isLastClueSquare(index, orientation)) return 0;
 
     if (overwriteMode) {
       // in overwrite mode, just go to the next square in the word regardless of whether it is occupied        
-      return activeWord.orientation === "across" ? index + 1 : index + numCols;
+      return orientation === "across" ? index + 1 : index + numCols;
 
     } else {
-      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-      let currentWordStart = findWordStart(index, activeWord.orientation);
-      let currentWordEnd = findWordEnd(index, activeWord.orientation);
+      let incrementInterval = orientation === "across" ? 1 : numCols;
+      let currentWordStart = findWordStart(index, orientation);
+      let currentWordEnd = findWordEnd(index, orientation);
 
       // Start at current square and go to next empty letter in word
       for (let i = index; i <= currentWordEnd; i = (i + incrementInterval)) {
@@ -309,18 +305,7 @@ export default function Board(props) {
     return wordEnd;
   }
 
-  /**
-   * Methods for child components to use to toggle state
-   */
-  function toggleOrientation() {
-    const newOrientation = activeWord.orientation === "across" ? "down" : "across";
-    dispatch(setActiveWord({
-      ...activeWord,
-      orientation: newOrientation,
-      start: findWordStart(activeWord.focus, newOrientation),
-      end: findWordEnd(activeWord.focus, newOrientation)
-    }));
-  }
+
 
 
   function isLastClueSquare(index, orientation) {
@@ -330,8 +315,8 @@ export default function Board(props) {
 
 
   function mapGridIndexToClueDictionaryEntry(index) {
-    let currentWordStart = findWordStart(index, activeWord.orientation);
-    return clueDictionary[activeWord.orientation][gameGrid[currentWordStart].gridNum];
+    let currentWordStart = findWordStart(index, orientation);
+    return clueDictionary[orientation][gameGrid[currentWordStart].gridNum];
   }
 
 
@@ -339,10 +324,10 @@ export default function Board(props) {
     let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
     let prevGridNum = currentWordClueDictionaryEntry.prevGridNum;
     if (prevGridNum !== -1) {
-      let prevWordStartIndex = clueDictionary[activeWord.orientation][prevGridNum].index;
+      let prevWordStartIndex = clueDictionary[orientation][prevGridNum].index;
       return prevWordStartIndex;
     } else {
-      let currentWordStart = findWordStart(index, activeWord.orientation);
+      let currentWordStart = findWordStart(index, orientation);
       return currentWordStart;
     }
   }
@@ -351,10 +336,10 @@ export default function Board(props) {
     let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
     let nextGridNum = currentWordClueDictionaryEntry.nextGridNum;
     if (nextGridNum !== -1) {
-      let nextWordStartIndex = clueDictionary[activeWord.orientation][nextGridNum].index;
+      let nextWordStartIndex = clueDictionary[orientation][nextGridNum].index;
       return nextWordStartIndex;
     } else {
-      let currentWordEnd = findWordEnd(index, activeWord.orientation);
+      let currentWordEnd = findWordEnd(index, orientation);
       return currentWordEnd;
     }
   }
@@ -413,17 +398,16 @@ export default function Board(props) {
       <Square key={square.id}
         {...square}
         squareRef={squareRefs[index]}
-        handleMouseDown={() => handleMouseDown(square.id)}
-        handleFocus={(event) => handleFocus(event, square.id)}
-        handleKeyDown={handleKeyDown}
-        goToNextSquareAfterInput={goToNextSquareAfterInput}
-        handleRerender={centerActiveSquareOnZoom}
-        socket={socket}
-        saveGame={saveBoard}
+        // handleMouseDown={() => handleMouseDown(square.id)}
+        // highlightActiveWord={memoizedHighlightActiveWord}
+        // handleKeyDown={handleKeyDown}
+        // goToNextSquareAfterInput={goToNextSquareAfterInput}
+        // handleRerender={centerActiveSquareOnZoom}
+        // socket={socket}
+        // saveGame={saveBoard}
       />
     )
   });
-
   return (
     <div className="Board">
       {squares}

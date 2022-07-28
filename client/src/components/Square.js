@@ -3,58 +3,84 @@ import '../styles/common.css';
 import "../styles/Square.css";
 import { useSelector, useDispatch } from 'react-redux';
 import { markVerified, markPartial, markIncorrect } from '../redux/slices/gameSlice';
+import { setFocus, toggleOrientation } from '../redux/slices/povSlice';
+import { oneLine } from 'common-tags';
 
-export default function Square(props) {
-
+export const Square = React.memo((props) => {
   const {
     id,
-    goToNextSquareAfterInput,
+    // goToNextSquareAfterInput,
     squareRef,
-    handleFocus,
-    handleMouseDown,
-    handleKeyDown,
-    handleRerender,
-    socket,
-    saveGame
+    // handleKeyDown,
+    // handleRerender,
+    // socket,
+    // saveGame
   } = props;
 
+  console.log(`Rendering square component ${id}`);
 
-  const pov = useSelector(state => {
-    return state.pov
+  const rebusActive = useSelector(state => {
+    return state.pov.rebusActive;
   });
-  const game = useSelector(state => {
-    return state.game
+  const zoomActive = useSelector(state => {
+    return state.pov.zoomActive;
+  });
+  const autocheck = useSelector(state => {
+    return state.game.autocheck;
+  });
+  const isActiveWord = useSelector(state => {
+    return state.pov.board[id].isActiveWord;
+  });
+  const isActiveLetter = useSelector(state => {
+    return state.pov.board[id].isActiveLetter;
+  })
+  const squareGameState = useSelector(state => {
+    return state.game.board[id]
   });
   const squareGrid = useSelector(state => {
     return state.game.gameGrid[id]
   });
-  const board = game.board[id];
   const dispatch = useDispatch();
 
+  function handleFocus() {
+    if (squareGrid.answer === ".") return;
+    console.log(`Set focus to ${id}`);
+    dispatch(setFocus({focus: id}));
+  }
+
+  /**
+   * This event is fired before 'onFocus', so we can toggle orientation before changing active word
+   */
+   function handleMouseDown() {
+    if (isActiveLetter) {
+      console.log("Toggle orientation");
+      dispatch(toggleOrientation());
+    }
+  }
 
   function displaySquare() {
     if (!squareGrid.isPlayable) return;
-    if (board.reveal) {
+    if (squareGameState.reveal) {
       setSquareText(squareGrid.answer);
     } else {
-      setSquareText(board.input);
+      setSquareText(squareGameState.input);
     }
   }
 
   let [squareText, setSquareText] = React.useState('');
 
-  React.useEffect(displaySquare, [board]);
-  React.useEffect(goToNextSquareAfterInput, [board, pov.rebusActive]);
-  React.useEffect(checkAnswer, [game.autocheck, board]);
+  React.useEffect(displaySquare, [squareGameState]);
+  // React.useEffect(goToNextSquareAfterInput, [squareGameState, rebusActive]);
+  React.useEffect(checkAnswer, [autocheck, squareGameState]);
 
-  React.useEffect(() => {
-    if (socket === null) return;
-    if (!board.initial && board.source === socket.id) {
-      console.log("[Client] Sending changes");
-      socket.emit("send-changes", board);
-      saveGame();
-    }
-  }, [socket, board]);
+  // React.useEffect(() => {
+  //   if (socket === null) return;
+  //   if (!squareGameState.initial && squareGameState.source === socket.id) {
+  //     console.log("[Client] Sending changes");
+  //     socket.emit("send-changes", squareGameState);
+  //     saveGame();
+  //   }
+  // }, [socket, squareGameState]);
 
 
   function checkAnswer() {
@@ -64,18 +90,18 @@ export default function Square(props) {
   }
 
   function shouldCheckAnswer() {
-    return game.autocheck || board.check;
+    return autocheck || squareGameState.check;
   }
 
 
   function verifyLetter() {
-    if (!squareGrid.isPlayable || board.input === '') return;
-    if (board.input === squareGrid.answer) {
+    if (!squareGrid.isPlayable || squareGameState.input === '') return;
+    if (squareGameState.input === squareGrid.answer) {
       dispatch(markVerified({ id: id }));
 
     } else if (squareGrid.answer.length > 1) {
       // rebus
-      if (board.input.length >= 1 && board.input.charAt(0) === squareGrid.answer.charAt(0)) {
+      if (squareGameState.input.length >= 1 && squareGameState.input.charAt(0) === squareGrid.answer.charAt(0)) {
         dispatch(markPartial({ id: id }));
       } else {
         dispatch(markIncorrect({ id: id }));
@@ -87,48 +113,47 @@ export default function Square(props) {
   }
 
   function log() {
-    console.log(board);
+    console.log(squareGameState);
   }
 
   React.useEffect(() => {
-    if (pov.zoomActive) {
-      handleRerender();
+    if (zoomActive) {
+      // handleRerender();
     }
-  }, [pov.zoomActive]);
+  }, [zoomActive]);
 
   return (
     <div
       id={id}
       tabIndex="0"
       ref={squareRef}
-      onKeyDown={handleKeyDown}
+      // onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onMouseDown={handleMouseDown}
-      className={`square 
+      className={oneLine`square
                   ${!squareGrid.isPlayable ? "block" : ""}
-                  ${board.reveal ? "revealed-overlay" : ""}
-                  ${pov.activeWord ? "focused-word" : ""}
-                  ${pov.activeLetter ? "focused-letter" : ""}
-                  ${pov.zoomActive ? "zoomed" : ""}
-                  ${pov.rebusActive && pov.activeLetter ? "rebus-square" : ""}
+                  ${squareGameState.reveal ? "revealed-overlay" : ""}
+                  ${isActiveWord ? "focused-word" : ""}
+                  ${isActiveLetter ? "focused-letter" : ""}
+                  ${zoomActive ? "zoomed" : ""}
+                  ${rebusActive && isActiveLetter ? "rebus-square" : ""}
                   `}
       onClick={log}>
 
-      {board.incorrect && <div className="wrong-answer-overlay"></div>}
+      {squareGameState.incorrect && <div className="wrong-answer-overlay"></div>}
 
-      {board.partial && <div className="partially-correct-overlay"></div>}
+      {squareGameState.partial && <div className="partially-correct-overlay"></div>}
 
       <div className="square-gridnum">{squareGrid.gridNum !== 0 && squareGrid.gridNum}</div>
 
-      {squareGrid.isPlayable && board.reveal && <div className="revealed-marker"></div>}
+      {squareGrid.isPlayable && squareGameState.reveal && <div className="revealed-marker"></div>}
 
-      <div className={`square-value
-                      ${board.penciled ? "penciled-color" : ""}
-                      ${board.verified ? "verified-color" : ""}
+      <div className={oneLine`square-value
+                      ${squareGameState.penciled ? "penciled-color" : ""}
+                      ${squareGameState.verified ? "verified-color" : ""}
                       `}>
             {squareText}
       </div>
-
     </div>
   )
-} 
+});

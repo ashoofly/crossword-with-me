@@ -19,7 +19,7 @@ export default function Keyboard(props) {
     return state.pov
   });
   const rebusActive = pov.rebusActive;
-  const activeWord = pov.activeWord;
+  const focus = pov.focus;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
@@ -32,7 +32,7 @@ export default function Keyboard(props) {
 
   function handleRebusButtonClick() {
     dispatch(toggleRebus());
-    jumpToSquare(activeWord.focus);
+    jumpToSquare(focus);
   }
 
   function handleClick(e) {

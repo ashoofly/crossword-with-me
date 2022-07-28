@@ -29,6 +29,7 @@ export default function Navbar(props) {
   const rebusActive = pov.rebusActive;
   const pencilActive = pov.pencilActive;
   const activeWord = pov.activeWord;
+  const focus = pov.focus;
 
   function handleClickOpen() {
     setOpen(true);
@@ -43,8 +44,8 @@ export default function Navbar(props) {
   }
 
   function handleRebusButtonClick() {
-    dispatch(toggleRebus({id: activeWord.focus}));
-    jumpToSquare(activeWord.focus);
+    dispatch(toggleRebus({id: focus}));
+    jumpToSquare(focus);
   }
 
   function isRebusButtonDisabled() {
@@ -53,7 +54,7 @@ export default function Navbar(props) {
 
   function handlePencilClick() {
     dispatch(togglePencil());
-    jumpToSquare(activeWord.focus);
+    jumpToSquare(focus);
   }
 
   return (

@@ -4,16 +4,13 @@ const defaultState = {
   rebusActive: false,
   pencilActive: false,
   zoomActive: false,
-  activeWord: {
-    orientation: "across",
-    focus: 0,
-    start: 0,
-    end: 0
-  },
+  orientation: "across",
+  wordHighlight: [0],
+  focus: 0,
   board: [...Array(225).keys()].map(num => ({
     index: num,
-    activeWord: false,
-    activeLetter: false
+    isActiveWord: false,
+    isActiveLetter: false
   }))
 };
 
@@ -26,27 +23,36 @@ export const povSlice = createSlice({
         rebusActive: false,
         pencilActive: false,
         zoomActive: false,
-        activeWord: {
-          orientation: "across",
-          focus: 0,
-          start: 0,
-          end: 0
-        },
+        orientation: "across",
+        wordHighlight: [0],
+        focus: 0,
         board: [...Array(action.payload.numSquares).keys()].map(num => ({
           index: num,
-          activeWord: false,
-          activeLetter: false
+          isActiveWord: false,
+          isActiveLetter: false
         }))
       };
     },
-    'setActiveWord': (state, action) => {
-      state.activeWord = action.payload;
+    'removeWordHighlight': (state, action) => {
+      state.wordHighlight.forEach( index => {
+        state.board[index].isActiveLetter = false;
+        state.board[index].isActiveWord = false;
+      });
+    },
+    'saveWordHighlight': (state, action) => {
+      state.wordHighlight = action.payload.word;
+    },
+    'setFocus': (state, action) => {
+      state.focus = action.payload.focus;
     },
     'markActiveWord': (state, action) => {
-      state.board[action.payload.id].activeWord = true;
+      state.board[action.payload.id].isActiveWord = true;
     },
     'markActiveLetter': (state, action) => {
-      state.board[action.payload.id].activeLetter = true;
+      state.board[action.payload.id].isActiveLetter = true;
+    },
+    'toggleOrientation': (state) => {
+      state.orientation = state.orientation === "across" ? "down" : "across";
     },
     'toggleZoom': (state) => {
       state.zoomActive = !state.zoomActive;
@@ -75,6 +81,10 @@ export const {
   toggleZoom,
   toggleRebus,
   togglePencil,
-  setActiveWord
+  resetActiveWord,
+  removeWordHighlight,
+  setFocus,
+  saveWordHighlight,
+  toggleOrientation
 } = povSlice.actions;
 export default povSlice.reducer;

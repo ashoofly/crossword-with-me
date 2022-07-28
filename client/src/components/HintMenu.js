@@ -40,35 +40,35 @@ export default function HintMenu(props) {
     return state.pov
   });
   const activeWord = pov.activeWord;
-
+  const orientation = pov.orientation;
+  const focus = pov.focus;
+  const wordHighlight = pov.wordHighlight;
 
 
   function checkActiveSquare() {
-    if (board[activeWord.focus].input !== '') {
-      dispatch(requestCheck({ id: activeWord.focus }));
+    if (board[focus].input !== '') {
+      dispatch(requestCheck({ id: focus }));
     }
   }
 
   function checkActiveWord() {
-    let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-    for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
-      if (board[i].input !== '') {
-        dispatch(requestCheck({ id: i }));
+    wordHighlight.forEach( index => {
+      if (board[index].input !== '') {
+        dispatch(requestCheck({ id: index }));
       }
-    }
+    });
   }
 
   function revealSquare() {
-      if (board[activeWord.focus].input === grid[activeWord.focus].answer) {
+      if (board[focus].input === grid[focus].answer) {
         checkActiveSquare();
       } else {
-        dispatch(requestReveal({ id: activeWord.focus }));
+        dispatch(requestReveal({ id: focus }));
       }
   }
 
   function revealWord() {
-      let incrementInterval = activeWord.orientation === "across" ? 1 : numCols;
-      for (let i = activeWord.start; i <= activeWord.end; i = (i + incrementInterval)) {
+      wordHighlight.forEach( i => {
         if (!board[i].reveal && !board[i].verified) {
           if (board[i].input === grid[i].answer) {
             dispatch(requestCheck({ id: i }));
@@ -76,7 +76,7 @@ export default function HintMenu(props) {
             dispatch(requestReveal({ id: i }));
           }
         }
-      }
+      });
   }
 
   function isPlayableSquare(index) {

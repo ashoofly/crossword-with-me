@@ -21,15 +21,16 @@ export default function Clue(props) {
   const pov = useSelector(state => {
     return state.pov
   });
-  const activeWord = pov.activeWord;
+  const orientation = pov.orientation;
+  const wordHighlight = pov.wordHighlight;
 
 
   const [ clueText, setClueText ] = React.useState("");
-  React.useEffect(displayClue, [activeWord, gameGrid, clueDictionary]);
+  React.useEffect(displayClue, [wordHighlight, gameGrid, clueDictionary]);
 
   function displayClue() {
-    let dictionaryKey = gameGrid[activeWord.start].gridNum;
-    setClueText(clueDictionary[activeWord.orientation][dictionaryKey].clue);
+    let dictionaryKey = gameGrid[wordHighlight[0]].gridNum;
+    setClueText(clueDictionary[orientation][dictionaryKey].clue);
   }
 
   return (
