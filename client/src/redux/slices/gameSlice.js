@@ -1,9 +1,9 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const defaultState = {
   loaded: false,
   autocheck: false,
-  board: [...Array(225).keys()].map( (num) => ({
+  board: [...Array(225).keys()].map((num) => ({
     initial: true,
     index: num,
     input: '',
@@ -29,8 +29,12 @@ const defaultState = {
     down: {
 
     }
-  }
+  },
+  gameId: 0,
+  advanceCursor: 0
 };
+
+
 
 
 export const gameSlice = createSlice({
@@ -40,9 +44,15 @@ export const gameSlice = createSlice({
     'loadGame': (state, action) => {
       return action.payload;
     },
+    'saveBoard': (state, action) => {
+      state.savedToDB = false;
+    },
+    'boardSaved': (state, action) => {
+      state.savedToDB = true;
+    },
     'resetGame': (state) => {
       state.autocheck = false;
-      state.board = [...Array(state.numRows * state.numCols).keys()].map( (num) => ({
+      state.board = [...Array(state.numRows * state.numCols).keys()].map((num) => ({
         initial: true,
         index: num,
         input: '',
@@ -58,27 +68,37 @@ export const gameSlice = createSlice({
       state.autocheck = !state.autocheck;
     },
     'changeInput': (state, action) => {
-        state.board[action.payload.id].initial = false;
-        state.board[action.payload.id].source = action.payload.source;
-        state.board[action.payload.id].input = action.payload.value;
-        state.board[action.payload.id].penciled = action.payload.penciled;
+      state.board[action.payload.id].initial = false;
+      state.board[action.payload.id].source = action.payload.source;
+      state.board[action.payload.id].input = action.payload.value;
+      state.board[action.payload.id].penciled = action.payload.penciled;
+      if (action.payload.advanceCursor) {
+        state.advanceCursor = state.advanceCursor + 1;
+      }
     },
     'requestCheck': (state, action) => {
-        state.board[action.payload.id].check = true
+      state.board[action.payload.id].check = true
     },
     'requestCheckPuzzle': (state) => {
-        state.board.map(square => ({
-          ...square,
-          check: true
-        }));
+      state.board = state.board.map(square => {
+        return (square.input !== '') ? 
+          ({
+            ...square,
+            check: true
+          }) 
+          : square
+      });
     },
     'requestReveal': (state, action) => {
-        state.board[action.payload.id].reveal = true
+      state.board[action.payload.id].incorrect = false
+      state.board[action.payload.id].partial = false
+      state.board[action.payload.id].reveal = true
+      state.board[action.payload.id].verified = true
     },
     'removeCheck': (state, action) => {
-        state.board[action.payload.id].check = false
-        state.board[action.payload.id].incorrect = false
-        state.board[action.payload.id].partial = false
+      state.board[action.payload.id].check = false
+      state.board[action.payload.id].incorrect = false
+      state.board[action.payload.id].partial = false
     },
     'markVerified': (state, action) => {
       state.board[action.payload.id].verified = true
@@ -89,29 +109,28 @@ export const gameSlice = createSlice({
     'markPartial': (state, action) => {
       state.board[action.payload.id].partial = true
     },
-    'clearPreviousChecks': (state, action) => {
-      state.board[action.payload.id].incorrect = false
-      state.board[action.payload.id].partial = false
-    },
     'setAutocheck': (state, action) => {
       state.autocheck = action.payload.autocheck;
     }
   }
 })
 
-export const { 
+export const {
   loadGame,
   resetGame,
   toggleAutocheck,
-  changeInput, 
+  changeInput,
   requestCheck,
-  requestCheckPuzzle, 
-  requestReveal, 
-  removeCheck, 
+  requestCheckPuzzle,
+  requestReveal,
+  removeCheck,
   markBlock,
   markVerified,
   markPartial,
   markIncorrect,
-  setAutocheck
+  setAutocheck,
+  saveBoard,
+  boardSaved,
+  advanceCursor
 } = gameSlice.actions;
 export default gameSlice.reducer;

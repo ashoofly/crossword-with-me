@@ -7,14 +7,12 @@ const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 function getCurrentDOW() {
   const currentDate = new Date();
-  console.log(currentDate);
   return weekdays[currentDate.getDay()];
 }
 
 function getPreviousDOW() {
   const yesterday = new Date();
   yesterday.setDate((new Date()).getDate()-1);
-  console.log(yesterday);
   return weekdays[yesterday.getDay()];
 }
 

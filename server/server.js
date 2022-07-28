@@ -57,7 +57,9 @@ async function createNewGame(gameId) {
   let numSquares = puzzle.size.rows * puzzle.size.cols;
   await set(ref(db, 'games/' + gameId), {
     gameId: gameId,
+    savedToDB: true,
     autocheck: false,
+    advanceCursor: 0,
     board: [...Array(numSquares).keys()].map( (num) => ({
       initial: true,
       index: num,
@@ -75,6 +77,8 @@ async function createNewGame(gameId) {
     date: puzzle.date,
     dow: puzzle.dow,
     editor: puzzle.editor,
+    author: puzzle.author,
+    hasTitle: puzzle.hastitle,
     title: puzzle.title,
     numRows: puzzle.size.rows,
     numCols: puzzle.size.cols

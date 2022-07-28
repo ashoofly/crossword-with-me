@@ -16,6 +16,7 @@ import {
 
 
 export default function HintMenu(props) {
+  console.log("Render hintmenu");
   const dispatch = useDispatch();
 
   /**
@@ -39,65 +40,72 @@ export default function HintMenu(props) {
   const pov = useSelector(state => {
     return state.pov
   });
-  const activeWord = pov.activeWord;
-  const orientation = pov.orientation;
-  const focus = pov.focus;
-  const wordHighlight = pov.wordHighlight;
+  const focus = useSelector(state => {
+    return state.pov.focused.square;
+  });
+  const wordHighlight = pov.focused.word;
 
 
   function checkActiveSquare() {
+    handleClose();
     if (board[focus].input !== '') {
       dispatch(requestCheck({ id: focus }));
     }
-  }
+  };
 
   function checkActiveWord() {
-    wordHighlight.forEach( index => {
+    handleClose();
+    wordHighlight.forEach(index => {
       if (board[index].input !== '') {
         dispatch(requestCheck({ id: index }));
       }
     });
   }
 
+  function checkPuzzle() {
+    handleClose();
+    dispatch(requestCheckPuzzle());
+  }
+
   function revealSquare() {
-      if (board[focus].input === grid[focus].answer) {
-        checkActiveSquare();
-      } else {
-        dispatch(requestReveal({ id: focus }));
-      }
+    handleClose();
+    if (board[focus].input === grid[focus].answer) {
+      checkActiveSquare();
+    } else {
+      dispatch(requestReveal({ id: focus }));
+    }
   }
 
   function revealWord() {
-      wordHighlight.forEach( i => {
-        if (!board[i].reveal && !board[i].verified) {
-          if (board[i].input === grid[i].answer) {
-            dispatch(requestCheck({ id: i }));
-          } else {
-            dispatch(requestReveal({ id: i }));
-          }
+    handleClose();
+    wordHighlight.forEach(i => {
+      if (!board[i].reveal && !board[i].verified) {
+        if (board[i].input === grid[i].answer) {
+          dispatch(requestCheck({ id: i }));
+        } else {
+          dispatch(requestReveal({ id: i }));
         }
-      });
-  }
-
-  function isPlayableSquare(index) {
-    return grid[index].answer !== '.';
+      }
+    });
   }
 
   function revealPuzzle() {
-      board.forEach((square, i) => {
-        if (isPlayableSquare(i) && !board[i].reveal && !board[i].verified) {
-          if (board[i].input === grid[i].answer) {
-            dispatch(requestCheck({ id: i }));
-          } else {
-            dispatch(removeCheck({ id: i }));
-            dispatch(requestReveal({ id: i }));
-          }
+    handleClose();
+    board.forEach((square, i) => {
+      if (grid[i].isPlayable && !board[i].reveal && !board[i].verified) {
+        if (board[i].input === grid[i].answer) {
+          dispatch(requestCheck({ id: i }));
+        } else {
+          dispatch(removeCheck({ id: i }));
+          dispatch(requestReveal({ id: i }));
         }
-      });
+      }
+    });
   }
 
   function clearPuzzle() {
-      dispatch(resetGame());
+    handleClose();
+    dispatch(resetGame());
   };
 
   const mainHintMenuItems = [
@@ -121,7 +129,7 @@ export default function HintMenu(props) {
     {
       id: 4,
       text: "Check Puzzle",
-      onClick: () => dispatch(requestCheckPuzzle()),
+      onClick: checkPuzzle,
       disabled: autocheck ? true : false
     },
     {
@@ -160,7 +168,7 @@ export default function HintMenu(props) {
   const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
   const [menuItems, setMenuItems] = React.useState([]);
   const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [showDetailedMenu, autocheck]);
+  React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
 
 
   const handleClick = (e) => {
@@ -173,6 +181,7 @@ export default function HintMenu(props) {
 
   function handleAutocheck() {
     dispatch(toggleAutocheck());
+    handleClose();
   }
 
   function goToRevealMenu() {
@@ -186,14 +195,14 @@ export default function HintMenu(props) {
     } else {
       currentMenu = mainHintMenuItems;
     }
-    const currentMenuItems = currentMenu.map( menuItem => {
+    const currentMenuItems = currentMenu.map(menuItem => {
       return (
-        <MenuItem 
-          key={menuItem.id} 
+        <MenuItem
+          key={menuItem.id}
           onClick={menuItem.onClick}
           disabled={menuItem.disabled ?? false}
           style={menuItem.style ?? {}}>
-            {menuItem.text}
+          {menuItem.text}
         </MenuItem>
       )
     });

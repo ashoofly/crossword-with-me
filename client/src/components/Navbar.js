@@ -28,8 +28,7 @@ export default function Navbar(props) {
   const zoomActive = pov.zoomActive;
   const rebusActive = pov.rebusActive;
   const pencilActive = pov.pencilActive;
-  const activeWord = pov.activeWord;
-  const focus = pov.focus;
+  const focus = pov.focused.square;
 
   function handleClickOpen() {
     setOpen(true);
@@ -44,16 +43,13 @@ export default function Navbar(props) {
   }
 
   function handleRebusButtonClick() {
-    dispatch(toggleRebus({id: focus}));
+    dispatch(toggleRebus());
     jumpToSquare(focus);
-  }
-
-  function isRebusButtonDisabled() {
-    return rebusActive;
   }
 
   function handlePencilClick() {
     dispatch(togglePencil());
+    console.log(`Focus: ${focus}`)
     jumpToSquare(focus);
   }
 
@@ -63,7 +59,13 @@ export default function Navbar(props) {
         auth={auth} />
       <h1>Crossword with Friends</h1>
       {/* TODO: display only for desktop. */}
-      <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button>
+      <Button 
+        tabIndex={parseInt("-1")} 
+        className={`rebus ${rebusActive ? "rebus-active": ''}`} 
+        variant="contained" 
+        onClick={handleRebusButtonClick}>
+          Rebus
+      </Button>
       {/* TODO: display zoom only for mobile. */}
       <div className="icon-bg">
         <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />

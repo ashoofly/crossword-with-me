@@ -3,15 +3,16 @@ import prev from "../images/prev.svg";
 import next from "../images/next.svg";
 import '../styles/common.css';
 import "../styles/Clue.css";
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleOrientation } from '../redux/slices/povSlice';
 
 export default function Clue(props) {
   const { 
-    toggleOrientation,
     goToPrevWord,
     goToNextWord
   } = props
 
+  const dispatch = useDispatch();
   const game = useSelector(state => {
     return state.game
   });
@@ -21,16 +22,16 @@ export default function Clue(props) {
   const pov = useSelector(state => {
     return state.pov
   });
-  const orientation = pov.orientation;
-  const wordHighlight = pov.wordHighlight;
+  const orientation = pov.focused.orientation;
+  const wordHighlight = pov.focused.word;
 
 
-  const [ clueText, setClueText ] = React.useState("");
-  React.useEffect(displayClue, [wordHighlight, gameGrid, clueDictionary]);
+  const [ clueText, setClueText ] = React.useState({__html: ''});
+  React.useEffect(displayClue, [wordHighlight, gameGrid, clueDictionary, orientation]);
 
   function displayClue() {
     let dictionaryKey = gameGrid[wordHighlight[0]].gridNum;
-    setClueText(clueDictionary[orientation][dictionaryKey].clue);
+    setClueText({__html: clueDictionary[orientation][dictionaryKey].clue});
   }
 
   return (
@@ -38,7 +39,11 @@ export default function Clue(props) {
       <div className="arrow-container" onClick={goToPrevWord}>
         <img className="arrows" src={prev} alt="prev_clue" />
       </div>
-      <div onClick={toggleOrientation} className="clue-text">{clueText}</div>
+      <div 
+        onClick={() => dispatch(toggleOrientation())} 
+        className="clue-text"
+        dangerouslySetInnerHTML={clueText}>
+      </div>
       <div className="arrow-container" onClick={goToNextWord}>
         <img className="arrows" src={next} alt="next_clue" />
       </div>

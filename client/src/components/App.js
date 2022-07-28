@@ -58,8 +58,11 @@ function App() {
       console.log(`[Client] Loaded game ${gameId}`);
       console.log(game);
       dispatch(loadGame({...game, loaded: true}));
-      let numSquares = game.numRows * game.numCols;
-      dispatch(initializePlayerView({numSquares: numSquares}));
+      dispatch(initializePlayerView({
+        numRows: game.numRows,
+        numCols: game.numCols,
+        gameGrid: game.gameGrid
+      }));
     });
     socket.emit('get-game', gameId);
   }, [socket, gameId]); 
@@ -96,7 +99,7 @@ function App() {
       {loaded && <div className="App">
         <Navbar
           auth={auth}
-          jumpToSquare={() => jumpToSquare.current()}
+          jumpToSquare={(i) => jumpToSquare.current(i)}
         />
         <Board
           socket={socket}
@@ -112,7 +115,7 @@ function App() {
           goToPrevWord={() => goToPreviousWord.current()}
         />
         <Keyboard
-          jumpToSquare={jumpToSquare}
+          jumpToSquare={(i) => jumpToSquare.current(i)}
           handleKeyDown={(e) => handleKeyDown.current(e)}
         />
       </div>}

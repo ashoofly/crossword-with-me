@@ -11,14 +11,23 @@ export default function InfoPage(props) {
   const game = useSelector(state => {
     return state.game
   });
-  const sourceAndDateRegex = /([A-Za-z\s]+), (.+)/;
-  const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(game.title);
+
+
+  function getTitle() {
+    if (game.hasTitle) {
+      return game.title;
+    } else {
+      const sourceAndDateRegex = /([A-Za-z\s]+), (.+)/;
+      const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(game.title);
+      return dailyTitle;
+    }
+  }
 
   return (
     <Dialog onClose={handleClose} open={open}
       className="info-page">
       <header>
-        <h1>{dailyTitle}</h1>
+        <h1>{getTitle()}</h1>
         <h3>By {game.author}</h3>
         <h4>Edited by {game.editor}</h4>
         <small>	&copy; {game.copyright}</small>

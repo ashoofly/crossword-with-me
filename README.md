@@ -1,7 +1,7 @@
 # Tech Stack
 
 * Modern React (v18)
-  * Functional Components
+  * Functional Components & Hooks
   * React Router
   * MaterialUI 
 * Modern Redux
@@ -24,10 +24,10 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 
 # TODO
 
-* Clean up function upload so only uploads needed index.js file dude
 * If fetch fails, send message
-
-
+* Save board on all dispatch for game changes
+* Board needs to be able to do more than 15 rows for Sunday puzzles (Boards.css)
+* move handlekeydown function into App.js instead of Board.js
 
 # Study
 

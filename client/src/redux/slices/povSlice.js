@@ -1,58 +1,91 @@
 import { createSlice } from '@reduxjs/toolkit';
-
-const defaultState = {
-  rebusActive: false,
-  pencilActive: false,
-  zoomActive: false,
-  orientation: "across",
-  wordHighlight: [0],
-  focus: 0,
-  board: [...Array(225).keys()].map(num => ({
-    index: num,
-    isActiveWord: false,
-    isActiveLetter: false
-  }))
-};
+import { getFocusedWord } from '../puzzleUtils';
 
 export const povSlice = createSlice({
   name: 'pov',
-  initialState: defaultState,
+  initialState: {},
   reducers: {
     'initializePlayerView': (state, action) => {
       return {
         rebusActive: false,
         pencilActive: false,
         zoomActive: false,
-        orientation: "across",
-        wordHighlight: [0],
-        focus: 0,
-        board: [...Array(action.payload.numSquares).keys()].map(num => ({
-          index: num,
-          isActiveWord: false,
-          isActiveLetter: false
-        }))
+        focused: {
+          orientation: "across",
+          word: [0],
+          square: 0,
+        },
+        numRows: action.payload.numRows,
+        numCols: action.payload.numCols,
+        board: [...Array(action.payload.numRows * action.payload.numCols).keys()]
+          .map(num => ({
+            index: num,
+            isActiveWord: false,
+            isActiveSquare: false,
+            ...action.payload.gameGrid[num]
+          }))
       };
     },
-    'removeWordHighlight': (state, action) => {
-      state.wordHighlight.forEach( index => {
-        state.board[index].isActiveLetter = false;
+    'setFocusedSquare': (state, action) => {
+      // remove previous focus
+      state.focused.word.forEach( index => {
+        state.board[index].isActiveSquare = false;
         state.board[index].isActiveWord = false;
       });
+      // set new focus
+      state.focused = {
+        ...state.focused,
+        square: action.payload.focus,
+        word: getFocusedWord(
+          state.board,
+          state.numCols,
+          state.numRows,
+          action.payload.focus, 
+          state.focused.orientation
+        )
+      }
+      // highlight new focus
+      state.focused.word.forEach( index => {
+        if (index === action.payload.focus) {
+          state.board[index].isActiveSquare = true;
+        } else {
+          state.board[index].isActiveWord = true;
+        }
+      });
     },
-    'saveWordHighlight': (state, action) => {
-      state.wordHighlight = action.payload.word;
-    },
-    'setFocus': (state, action) => {
-      state.focus = action.payload.focus;
-    },
-    'markActiveWord': (state, action) => {
+    'highlightActiveWord': (state, action) => {
       state.board[action.payload.id].isActiveWord = true;
     },
-    'markActiveLetter': (state, action) => {
-      state.board[action.payload.id].isActiveLetter = true;
+    'highlightActiveSquare': (state, action) => {
+      state.board[action.payload.id].isActiveSquare = true;
     },
     'toggleOrientation': (state) => {
-      state.orientation = state.orientation === "across" ? "down" : "across";
+      let newOrientation = state.focused.orientation === "across" ? "down" : "across";
+      // remove previous focus
+      state.focused.word.forEach( index => {
+        state.board[index].isActiveSquare = false;
+        state.board[index].isActiveWord = false;
+      });
+      // toggle orientation & set new focus
+      state.focused = {
+        ...state.focused, 
+        orientation: newOrientation,
+        word: getFocusedWord(
+          state.board,
+          state.numCols,
+          state.numRows,
+          state.focused.square, 
+          newOrientation
+        )
+      };
+      // highlight new focus
+      state.focused.word.forEach( index => {
+        if (index === state.focused.square) {
+          state.board[index].isActiveSquare = true;
+        } else {
+          state.board[index].isActiveWord = true;
+        }
+      });
     },
     'toggleZoom': (state) => {
       state.zoomActive = !state.zoomActive;
@@ -62,29 +95,16 @@ export const povSlice = createSlice({
     },
     'togglePencil': (state) => {
       state.pencilActive = !state.pencilActive;
-    },
-    'clearAllFocus': (state) => {
-      state.board = state.board.map(square => ({
-        ...square,
-        activeWord: false,
-        activeLetter: false
-      }));
     }
   }
 });
 
 export const {
   initializePlayerView,
-  markActiveWord,
-  markActiveLetter,
-  clearAllFocus,
+  setFocusedSquare,
   toggleZoom,
   toggleRebus,
   togglePencil,
-  resetActiveWord,
-  removeWordHighlight,
-  setFocus,
-  saveWordHighlight,
   toggleOrientation
 } = povSlice.actions;
 export default povSlice.reducer;
