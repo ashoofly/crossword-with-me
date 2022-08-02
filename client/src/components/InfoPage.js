@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 
 
 export default function InfoPage(props) {
-
+  console.log("Render info page");
   const { open, handleClose } = props;
   const game = useSelector(state => {
     return state.game

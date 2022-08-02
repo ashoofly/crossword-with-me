@@ -9,6 +9,7 @@ import { signin, signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 export default function Account(props) {
+  console.log("Render Account component");
   const {
     auth
   } = props;

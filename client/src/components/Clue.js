@@ -7,9 +7,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleOrientation } from '../redux/slices/povSlice';
 
 export default function Clue(props) {
+  console.log("Render clue component");
   const { 
-    goToPrevWord,
-    goToNextWord
+    jumpToPreviousWord,
+    jumpToNextWord
   } = props
 
   const dispatch = useDispatch();
@@ -36,7 +37,7 @@ export default function Clue(props) {
 
   return (
     <div className="clue">
-      <div className="arrow-container" onClick={goToPrevWord}>
+      <div className="arrow-container" onClick={jumpToPreviousWord}>
         <img className="arrows" src={prev} alt="prev_clue" />
       </div>
       <div 
@@ -44,7 +45,7 @@ export default function Clue(props) {
         className="clue-text"
         dangerouslySetInnerHTML={clueText}>
       </div>
-      <div className="arrow-container" onClick={goToNextWord}>
+      <div className="arrow-container" onClick={jumpToNextWord}>
         <img className="arrows" src={next} alt="next_clue" />
       </div>
     </div>

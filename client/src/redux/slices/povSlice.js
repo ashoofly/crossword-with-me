@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { getFocusedWord } from '../puzzleUtils';
+import { getFocusedWord } from '../../puzzleUtils';
 
 export const povSlice = createSlice({
   name: 'pov',

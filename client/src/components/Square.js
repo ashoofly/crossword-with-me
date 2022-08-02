@@ -14,7 +14,7 @@ export const Square = React.memo((props) => {
     socket,
   } = props;
 
-  // console.log(`Rendering square component ${id}`);
+  console.log(`Rendering square component ${id}`);
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });

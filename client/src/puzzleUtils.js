@@ -1,5 +1,8 @@
 
-export function getFocusedWord(gameGrid, numCols, numRows, index, orientation) {
+/**
+ * Used in P.O.V. slice reducer to set focused word
+ */
+function getFocusedWord(gameGrid, numCols, numRows, index, orientation) {
   const start = findWordStart(gameGrid, numCols, index, orientation);
   const end = findWordEnd(gameGrid, numCols, numRows, index, orientation);
   let incrementInterval = orientation === "across" ? 1 : numCols;
@@ -10,7 +13,7 @@ export function getFocusedWord(gameGrid, numCols, numRows, index, orientation) {
   return focusedWord;
 }
 
-export function findWordStart(gameGrid, numCols, index, orientation) {
+function findWordStart(gameGrid, numCols, index, orientation) {
   let currentIndex = index;
   if (orientation === "across") {
     while (!gameGrid[currentIndex].acrossStart) {
@@ -25,7 +28,7 @@ export function findWordStart(gameGrid, numCols, index, orientation) {
   return currentIndex;
 }
 
-export function findWordEnd(gameGrid, numCols, numRows, index, orientation) {
+function findWordEnd(gameGrid, numCols, numRows, index, orientation) {
   let currentIndex = index;
   let wordEnd;
   if (orientation === "across") {
@@ -42,4 +45,26 @@ export function findWordEnd(gameGrid, numCols, numRows, index, orientation) {
     wordEnd = gameGrid[currentIndex].answer === '.' ? currentIndex - numCols : currentIndex;
   }
   return wordEnd;
+}
+
+function isPuzzleFilled(board, gameGrid) {
+  return board.filter((square, index) => 
+    (square.input === "" && gameGrid[index].isPlayable && !square.verified)).length === 0 ? 
+      true : false;
+}
+
+function centerActiveSquareOnZoom(squareRefs, focus, orientation) {
+  let firstLetterOfWord = squareRefs[focus].current;
+  firstLetterOfWord.scrollIntoView({
+    behavior: "smooth",
+    block: orientation === "down" ? "start" : "center",
+    inline: "center"
+  });
+}
+
+
+export {
+  getFocusedWord,
+  isPuzzleFilled,
+  centerActiveSquareOnZoom
 }

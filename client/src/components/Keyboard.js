@@ -8,6 +8,7 @@ import {
   toggleRebus
 } from '../redux/slices/povSlice';
 export default function Keyboard(props) {
+  console.log("Render keyboard");
 
   const { 
     jumpToSquare,

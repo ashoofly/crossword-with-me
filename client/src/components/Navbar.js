@@ -14,7 +14,7 @@ import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice'
 
 
 export default function Navbar(props) {
-
+  console.log("Render navbar");
   const { 
     auth,
     jumpToSquare
@@ -49,7 +49,6 @@ export default function Navbar(props) {
 
   function handlePencilClick() {
     dispatch(togglePencil());
-    console.log(`Focus: ${focus}`)
     jumpToSquare(focus);
   }
 
