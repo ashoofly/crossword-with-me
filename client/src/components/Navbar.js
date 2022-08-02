@@ -13,9 +13,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
 
 
-export default function Navbar(props) {
-  console.log("Render navbar");
+export default React.memo((props) => {
+  // console.log("Render navbar");
   const { 
+    socket,
     auth,
     jumpToSquare
   } = props;
@@ -73,6 +74,7 @@ export default function Navbar(props) {
         <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
       </div>
       <HintMenu 
+        socket={socket}
       />
       <div className="icon-bg">
         <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />
@@ -83,4 +85,4 @@ export default function Navbar(props) {
       />
     </div>
   )
-}
+});

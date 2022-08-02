@@ -25,12 +25,36 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 # TODO
 
 * If fetch fails, send message
-* Save board on all dispatch for game changes
 * Board needs to be able to do more than 15 rows for Sunday puzzles (Boards.css)
-* move handlekeydown function into App.js instead of Board.js
+
 
 # Study
 
 * import vs require
 * how to export modules, const, functions
 * async/await vs promise.then
+
+
+# Socket notes
+
+When making changes, mapped to redux actions:
+
+Check source: socket.id
+
+scope: game, action: reset
+scope: game, action: toggleAutocheck
+- resetGame
+- toggleAutocheck
+
+
+scope: square, squareState: overwrite
+scope: word, wordState: overwrite
+scope: board, boardState: overwrite
+- changeInput
+- requestCheckSquare
+- requestCheckWord
+- requestCheckPuzzle
+- requestRevealSquare
+- requestRevealWord
+- requestRevealPuzzle
+

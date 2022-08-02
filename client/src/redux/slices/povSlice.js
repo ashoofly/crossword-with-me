@@ -1,9 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { getFocusedWord } from '../../puzzleUtils';
 
+const defaultState = {
+  rebusActive: false,
+  pencilActive: false,
+  zoomActive: false,
+  focused: {
+    orientation: "across",
+    word: [0],
+    square: 0,
+  },
+  numRows: 0,
+  numCols: 0,
+  board: []
+};
+
+
 export const povSlice = createSlice({
   name: 'pov',
-  initialState: {},
+  initialState: defaultState,
   reducers: {
     'initializePlayerView': (state, action) => {
       return {

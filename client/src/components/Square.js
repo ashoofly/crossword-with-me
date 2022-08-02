@@ -2,11 +2,11 @@ import React from "react";
 import '../styles/common.css';
 import "../styles/Square.css";
 import { useSelector, useDispatch } from 'react-redux';
-import { markVerified, markPartial, markIncorrect, saveBoard } from '../redux/slices/gameSlice';
+import { markVerified, markPartial, markIncorrect, changeSent } from '../redux/slices/gameSlice';
 import { setFocusedSquare, toggleOrientation } from '../redux/slices/povSlice';
 import { oneLine } from 'common-tags';
 
-export const Square = React.memo((props) => {
+export default React.memo((props) => {
   const {
     id,
     squareRef,
@@ -14,7 +14,7 @@ export const Square = React.memo((props) => {
     socket,
   } = props;
 
-  console.log(`Rendering square component ${id}`);
+  // console.log(`Rendering square component ${id}`);
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });
@@ -42,13 +42,11 @@ export const Square = React.memo((props) => {
 
   function handleFocus() {
     if (squareGrid.answer === ".") return;
-    console.log(`Set focus to ${id}`);
     dispatch(setFocusedSquare({ focus: id }));
   }
 
   function handleMouseDown() {
     if (isActiveSquare) {
-      console.log("Toggle orientation");
       dispatch(toggleOrientation());
     }
   }
@@ -56,11 +54,9 @@ export const Square = React.memo((props) => {
   React.useEffect(() => {
     if (socket === null) return;
     if (!squareGameState.initial && squareGameState.source === socket.id) {
-      console.log("[Client] Sending changes");
-      socket.emit("send-changes", squareGameState);
-      dispatch(saveBoard());
+      socket.emit("send-changes", {...squareGameState, scope: "square"});
     }
-  }, [dispatch, socket, squareGameState]);  
+  }, [socket, squareGameState]);  
 
   function checkAnswer() {
     if (autocheck || squareGameState.check) {
@@ -71,17 +67,17 @@ export const Square = React.memo((props) => {
   function checkLetter() {
     if (!squareGrid.isPlayable || squareGameState.input === '') return;
     if (squareGameState.input === squareGrid.answer) {
-      dispatch(markVerified({ id: id }));
+      dispatch(markVerified({source: socket.id, id: id }));
 
     } else if (squareGrid.answer.length > 1) {
       // rebus
       if (squareGameState.input.length >= 1 && squareGameState.input.charAt(0) === squareGrid.answer.charAt(0)) {
-        dispatch(markPartial({ id: id }));
+        dispatch(markPartial({source: socket.id, id: id }));
       } else {
-        dispatch(markIncorrect({ id: id }));
+        dispatch(markIncorrect({source: socket.id, id: id }));
       }
     } else {
-      dispatch(markIncorrect({ id: id }));
+      dispatch(markIncorrect({source: socket.id, id: id }));
     }
   }
 
@@ -112,7 +108,7 @@ export const Square = React.memo((props) => {
                   `}
       onClick={log}>
 
-      {squareGameState.incorrect && <div className="wrong-answer-overlay"></div>}
+      {squareGameState.incorrect && !squareGameState.reveal && <div className="wrong-answer-overlay"></div>}
 
       {squareGameState.partial && <div className="partially-correct-overlay"></div>}
 

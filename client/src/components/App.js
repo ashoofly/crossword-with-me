@@ -15,66 +15,54 @@ import {
   changeInput,
   loadGame,
   removeCheck,
-  boardSaved
+  boardSaved,
+  loadSquareState,
+  loadWordState,
+  loadBoardState,
+  toggleAutocheck,
+  resetGame
 } from '../redux/slices/gameSlice';
 import {
   initializePlayerView,
   toggleRebus,
   toggleOrientation
 } from '../redux/slices/povSlice';
-import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 
 function App() {
-  console.log("Render App component");
+  // console.log("Render App component");
 
   const { id: gameId } = useParams();
   const dispatch = useDispatch();
 
   /**
-   * Redux game state
-   */
-  const loaded = useSelector(state => state.game.loaded);
-  const savedToDB = useSelector(state => state.game.savedToDB);
-  const numCols = useSelector(state => state.game.numCols);
-  const numRows = useSelector(state => state.game.numRows);
-  const board = useSelector(state => state.game.board);
-  const gameGrid = useSelector(state => state.game.gameGrid);
-  const clueDictionary = useSelector(state => state.game.clueDictionary);
-  const advanceCursor = useSelector(state => state.game.advanceCursor);
-
-  /**
-   * Redux player p.o.v. state
-   */
-  const zoomActive = useSelector(state => state.pov.zoomActive);
-  const rebusActive = useSelector(state => state.pov.rebusActive);
-  const pencilActive = useSelector(state => state.pov.pencilActive);
-  const orientation = useSelector(state => state.pov.orientation);
-  const focusedSquare = useSelector(state => state.pov.focused.square);
-  const focusedWord = useSelector(state => state.pov.focused.word);
-
-  /**
    * React component states
    */
+  const [app, setApp] = React.useState(null);
   const [auth, setAuth] = React.useState(null);
   const [socket, setSocket] = React.useState(null);
-  const [squareRefs] = React.useState(Array(numRows * numCols).fill(0).map(() => {
-    return React.createRef();
-  }));
-  const [deleteMode, setDeleteMode] = React.useState(false);
-  const [overwriteMode, setOverwriteMode] = React.useState(false);
-  const user = useAuthenticatedUser(auth);
 
   /**
-   * Initialize Firebase
+   * Initialize Firebase app
    */
   React.useEffect(() => {
-    const firebaseAppConfig = getFirebaseConfig();
-    const app = initializeApp(firebaseAppConfig);
-    console.log("Initialized Firebase app");
-    setAuth(initializeAuth(app));
-    console.log("Initialized Firebase authentication");
+    if (!app) {
+      const firebaseAppConfig = getFirebaseConfig();
+      setApp(initializeApp(firebaseAppConfig));
+      console.log("Initialized Firebase app");
+    }
   }, []);
+
+
+  /**
+   * Initialize Firebase auth
+   */
+   React.useEffect(() => {
+    if (app) {
+      setAuth(initializeAuth(app));
+      console.log("Initialized Firebase authentication");
+    }
+  }, [app]);
 
   /**
    * Initialize Socket.io
@@ -82,7 +70,6 @@ function App() {
   React.useEffect(() => {
     const s = io("http://localhost:3001");
     setSocket(s);
-
     return () => {
       s.disconnect();
     }
@@ -93,6 +80,8 @@ function App() {
    */
   React.useEffect(() => {
     if (socket === null) return;
+    socket.emit('get-game', gameId);
+
     socket.once('load-game', game => {
       console.log(`[Client] Loaded game ${gameId}`);
       console.log(game);
@@ -103,33 +92,102 @@ function App() {
         gameGrid: game.gameGrid
       }));
     });
-    socket.emit('get-game', gameId);
   }, [socket, gameId]);
 
+
   /**
-   * Receive updates on game from other sources
+   * Redux game state
+   */
+   const loaded = useSelector(state => state.game.loaded);
+   const savedToDB = useSelector(state => state.game.savedToDB);
+   const numCols = useSelector(state => state.game.numCols);
+   const numRows = useSelector(state => state.game.numRows);
+   const board = useSelector(state => state.game.board);
+   const gameGrid = useSelector(state => state.game.gameGrid);
+   const clueDictionary = useSelector(state => state.game.clueDictionary);
+   const advanceCursor = useSelector(state => state.game.advanceCursor);
+   const mostRecentAction = useSelector(state => state.game.mostRecentAction);
+ 
+   /**
+    * Redux player p.o.v. state
+    */
+   const zoomActive = useSelector(state => state.pov.zoomActive);
+   const rebusActive = useSelector(state => state.pov.rebusActive);
+   const pencilActive = useSelector(state => state.pov.pencilActive);
+   const orientation = useSelector(state => state.pov.focused.orientation);
+   const focusedSquare = useSelector(state => state.pov.focused.square);
+   const focusedWord = useSelector(state => state.pov.focused.word);
+ 
+   const [squareRefs] = React.useState(Array(numRows * numCols).fill(0).map(() => {
+    return React.createRef();
+  }));
+  const [deleteMode, setDeleteMode] = React.useState(false);
+  const [overwriteMode, setOverwriteMode] = React.useState(false);
+
+  /**
+   * Receive updates on game from other sources (different players or browser clients)
    */
   React.useEffect(() => {
     if (socket === null) return;
-    const handler = (state) => {
+    const receiveMsgHandler = (message) => {
       console.log("Received external change, updating Redux state.");
-      dispatch(changeInput({ id: state.index, value: state.input, source: 'external' }));
+      if (message.scope === "square") {
+        dispatch(loadSquareState(message));
+
+      } else if (message.scope === "word") {
+        dispatch(loadWordState(message));
+
+      } else if (message.scope === "board") {
+        dispatch(loadBoardState(message));
+
+      } else if (message.scope === "game") {
+        if (message.type === "toggleAutocheck") {
+          dispatch(toggleAutocheck({source: "external"}));
+
+        } else if (message.type === "resetGame") {
+          dispatch(resetGame({source: "external"}));
+
+        } else {
+          console.log(`Unknown message received for game scope: ${message}`);
+        }
+      } else {
+        console.log(`Message with unknown scope received: ${message}`);
+      }
     }
-    socket.on("receive-changes", handler);
+    socket.on("receive-changes", receiveMsgHandler);
 
     return () => {
-      socket.off("receive-changes", handler)
+      socket.off("receive-changes", receiveMsgHandler)
     }
 
   }, [socket]);
 
   /**
-   * Saves board to DB on changes from current player
+   * Send state updates through socket to other clients
+   */
+  React.useEffect(() => {
+    if (!mostRecentAction || mostRecentAction.initial) return;
+    if (mostRecentAction.scope === "word" || mostRecentAction.scope === "puzzle") {
+      socket.emit("send-changes", { state: mostRecentAction.state, scope: mostRecentAction.scope});
+    } else if (mostRecentAction.scope === "game") {
+      socket.emit("send-changes", { type: mostRecentAction.type, scope: mostRecentAction.scope});
+    } else {
+      console.log(`Unrecognizable action: ${mostRecentAction}`);
+    }
+
+  }, [mostRecentAction, socket]);
+
+
+  /**
+   * Saves board to DB on current player changes
    */
   React.useEffect(() => {
     if (socket === null) return;
     if (!savedToDB) {
-      socket.emit("save-board", gameId, board);
+      socket.emit("save-board", gameId, board.map(square => ({
+        ...square,
+        source: null
+      })));
       dispatch(boardSaved());
     }
   }, [savedToDB]);
@@ -138,7 +196,8 @@ function App() {
    * Advances cursor after user input
    */
   React.useEffect(() => {
-    goToNextSquareAfterInput();
+    if (advanceCursor > 0)
+      goToNextSquareAfterInput();
   }, [advanceCursor])
 
   /**
@@ -169,7 +228,7 @@ function App() {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
-      dispatch(removeCheck({ id: currentIndex }));
+      dispatch(removeCheck({id: currentIndex }));
       if (!board[currentIndex].verified) {
         dispatch(changeInput({ id: currentIndex, value: '', source: socket.id }));
       }
@@ -178,14 +237,14 @@ function App() {
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
         if (rebusActive) {
-          dispatch(removeCheck({ id: focusedSquare }));
+          dispatch(removeCheck({id: focusedSquare }));
           let currentInput = board[focusedSquare].input;
           let newValue = currentInput + e.key.toUpperCase();
           dispatch(changeInput({ id: focusedSquare, value: newValue, source: socket.id, penciled: pencilActive, advanceCursor: true }));
         } else {
           // if letter already in square, go into 'overwrite' mode
           if (board[focusedSquare].input !== "") {
-            dispatch(removeCheck({ id: focusedSquare }));
+            dispatch(removeCheck({id: focusedSquare }));
             setOverwriteMode(true);
           } else {
             if (overwriteMode) setOverwriteMode(false);
@@ -208,8 +267,8 @@ function App() {
     jumpToSquare(getNextEmptySquare(prevWordStart, true));
   }
 
-  function jumpToNextWord(focus) {
-    let nextWordStart = getNextWord(focus, clueDictionary, orientation);
+  function jumpToNextWord() {
+    let nextWordStart = getNextWord(focusedSquare, clueDictionary, orientation);
     jumpToSquare(getNextEmptySquare(nextWordStart));
   }
 
@@ -318,6 +377,7 @@ function App() {
 
   function mapGridIndexToClueDictionaryEntry(index) {
     let currentWordStart = findWordStart(index);
+    let gridNum = gameGrid[currentWordStart].gridNum;
     return clueDictionary[orientation][gameGrid[currentWordStart].gridNum];
   }
 
@@ -405,6 +465,7 @@ function App() {
       {!loaded && <h1>Loading...</h1>}
       {loaded && <div className="App">
         <Navbar
+          socket={socket}
           auth={auth}
           jumpToSquare={jumpToSquare}
         />
@@ -418,7 +479,7 @@ function App() {
         />
         <Keyboard
           jumpToSquare={jumpToSquare}
-          handleKeyDown={(e) => handleKeyDown.current(e)}
+          handleKeyDown={handleKeyDown}
         />
       </div>}
     </div>

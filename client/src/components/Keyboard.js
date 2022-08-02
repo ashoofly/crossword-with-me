@@ -7,8 +7,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   toggleRebus
 } from '../redux/slices/povSlice';
-export default function Keyboard(props) {
-  console.log("Render keyboard");
+
+export default React.memo((props) => {
+  // console.log("Render keyboard");
 
   const { 
     jumpToSquare,
@@ -84,4 +85,4 @@ export default function Keyboard(props) {
       {keys}
     </div>
   )
-}
+});

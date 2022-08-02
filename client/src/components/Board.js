@@ -1,11 +1,11 @@
 import React from "react";
-import { Square } from "./Square";
+import Square from "./Square";
 import '../styles/common.css';
 import "../styles/Board.css";
 import { useSelector } from 'react-redux';
 
-export default function Board(props) {
-  console.log("Rendering Board component.");
+export default React.memo((props) => {
+  // console.log("Rendering Board component.");
 
   const {
     socket,
@@ -29,4 +29,4 @@ export default function Board(props) {
       {squares}
     </div>
   )
-}
+});

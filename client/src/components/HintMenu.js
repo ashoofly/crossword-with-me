@@ -8,58 +8,38 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   toggleAutocheck,
   resetGame,
-  requestCheck,
+  requestCheckSquare,
+  requestCheckWord,
   requestCheckPuzzle,
-  requestReveal,
-  removeCheck
+  requestRevealSquare,
+  requestRevealWord,
+  requestRevealPuzzle
 } from '../redux/slices/gameSlice';
 
 
-export default function HintMenu(props) {
-  console.log("Render hintmenu");
+export default React.memo((props) => {
+  const { socket } = props;
+  // console.log("Render hintmenu");
   const dispatch = useDispatch();
 
-  /**
-   * Get game state
-   */
-  const game = useSelector(state => {
-    return state.game
-  });
-  const board = game.board;
-  const autocheck = game.autocheck;
+  const autocheck = useSelector(state => state.game.autocheck);
+  const focus = useSelector(state => state.pov.focused.square);
+  const focusedWord = useSelector(state => state.pov.focused.word);
 
-  /**
-   * Get puzzle state
-   */
-  const grid = game.gameGrid;
-  const numCols = game.numCols;
-
-  /**
-   * Get player state
-   */
-  const pov = useSelector(state => {
-    return state.pov
-  });
-  const focus = useSelector(state => {
-    return state.pov.focused.square;
-  });
-  const wordHighlight = pov.focused.word;
-
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
+  const [menuItems, setMenuItems] = React.useState([]);
+  const open = Boolean(anchorEl);
+  React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
 
   function checkActiveSquare() {
     handleClose();
-    if (board[focus].input !== '') {
-      dispatch(requestCheck({ id: focus }));
-    }
+    dispatch(requestCheckSquare({ id: focus, source: socket.id }));
   };
 
   function checkActiveWord() {
     handleClose();
-    wordHighlight.forEach(index => {
-      if (board[index].input !== '') {
-        dispatch(requestCheck({ id: index }));
-      }
-    });
+    dispatch(requestCheckWord({ word: focusedWord }));
   }
 
   function checkPuzzle() {
@@ -69,44 +49,29 @@ export default function HintMenu(props) {
 
   function revealSquare() {
     handleClose();
-    if (board[focus].input === grid[focus].answer) {
-      checkActiveSquare();
-    } else {
-      dispatch(requestReveal({ id: focus }));
-    }
+    dispatch(requestRevealSquare({ source: socket.id, id: focus }));
   }
 
   function revealWord() {
     handleClose();
-    wordHighlight.forEach(i => {
-      if (!board[i].reveal && !board[i].verified) {
-        if (board[i].input === grid[i].answer) {
-          dispatch(requestCheck({ id: i }));
-        } else {
-          dispatch(requestReveal({ id: i }));
-        }
-      }
-    });
+    dispatch(requestRevealWord({ word: focusedWord }));
   }
 
   function revealPuzzle() {
     handleClose();
-    board.forEach((square, i) => {
-      if (grid[i].isPlayable && !board[i].reveal && !board[i].verified) {
-        if (board[i].input === grid[i].answer) {
-          dispatch(requestCheck({ id: i }));
-        } else {
-          dispatch(removeCheck({ id: i }));
-          dispatch(requestReveal({ id: i }));
-        }
-      }
-    });
+    dispatch(requestRevealPuzzle());
   }
 
   function clearPuzzle() {
     handleClose();
-    dispatch(resetGame());
+    dispatch(resetGame({source: socket.id}));
+
   };
+
+  function handleAutocheck() {
+    handleClose();
+    dispatch(toggleAutocheck({source: socket.id}));
+  }
 
   const mainHintMenuItems = [
     {
@@ -164,24 +129,12 @@ export default function HintMenu(props) {
     }
   ];
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
-  const [menuItems, setMenuItems] = React.useState([]);
-  const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
-
-
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
     setShowDetailedMenu(false);
-  }
-
-  function handleAutocheck() {
-    dispatch(toggleAutocheck());
-    handleClose();
   }
 
   function goToRevealMenu() {
@@ -232,4 +185,4 @@ export default function HintMenu(props) {
       </Menu>
     </React.Fragment>
   )
-}
+});

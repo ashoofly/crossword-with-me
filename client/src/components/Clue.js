@@ -6,32 +6,26 @@ import "../styles/Clue.css";
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleOrientation } from '../redux/slices/povSlice';
 
-export default function Clue(props) {
-  console.log("Render clue component");
+export default React.memo((props) => {
+  // console.log("Render clue component");
   const { 
     jumpToPreviousWord,
     jumpToNextWord
   } = props
 
   const dispatch = useDispatch();
-  const game = useSelector(state => {
-    return state.game
-  });
-  const clueDictionary = game.clueDictionary;
-  const gameGrid = game.gameGrid;
 
-  const pov = useSelector(state => {
-    return state.pov
-  });
-  const orientation = pov.focused.orientation;
-  const wordHighlight = pov.focused.word;
+  const clueDictionary = useSelector(state => state.game.clueDictionary);
+  const gameGrid = useSelector(state => state.game.gameGrid);
 
+  const orientation = useSelector(state => state.pov.focused.orientation);
+  const focusedWord = useSelector(state => state.pov.focused.word);
 
   const [ clueText, setClueText ] = React.useState({__html: ''});
-  React.useEffect(displayClue, [wordHighlight, gameGrid, clueDictionary, orientation]);
+  React.useEffect(displayClue, [focusedWord, gameGrid, clueDictionary, orientation]);
 
   function displayClue() {
-    let dictionaryKey = gameGrid[wordHighlight[0]].gridNum;
+    let dictionaryKey = gameGrid[focusedWord[0]].gridNum;
     setClueText({__html: clueDictionary[orientation][dictionaryKey].clue});
   }
 
@@ -50,4 +44,4 @@ export default function Clue(props) {
       </div>
     </div>
   )
-}
+});
