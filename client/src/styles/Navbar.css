@@ -27,13 +27,18 @@
   min-height: 25px;
 }
 
-.navbar .MuiButton-root.Mui-disabled {
+.navbar Button.rebus-active {
   background-color:  rgb(38,139,210);
   color: rgb(0,44,54);
 }
 
 .navbar .MuiButton-root:hover {
   background-color:  rgb(253,246,227);
+}
+
+.navbar Button.rebus-active:hover {
+  background-color:  rgb(38,139,210);
+  color: rgb(0,44,54);
 }
 
 .icon-bg {

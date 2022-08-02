@@ -4,37 +4,91 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
 import "../styles/Navbar.css";
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  toggleAutocheck,
+  resetGame,
+  requestCheckSquare,
+  requestCheckWord,
+  requestCheckPuzzle,
+  requestRevealSquare,
+  requestRevealWord,
+  requestRevealPuzzle
+} from '../redux/slices/gameSlice';
 
-export default function HintMenu(props) {
 
-  const {
-    autocheck,
-    setAutocheck,
-    clearPuzzle,
-    checkSquare,
-    checkWord,
-    checkPuzzle,
-    revealSquare,
-    revealWord,
-    revealPuzzle
-  } = props;
+export default React.memo((props) => {
+  const { socket } = props;
+  // console.log("Render hintmenu");
+  const dispatch = useDispatch();
+
+  const autocheck = useSelector(state => state.game.autocheck);
+  const focus = useSelector(state => state.pov.focused.square);
+  const focusedWord = useSelector(state => state.pov.focused.word);
+
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
+  const [menuItems, setMenuItems] = React.useState([]);
+  const open = Boolean(anchorEl);
+  React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
+
+  function checkActiveSquare() {
+    handleClose();
+    dispatch(requestCheckSquare({ id: focus, source: socket.id }));
+  };
+
+  function checkActiveWord() {
+    handleClose();
+    dispatch(requestCheckWord({ word: focusedWord }));
+  }
+
+  function checkPuzzle() {
+    handleClose();
+    dispatch(requestCheckPuzzle());
+  }
+
+  function revealSquare() {
+    handleClose();
+    dispatch(requestRevealSquare({ source: socket.id, id: focus }));
+  }
+
+  function revealWord() {
+    handleClose();
+    dispatch(requestRevealWord({ word: focusedWord }));
+  }
+
+  function revealPuzzle() {
+    handleClose();
+    dispatch(requestRevealPuzzle());
+  }
+
+  function clearPuzzle() {
+    handleClose();
+    dispatch(resetGame({source: socket.id}));
+
+  };
+
+  function handleAutocheck() {
+    handleClose();
+    dispatch(toggleAutocheck({source: socket.id}));
+  }
 
   const mainHintMenuItems = [
     {
       id: 1,
       text: `Turn ${autocheck ? "OFF" : "ON"} Autocheck`,
-      onClick: toggleAutocheck
+      onClick: handleAutocheck
     },
     {
       id: 2,
       text: "Check Square",
-      onClick: checkSquare,
+      onClick: checkActiveSquare,
       disabled: autocheck ? true : false
     },
     {
       id: 3,
       text: "Check Word",
-      onClick: checkWord,
+      onClick: checkActiveWord,
       disabled: autocheck ? true : false
     },
     {
@@ -75,23 +129,12 @@ export default function HintMenu(props) {
     }
   ];
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
-  const [menuItems, setMenuItems] = React.useState([]);
-  const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [showDetailedMenu, autocheck]);
-
-
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
   };
   const handleClose = () => {
     setAnchorEl(null);
     setShowDetailedMenu(false);
-  }
-
-  function toggleAutocheck() {
-    setAutocheck( prevState => !prevState);
   }
 
   function goToRevealMenu() {
@@ -105,14 +148,14 @@ export default function HintMenu(props) {
     } else {
       currentMenu = mainHintMenuItems;
     }
-    const currentMenuItems = currentMenu.map( menuItem => {
+    const currentMenuItems = currentMenu.map(menuItem => {
       return (
-        <MenuItem 
-          key={menuItem.id} 
+        <MenuItem
+          key={menuItem.id}
           onClick={menuItem.onClick}
           disabled={menuItem.disabled ?? false}
           style={menuItem.style ?? {}}>
-            {menuItem.text}
+          {menuItem.text}
         </MenuItem>
       )
     });
@@ -142,4 +185,4 @@ export default function HintMenu(props) {
       </Menu>
     </React.Fragment>
   )
-}
+});

@@ -8,7 +8,8 @@ import MenuItem from '@mui/material/MenuItem';
 import { signin, signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
-export default function Account(props) {
+export default React.memo((props) => {
+  // console.log("Render Account component");
   const {
     auth
   } = props;
@@ -84,4 +85,4 @@ export default function Account(props) {
       </Menu>
     </React.Fragment>
   )
-}
+});

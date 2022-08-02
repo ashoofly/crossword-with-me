@@ -6,33 +6,30 @@ import zoomOut from '../images/zoom-out.svg';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Account from './Account';
+import Button from '@mui/material/Button';
 import '../styles/common.css';
 import "../styles/Navbar.css";
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
 
-export default function Navbar(props) {
 
+export default React.memo((props) => {
+  // console.log("Render navbar");
   const { 
-    autocheck,
-    setAutocheck,
-    clearPuzzle,
-    checkSquare,
-    checkWord,
-    checkPuzzle,
-    revealSquare,
-    revealWord,
-    revealPuzzle,
-    rebusActive,
-    setRebusActive,
-    activeWord,
-    jumpToSquare,
-    pencilActive,
-    setPencilActive,
-    zoomActive,
-    setZoomActive,
-    auth
+    socket,
+    auth,
+    jumpToSquare
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
+  const dispatch = useDispatch();
+  const pov = useSelector(state => {
+    return state.pov
+  });
+  const zoomActive = pov.zoomActive;
+  const rebusActive = pov.rebusActive;
+  const pencilActive = pov.pencilActive;
+  const focus = pov.focused.square;
 
   function handleClickOpen() {
     setOpen(true);
@@ -43,21 +40,17 @@ export default function Navbar(props) {
   }
 
   function handleZoom() {
-    setZoomActive( prevState => !prevState);
+    dispatch(toggleZoom());
   }
 
   function handleRebusButtonClick() {
-    setRebusActive(prevState => !prevState);
-    jumpToSquare(activeWord.focus);
-  }
-
-  function isRebusButtonDisabled() {
-    return rebusActive;
+    dispatch(toggleRebus());
+    jumpToSquare(focus);
   }
 
   function handlePencilClick() {
-    setPencilActive(prevState => !prevState);
-    jumpToSquare(activeWord.focus);
+    dispatch(togglePencil());
+    jumpToSquare(focus);
   }
 
   return (
@@ -65,7 +58,14 @@ export default function Navbar(props) {
       <Account 
         auth={auth} />
       <h1>Crossword with Friends</h1>
-      {/* <Button className={`rebus-button ${rebusActive ? "rebus-active": ''}`} variant="contained" onClick={handleRebusButtonClick} disabled={isRebusButtonDisabled()}>Rebus</Button> */}
+      {/* TODO: display only for desktop. */}
+      <Button 
+        tabIndex={parseInt("-1")} 
+        className={`rebus ${rebusActive ? "rebus-active": ''}`} 
+        variant="contained" 
+        onClick={handleRebusButtonClick}>
+          Rebus
+      </Button>
       {/* TODO: display zoom only for mobile. */}
       <div className="icon-bg">
         <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />
@@ -74,15 +74,7 @@ export default function Navbar(props) {
         <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
       </div>
       <HintMenu 
-        autocheck={autocheck}
-        setAutocheck={setAutocheck} 
-        clearPuzzle={clearPuzzle}
-        checkSquare={checkSquare}
-        checkWord={checkWord}
-        checkPuzzle={checkPuzzle}
-        revealSquare={revealSquare}
-        revealWord={revealWord}
-        revealPuzzle={revealPuzzle}
+        socket={socket}
       />
       <div className="icon-bg">
         <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />
@@ -93,4 +85,4 @@ export default function Navbar(props) {
       />
     </div>
   )
-}
+});

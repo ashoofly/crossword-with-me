@@ -3,16 +3,25 @@ import '../styles/common.css';
 import "../styles/Keyboard.css";
 import Button from '@mui/material/Button';
 import backspace from '../images/backspace-outline.png';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  toggleRebus
+} from '../redux/slices/povSlice';
 
-export default function Keyboard(props) {
+export default React.memo((props) => {
+  // console.log("Render keyboard");
 
   const { 
-    rebusActive,
-    setRebusActive,
-    activeWord,
     jumpToSquare,
     handleKeyDown
   } = props;
+
+  const dispatch = useDispatch();
+  const pov = useSelector(state => {
+    return state.pov
+  });
+  const rebusActive = pov.rebusActive;
+  const focus = pov.focused.square;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
@@ -24,8 +33,8 @@ export default function Keyboard(props) {
   };
 
   function handleRebusButtonClick() {
-    setRebusActive(prevState => !prevState);
-    jumpToSquare(activeWord.focus);
+    dispatch(toggleRebus());
+    jumpToSquare(focus);
   }
 
   function handleClick(e) {
@@ -46,25 +55,27 @@ export default function Keyboard(props) {
   );
 
   function displayRow(keys) {
+    let tabIndex = -1;
     return keys.map( key => {
         if (key === "rebus") {
           return (<Button 
                     key={key}
                     className={`rebus ${rebusActive ? "rebus-active": ''}`} 
-                    onClick={handleRebusButtonClick}>
+                    onClick={handleRebusButtonClick}
+                    tabIndex={tabIndex}>
                       {key.toUpperCase()}
                   </Button>);
 
         } else if (key === "Backspace") {
-          return (<Button key={key}>
+          return (<Button tabIndex={tabIndex} key={key}>
                     <img id={key} onClick={handleClick} className="backspace" src={backspace} alt="backspace" />
                   </Button>);
 
         } else if (key === "a") {
-          return <Button key={key} id={key} className="firstLetter" onClick={handleClick}>{key.toUpperCase()}</Button>
+          return <Button tabIndex={tabIndex} key={key} id={key} className="firstLetter" onClick={handleClick}>{key.toUpperCase()}</Button>
 
         } else {
-          return <Button key={key} id={key} onClick={handleClick}>{key.toUpperCase()}</Button> 
+          return <Button tabIndex={tabIndex} key={key} id={key} onClick={handleClick}>{key.toUpperCase()}</Button> 
         }
     });
   }
@@ -74,4 +85,4 @@ export default function Keyboard(props) {
       {keys}
     </div>
   )
-}
+});
