@@ -43,10 +43,15 @@ io.on("connection", socket => {
     const puzzleDates = await getPuzzleDates();
     socket.emit('load-puzzle-dates', puzzleDates); 
   });
-  socket.on("get-game-by-dow", async(socketId, dow, playerId) => {
-    console.log(`${socketId} ${dow} ${playerId}`);
+  socket.on("get-game-by-dow", async(dow, playerId) => {
+    console.log(`${dow} ${playerId}`);
     const game = await findOrCreateGame(dow, playerId);
-    console.log(`Sending load-game event to ${socketId} client`);
+    console.log(`Sending load-game event to client`);
+    socket.emit("load-game", game);
+  });
+  socket.on("get-default-game", async(playerId) => {
+    const game = await getDefaultGame(playerId);
+    console.log('Sending load-game to client after fetching default game');
     socket.emit("load-game", game);
   });
 
@@ -114,46 +119,15 @@ async function createNewGame(dow, playerId) {
 }
 
 
-// async function createNewGame(gameId) {
-//   let puzzle, dow;
-//   if (isCurrentPuzzleSaved(db)) {
-//     dow = getCurrentDOW();
-//   } else {
-//     dow = getPreviousDOW();
-//   }
-//   puzzle = await getPuzzle(dow);
-//   console.log(`Creating game with ${dow} puzzle...`)
-//   let numSquares = puzzle.size.rows * puzzle.size.cols;
-//   await set(ref(db, 'games/' + gameId), {
-//     gameId: gameId,
-//     savedToDB: true,
-//     autocheck: false,
-//     advanceCursor: 0,
-//     board: [...Array(numSquares).keys()].map( (num) => ({
-//       initial: true,
-//       index: num,
-//       input: '',
-//       reveal: false,
-//       check: false,
-//       verified: false,
-//       incorrect: false,
-//       partial: false,
-//       penciled: false
-//     })),
-//     clueDictionary: puzzle.clueDictionary,
-//     gameGrid: puzzle.gameGrid,
-//     copyright: puzzle.copyright,
-//     date: puzzle.date,
-//     dow: puzzle.dow,
-//     editor: puzzle.editor,
-//     author: puzzle.author,
-//     hasTitle: puzzle.hastitle,
-//     title: puzzle.title,
-//     numRows: puzzle.size.rows,
-//     numCols: puzzle.size.cols
-//   });
-//   return (await get(ref(db, 'games/' + gameId))).val();
-// }
+async function getDefaultGame(playerId) {
+  let dow;
+  if (isCurrentPuzzleSaved(db)) {
+    dow = getCurrentDOW();
+  } else {
+    dow = getPreviousDOW();
+  }
+  return await findOrCreateGame(dow, playerId);
+}
 
 async function getPuzzle(dow) {
   console.log(`Loading puzzle for ${dow}...`);

@@ -1,5 +1,7 @@
 import React from 'react';
 import lifebuoy from '../images/life-buoy.svg';
+// import phone from '../images/phone.svg';
+import friend from '../images/add-friend.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
@@ -74,6 +76,19 @@ export default React.memo((props) => {
   }
 
   const mainHintMenuItems = [
+    {
+      id: 0,
+      text: 'Phone a Friend',
+      onClick: () => {},
+      icon: {
+        "className": "phone-a-friend",
+        "src": friend,
+        "alt": "add-a-friend-icon"
+      },
+      style: {
+        "color": "#08992e"
+      }
+    },
     {
       id: 1,
       text: `Turn ${autocheck ? "OFF" : "ON"} Autocheck`,
@@ -155,7 +170,8 @@ export default React.memo((props) => {
           onClick={menuItem.onClick}
           disabled={menuItem.disabled ?? false}
           style={menuItem.style ?? {}}>
-          {menuItem.text}
+          {menuItem.icon && <img className={menuItem.icon.className} src={menuItem.icon.src} alt={menuItem.icon.alt} />} 
+            {menuItem.text}
         </MenuItem>
       )
     });
@@ -178,7 +194,7 @@ export default React.memo((props) => {
         }}
         transformOrigin={{
           vertical: 'top',
-          horizontal: 'center',
+          horizontal: 'left',
         }}
       >
         {menuItems}

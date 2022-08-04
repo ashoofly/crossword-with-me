@@ -4,7 +4,7 @@
 const {ref, get} = require("firebase/database");
 
 // TODO: Update as db switches all keys to capitalized
-const weekdays = ["sunday", "monday", "tuesday", "Wednesday", "thursday", "friday", "saturday"];
+const weekdays = ["sunday", "monday", "tuesday", "Wednesday", "Thursday", "friday", "saturday"];
 
 function getCurrentDOW() {
   const currentDate = new Date();

@@ -91,8 +91,6 @@ function App() {
         console.log(player);
         setPlayer(player);
       });
-      console.log(socket);
-      console.log(`Socket id: ${socket.id}`);
       socket.on('load-game', game => {
         console.log(`[Client] Loaded game ${game.gameId}`);
         console.log(game);

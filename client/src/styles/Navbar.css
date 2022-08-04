@@ -49,6 +49,11 @@
   color: rgb(0,44,54);
 }
 
+.phone-a-friend {
+  filter: invert(34%) sepia(80%) saturate(4406%) hue-rotate(129deg) brightness(98%) contrast(94%);
+  padding-right: 8px;
+}
+
 .icon-bg {
   background-color: #fdf6e3;
   border-radius: 5px;
@@ -120,6 +125,12 @@
   text-transform: uppercase;
   font-size: 14px;
   color: rgb(89,110,117);
+}
+
+.focused-menu-item.MuiMenuItem-root {
+  font-weight: bold;
+  /* color: #278BD2; */
+  background-color: rgba(39,139,210, 0.1)
 }
 
 .avatar-img {
