@@ -26,7 +26,9 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 
 * If fetch fails, send message
 * Board needs to be able to do more than 15 rows for Sunday puzzles (Boards.css)
-
+* Clear anonymous games from the database every night
+* Clear games with last week's puzzle from database after fetching each new puzzle
+* Update user games every day
 
 # Study
 
@@ -35,26 +37,4 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 * async/await vs promise.then
 
 
-# Socket notes
-
-When making changes, mapped to redux actions:
-
-Check source: socket.id
-
-scope: game, action: reset
-scope: game, action: toggleAutocheck
-- resetGame
-- toggleAutocheck
-
-
-scope: square, squareState: overwrite
-scope: word, wordState: overwrite
-scope: board, boardState: overwrite
-- changeInput
-- requestCheckSquare
-- requestCheckWord
-- requestCheckPuzzle
-- requestRevealSquare
-- requestRevealWord
-- requestRevealPuzzle
 

@@ -45,6 +45,9 @@ export default React.memo((props) => {
         );
       }
       setSigninText("Sign out");
+
+      
+
     } else {
       // anonymous icon
       setAvatarIcon(

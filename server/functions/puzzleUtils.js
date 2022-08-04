@@ -3,7 +3,8 @@
 /* eslint-disable require-jsdoc */
 const {ref, get} = require("firebase/database");
 
-const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// TODO: Update as db switches all keys to capitalized
+const weekdays = ["sunday", "monday", "tuesday", "Wednesday", "thursday", "friday", "saturday"];
 
 function getCurrentDOW() {
   const currentDate = new Date();
@@ -22,7 +23,7 @@ async function isCurrentPuzzleSaved(db) {
   const currentDOW = weekdays[currentDate.getDay()];
   console.log(`Looking for current ${currentDOW} puzzle`);
 
-  const snapshot = await get(ref(db, "puzzles/" + currentDOW.toLowerCase()));
+  const snapshot = await get(ref(db, "puzzles/" + currentDOW));
   if (snapshot.exists()) {
     const fetchedPuzzle = snapshot.val();
     const fetchedPuzzleDate = new Date(Date.parse(fetchedPuzzle.date));
@@ -150,6 +151,7 @@ function setupGameBoard(puzzle) {
 
 
 module.exports = {
+  weekdays,
   getCurrentDOW,
   getPreviousDOW,
   isCurrentPuzzleSaved,

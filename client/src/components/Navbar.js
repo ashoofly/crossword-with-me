@@ -3,6 +3,7 @@ import info from '../images/info.svg';
 import pencil from '../images/pencil.svg';
 import zoomIn from '../images/zoom-in.svg';
 import zoomOut from '../images/zoom-out.svg';
+import GameMenu from './GameMenu';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import Account from './Account';
@@ -18,7 +19,8 @@ export default React.memo((props) => {
   const { 
     socket,
     auth,
-    jumpToSquare
+    jumpToSquare,
+    player
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
@@ -54,35 +56,43 @@ export default React.memo((props) => {
   }
 
   return (
-    <div className="navbar">
-      <Account 
-        auth={auth} />
-      <h1>Crossword with Friends</h1>
-      {/* TODO: display only for desktop. */}
-      <Button 
-        tabIndex={parseInt("-1")} 
-        className={`rebus ${rebusActive ? "rebus-active": ''}`} 
-        variant="contained" 
-        onClick={handleRebusButtonClick}>
-          Rebus
-      </Button>
-      {/* TODO: display zoom only for mobile. */}
-      <div className="icon-bg">
-        <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />
+    <React.Fragment>
+      <div className="title-bar"><h1>Crossword with Friends</h1></div>
+      <div className="navbar">
+        <Account 
+          auth={auth} />
+        <GameMenu 
+          socket={socket}
+          player={player}
+        />
+        {/* <h1>Crossword with Friends</h1> */}
+        {/* TODO: display only for desktop. */}
+        <Button 
+          tabIndex={parseInt("-1")} 
+          className={`rebus ${rebusActive ? "rebus-active": ''}`} 
+          variant="contained" 
+          onClick={handleRebusButtonClick}>
+            Rebus
+        </Button>
+        {/* TODO: display zoom only for mobile. */}
+        <div className="icon-bg">
+          <img className="zoom-icon" src={zoomActive ? zoomOut : zoomIn} alt="zoom" onClick={handleZoom} />
+        </div>
+        <div className={`icon-bg ${pencilActive ? "pencil-active": ''}`}>
+          <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
+        </div>
+        <HintMenu 
+          socket={socket}
+        />
+        <div className="icon-bg">
+          <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />
+        </div>
+        <InfoPage
+          open={open}
+          handleClose={handleClose}
+        />
       </div>
-      <div className={`icon-bg ${pencilActive ? "pencil-active": ''}`}>
-        <img className={`pencil-icon`} src={pencil} alt="pencil" onClick={handlePencilClick} />
-      </div>
-      <HintMenu 
-        socket={socket}
-      />
-      <div className="icon-bg">
-        <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />
-      </div>
-      <InfoPage
-        open={open}
-        handleClose={handleClose}
-      />
-    </div>
+    </React.Fragment>
+
   )
 });

@@ -8,6 +8,7 @@ import '../styles/App.css';
 import { getFirebaseConfig } from '../firebase-config';
 import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { io } from 'socket.io-client';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -34,13 +35,16 @@ function App() {
 
   const { id: gameId } = useParams();
   const dispatch = useDispatch();
-
+  
   /**
    * React component states
    */
   const [app, setApp] = React.useState(null);
   const [auth, setAuth] = React.useState(null);
   const [socket, setSocket] = React.useState(null);
+  const [player, setPlayer] = React.useState(null);
+
+  const firebaseUser = useAuthenticatedUser(auth);
 
   /**
    * Initialize Firebase app
@@ -76,24 +80,31 @@ function App() {
   }, []);
 
   /**
-   * Load existing or create new game
+   * Load existing or create new player
    */
   React.useEffect(() => {
     if (socket === null) return;
-    socket.emit('get-game', gameId);
+    if (firebaseUser) {
+      socket.emit('get-player', firebaseUser);
 
-    socket.once('load-game', game => {
-      console.log(`[Client] Loaded game ${gameId}`);
-      console.log(game);
-      dispatch(loadGame({ ...game, loaded: true }));
-      dispatch(initializePlayerView({
-        numRows: game.numRows,
-        numCols: game.numCols,
-        gameGrid: game.gameGrid
-      }));
-    });
-  }, [socket, gameId]);
-
+      socket.once('load-player', player => {
+        console.log(player);
+        setPlayer(player);
+      });
+      console.log(socket);
+      console.log(`Socket id: ${socket.id}`);
+      socket.on('load-game', game => {
+        console.log(`[Client] Loaded game ${game.gameId}`);
+        console.log(game);
+        dispatch(loadGame({ ...game, loaded: true }));
+        dispatch(initializePlayerView({
+          numRows: game.numRows,
+          numCols: game.numCols,
+          gameGrid: game.gameGrid
+        }));
+      });
+    }
+  }, [socket, firebaseUser]);
 
   /**
    * Redux game state
@@ -463,25 +474,29 @@ function App() {
   return (
     <div className="container" onKeyDown={handleKeyDown}>
       {!loaded && <h1>Loading...</h1>}
-      {loaded && <div className="App">
+      <div className="App">
         <Navbar
           socket={socket}
           auth={auth}
+          player={player}
           jumpToSquare={jumpToSquare}
         />
-        <Board
-          socket={socket}
-          squareRefs={squareRefs}
-        />
-        <Clue
-          jumpToNextWord={jumpToNextWord}
-          jumpToPreviousWord={jumpToPreviousWord}
-        />
-        <Keyboard
-          jumpToSquare={jumpToSquare}
-          handleKeyDown={handleKeyDown}
-        />
-      </div>}
+        {loaded && <React.Fragment>
+          <Board
+            socket={socket}
+            squareRefs={squareRefs}
+          />
+          <Clue
+            jumpToNextWord={jumpToNextWord}
+            jumpToPreviousWord={jumpToPreviousWord}
+          />
+          <Keyboard
+            jumpToSquare={jumpToSquare}
+            handleKeyDown={handleKeyDown}
+          />
+          </React.Fragment>
+        }
+      </div>
     </div>
   );
 }

@@ -27,7 +27,7 @@ async function fetchCurrentPuzzle() {
 function saveNewPuzzle(puzzle) {
   const { grid, clueDictionary } = setupGameBoard(puzzle);
   console.log("Saving puzzle to Firebase database");
-  set(ref(db, "puzzles/" + puzzle.dow.toLowerCase()), {
+  set(ref(db, "puzzles/" + puzzle.dow), {
     ...puzzle,
     gameGrid: grid,
     clueDictionary: clueDictionary,

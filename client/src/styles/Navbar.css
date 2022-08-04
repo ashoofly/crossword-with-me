@@ -3,7 +3,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 10px;
+  padding: 5px 10px;
   background-color: rgb(6,54,66);
   border: 1px solid rgb(6,54,66);
   width: 100%;
@@ -11,6 +11,14 @@
 
 .navbar h1 {
   font-size: 1rem;
+}
+
+.title-bar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: rgb(238,232,213);
+  background-color: rgb(6,54,66);
+  padding: 10px;
 
 }
 
@@ -67,6 +75,25 @@
   padding: 5px;
   cursor: pointer;
   filter: invert(14%) sepia(11%) saturate(4806%) hue-rotate(150deg) brightness(98%) contrast(102%);
+}
+
+.gameMenu-title {
+  cursor: pointer;
+}
+
+.date-subtitle {
+  color: #657B83;
+  padding-left: 8px;
+  font-size: 0.9rem;
+}
+
+.heading-dow {
+  font-weight: bold;
+}
+
+.heading-date {
+  opacity: 80%;
+  padding-left: 5px;
 }
 
 .icon-round-bg {
