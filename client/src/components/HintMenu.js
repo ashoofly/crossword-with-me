@@ -4,6 +4,7 @@ import lifebuoy from '../images/life-buoy.svg';
 import friend from '../images/add-friend.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
 import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -31,8 +32,15 @@ export default React.memo((props) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
   const [menuItems, setMenuItems] = React.useState([]);
+  const [openToast, setOpenToast] = React.useState(false);
   const open = Boolean(anchorEl);
   React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
+
+
+  function copyUrlToClipboard() {
+    navigator.clipboard.writeText(window.location);
+    setOpenToast(true);
+  }
 
   function checkActiveSquare() {
     handleClose();
@@ -79,7 +87,7 @@ export default React.memo((props) => {
     {
       id: 0,
       text: 'Phone a Friend',
-      onClick: () => {},
+      onClick: copyUrlToClipboard,
       icon: {
         "className": "phone-a-friend",
         "src": friend,
@@ -199,6 +207,12 @@ export default React.memo((props) => {
       >
         {menuItems}
       </Menu>
+      <Snackbar
+        open={openToast}
+        onClose={() => setOpenToast(false)}
+        autoHideDuration={2000}
+        message="Link copied to clipboard!"
+      />
     </React.Fragment>
   )
 });
