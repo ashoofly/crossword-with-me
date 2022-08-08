@@ -5,6 +5,7 @@ import friend from '../images/add-friend.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,13 +19,20 @@ import {
   requestRevealWord,
   requestRevealPuzzle
 } from '../redux/slices/gameSlice';
+import { signin } from '../auth';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 
 export default React.memo((props) => {
-  const { socket } = props;
+  const { 
+    socket,
+    auth,
+    gameId
+  } = props;
   // console.log("Render hintmenu");
   const dispatch = useDispatch();
-
+  const [user, initialized] = useAuthenticatedUser(auth);
+  console.log(`User in HintMenu: ${user}`);
   const autocheck = useSelector(state => state.game.autocheck);
   const focus = useSelector(state => state.pov.focused.square);
   const focusedWord = useSelector(state => state.pov.focused.word);
@@ -34,11 +42,13 @@ export default React.memo((props) => {
   const [menuItems, setMenuItems] = React.useState([]);
   const [openToast, setOpenToast] = React.useState(false);
   const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [showDetailedMenu, autocheck, focus]);
+  React.useEffect(showMenu, [user, showDetailedMenu, autocheck, focus]);
 
 
   function copyUrlToClipboard() {
-    navigator.clipboard.writeText(window.location);
+    handleClose();
+    let url = `${window.location.origin}/crossword-with-friends/join-game?gameId=${gameId}`
+    navigator.clipboard.writeText(url);
     setOpenToast(true);
   }
 
@@ -83,7 +93,25 @@ export default React.memo((props) => {
     dispatch(toggleAutocheck({source: socket.id}));
   }
 
+  function handleSignin() {
+    signin(auth);
+  }
+
   const mainHintMenuItems = [
+    {
+      id: -1,
+      text: 'Sign in to phone a friend',
+      onClick: handleSignin,
+      icon: {
+        "className": "phone-a-friend",
+        "src": friend,
+        "alt": "add-a-friend-icon"
+      },
+      style: {
+        "color": "#08992e"
+      },
+      hide: user ? true : false
+    },  
     {
       id: 0,
       text: 'Phone a Friend',
@@ -95,8 +123,9 @@ export default React.memo((props) => {
       },
       style: {
         "color": "#08992e"
-      }
-    },
+      },
+      hide: user ? false : true
+    },  
     {
       id: 1,
       text: `Turn ${autocheck ? "OFF" : "ON"} Autocheck`,
@@ -171,7 +200,7 @@ export default React.memo((props) => {
     } else {
       currentMenu = mainHintMenuItems;
     }
-    const currentMenuItems = currentMenu.map(menuItem => {
+    const currentMenuItems = currentMenu.filter(menuItem => !menuItem.hide).map(menuItem => {
       return (
         <MenuItem
           key={menuItem.id}
@@ -211,8 +240,15 @@ export default React.memo((props) => {
         open={openToast}
         onClose={() => setOpenToast(false)}
         autoHideDuration={2000}
-        message="Link copied to clipboard!"
-      />
+      >
+        <Alert 
+          onClose={() => setOpenToast(false)} 
+          severity="success" 
+          sx={{ width: '100%' }}
+        >
+          Link copied to clipboard!
+        </Alert>
+      </Snackbar>
     </React.Fragment>
   )
 });

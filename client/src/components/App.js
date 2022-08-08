@@ -3,6 +3,7 @@ import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
+import JoinGame from './JoinGame';
 import '../styles/common.css';
 import '../styles/App.css';
 import { getFirebaseConfig } from '../firebase-config';
@@ -10,7 +11,7 @@ import { initializeApp } from "firebase/app";
 import { initializeAuth } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { io } from 'socket.io-client';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
@@ -30,79 +31,93 @@ import {
 } from '../redux/slices/povSlice';
 
 
-function App() {
+function App(props) {
+  const { 
+    socket,
+    auth
+  } = props;
+
+  console.log("App auth:");
+  console.log(auth);
   // console.log("Render App component");
 
   const { id: gameId } = useParams();
+  const navigate = useNavigate();
+  // console.log(`App game id: ${gameId}`);
   const dispatch = useDispatch();
   
+
   /**
    * React component states
    */
-  const [app, setApp] = React.useState(null);
-  const [auth, setAuth] = React.useState(null);
-  const [socket, setSocket] = React.useState(null);
-  const [player, setPlayer] = React.useState(null);
+  const [gameNotFound, setGameNotFound] = React.useState(false);
+  // const user = useAuthenticatedUser(auth);
+  const [user, initialized] = useAuthenticatedUser(auth);
+  console.log('App user:');
+  console.log(user);
+  // console.log(`App auth initialized: ${initialized}`);
 
-  const firebaseUser = useAuthenticatedUser(auth);
+  // React.useEffect(() => {
+  //   console.log(`Inside app: User: ${user}`)
+  // }, [user])
 
-  /**
-   * Initialize Firebase app
-   */
   React.useEffect(() => {
-    if (!app) {
-      const firebaseAppConfig = getFirebaseConfig();
-      setApp(initializeApp(firebaseAppConfig));
-      console.log("Initialized Firebase app");
-    }
-  }, []);
-
-
-  /**
-   * Initialize Firebase auth
-   */
-   React.useEffect(() => {
-    if (app) {
-      setAuth(initializeAuth(app));
-      console.log("Initialized Firebase authentication");
-    }
-  }, [app]);
-
-  /**
-   * Initialize Socket.io
-   */
-  React.useEffect(() => {
-    const s = io("http://localhost:3001");
-    setSocket(s);
-    return () => {
-      s.disconnect();
-    }
-  }, []);
+    console.log(`Inside app: User: ${user}. Auth initialized: ${initialized}`)
+  }, [user, initialized])
 
   /**
    * Load existing or create new player
    */
   React.useEffect(() => {
     if (socket === null) return;
-    if (firebaseUser) {
-      socket.emit('get-player', firebaseUser);
+    socket.on('load-game', game => {
+      console.log(`[Client] Loaded game ${game.gameId}`);
+      setGameNotFound(false);
+      console.log(game);
+      navigate(`/crossword-with-friends/${game.gameId}`);
+      dispatch(loadGame({ ...game, loaded: true }));
+      dispatch(initializePlayerView({
+        numRows: game.numRows,
+        numCols: game.numCols,
+        gameGrid: game.gameGrid
+      }));
+    });
+    
+  }, [socket, user]);
 
-      socket.once('load-player', player => {
-        console.log(player);
-        setPlayer(player);
-      });
-      socket.on('load-game', game => {
-        console.log(`[Client] Loaded game ${game.gameId}`);
-        console.log(game);
-        dispatch(loadGame({ ...game, loaded: true }));
-        dispatch(initializePlayerView({
-          numRows: game.numRows,
-          numCols: game.numCols,
-          gameGrid: game.gameGrid
-        }));
+
+  // React.useEffect(() => {
+  //   if (socket === null) return;
+  //   if (gameId) {
+  //     if (user) {
+  //       socket.emit('get-game-by-id', gameId, user.uid);
+  //     } else {
+  //       navigate(`/crossword-with-friends/join-game?gameId=${gameId}`);
+  //     }
+  //     socket.on('game-not-found', () => {
+  //       setGameNotFound(true);
+  //     });
+  //   }
+  // }, [socket, gameId, user]);
+
+
+  /**
+   * Handle direct request for specific game
+   */
+  React.useEffect(() => {
+    if (socket === null || !initialized) return;
+    if (gameId) {
+      if (user) {
+        socket.emit('get-game-by-id', gameId, user.uid);
+      } else {
+        navigate(`/crossword-with-friends/join-game?gameId=${gameId}`);
+      }
+      socket.on('game-not-found', () => {
+        setGameNotFound(true);
       });
     }
-  }, [socket, firebaseUser]);
+  }, [socket, gameId, user, initialized]);
+
 
   /**
    * Redux game state
@@ -471,30 +486,33 @@ function App() {
 
   return (
     <div className="container" onKeyDown={handleKeyDown}>
-      {!loaded && <h1>Loading...</h1>}
-      <div className="App">
-        <Navbar
-          socket={socket}
-          auth={auth}
-          player={player}
-          jumpToSquare={jumpToSquare}
-        />
-        {loaded && <React.Fragment>
-          <Board
+      {(!gameId || (gameId && user)) && <React.Fragment>
+        {gameId && gameNotFound && <h1>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
+        {!gameNotFound && <div className="App">
+          <Navbar
             socket={socket}
-            squareRefs={squareRefs}
-          />
-          <Clue
-            jumpToNextWord={jumpToNextWord}
-            jumpToPreviousWord={jumpToPreviousWord}
-          />
-          <Keyboard
+            auth={auth}
+            gameId={gameId}
             jumpToSquare={jumpToSquare}
-            handleKeyDown={handleKeyDown}
           />
-          </React.Fragment>
-        }
-      </div>
+          {loaded && <React.Fragment>
+            <Board
+              socket={socket}
+              squareRefs={squareRefs}
+            />
+            <Clue
+              jumpToNextWord={jumpToNextWord}
+              jumpToPreviousWord={jumpToPreviousWord}
+            />
+            <Keyboard
+              jumpToSquare={jumpToSquare}
+              handleKeyDown={handleKeyDown}
+            />
+            </React.Fragment>
+          }
+        </div>}
+      </React.Fragment>
+      }
     </div>
   );
 }

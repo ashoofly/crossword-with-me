@@ -15,7 +15,7 @@ export default React.memo((props) => {
   } = props;
 
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const user = useAuthenticatedUser(auth);
+  const [user, initialized] = useAuthenticatedUser(auth);
   const [avatarIcon, setAvatarIcon] = React.useState(null);
   const [signinText, setSigninText] = React.useState(null);
 

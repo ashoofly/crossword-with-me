@@ -4,15 +4,19 @@ import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 export default React.memo((props) => {
   const { 
     socket,
-    player
+    auth, 
+    gameId
   } = props;
   // console.log("Render game menu");
   const dispatch = useDispatch();
   const game = useSelector(state => state.game);
+  // const user = useAuthenticatedUser(auth);
+  const [user, initialized] = useAuthenticatedUser(auth);
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [menuContent, setMenuContent] = React.useState(null);
@@ -56,15 +60,30 @@ export default React.memo((props) => {
     }
   }, [puzzleDates]);
 
+  // React.useEffect(() => {
+  //   console.log(`gameMenu Game id: ${gameId}`);
+  //   if (socket === null) return;
+  //   if (!gameId) {
+  //     if (user) {
+  //       socket.emit("get-default-game", user.uid);
+  //     } else {
+  //       socket.emit("get-default-game");
+  //     }
+  //   }
 
+  // }, [socket, user, gameId]);
   React.useEffect(() => {
-    if (socket === null) return;
-    if (player) {
-      socket.emit("get-default-game", player.id);
-    } else {
-      socket.emit("get-default-game")
+    console.log(`gameMenu Game id: ${gameId}`);
+    if (socket === null || !initialized) return;
+    if (!gameId) {
+      if (user) {
+        socket.emit("get-default-game", user.uid);
+      } else {
+        socket.emit("get-default-game");
+      }
     }
-  }, [socket, player]);
+
+  }, [socket, user, initialized, gameId]);
 
   React.useEffect(() => {
     if (game.loaded) {
@@ -75,7 +94,7 @@ export default React.memo((props) => {
     }
   }, [game, menuContent]);
 
-  const weekdays = ["monday", "tuesday", "Wednesday", "Thursday", "friday", "saturday"];
+  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const months = [
     'January',
     'February',
@@ -123,9 +142,9 @@ export default React.memo((props) => {
   function handleMenuItemClick(index) {
     handleClose();
     const dow = weekdays[index];
-    if (player) {
-      console.log(`[${socket.id}] Looking for game from ` + player.id);
-      socket.emit('get-game-by-dow', dow, player.id);
+    if (user) {
+      console.log(`[${socket.id}] Looking for game from ` + user.uid);
+      socket.emit('get-game-by-dow', dow, user.uid);
     } else {
       console.log("Looking for anonymous game");
       socket.emit('get-game-by-dow', dow);

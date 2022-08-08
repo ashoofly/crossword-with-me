@@ -20,7 +20,7 @@ export default React.memo((props) => {
     socket,
     auth,
     jumpToSquare,
-    player
+    gameId
   } = props;
 
   const [ open, setOpen ] = React.useState(false);
@@ -63,7 +63,8 @@ export default React.memo((props) => {
           auth={auth} />
         <GameMenu 
           socket={socket}
-          player={player}
+          auth={auth}
+          gameId={gameId}
         />
         {/* <h1>Crossword with Friends</h1> */}
         {/* TODO: display only for desktop. */}
@@ -83,6 +84,8 @@ export default React.memo((props) => {
         </div>
         <HintMenu 
           socket={socket}
+          auth={auth}
+          gameId={gameId}
         />
         <div className="icon-bg">
           <img className="info-icon" src={info} alt="info" onClick={handleClickOpen} />

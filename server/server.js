@@ -4,13 +4,21 @@ import { initializeApp } from "firebase/app";
 import { Server } from "socket.io";
 import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW } from "./functions/puzzleUtils.js";
 import { v4 as uuidv4 } from 'uuid';
-
+import express from 'express'; 
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import {jwtVerify, createRemoteJWKSet} from 'jose';
+import { getAuth, signInWithCredential } from "firebase/auth";
+import { GoogleAuthProvider } from "firebase/auth";
+import axios from "axios";
 
 const firebaseAppConfig = getFirebaseConfig();
 const app = initializeApp(firebaseAppConfig);
 console.log("Initialized Firebase app");
-const db = getDatabase(app);
+const db = getDatabase(app); 
 console.log("Initialized Firebase realtime database");
+const auth = getAuth(app);
+console.log("Initialized Firebase authentication");
 
 const io = new Server(3001, {
   cors: {
@@ -19,21 +27,12 @@ const io = new Server(3001, {
   }
 });
 
-io.on("connection", socket => {
-  socket.on('get-game', async (gameId) => {
-    const game = await findOrCreateGame(gameId);
-    socket.join(gameId);
-    console.log("Sending game to " + gameId);
-    io.to(gameId).emit('load-game', game);
-    socket.on('send-changes', squareState => {
-      io.to(gameId).emit("receive-changes", squareState);
-    });
-  });
+io.on("connection", async(socket) => {
+
   socket.on("save-board", async (gameId, board) => {
     console.log("Saving board..");
     updateGameBoard(gameId, board);
   });
-
   socket.on("get-player", async(user) => {
     const player = await findOrCreatePlayer(user); 
     socket.join(player.id);
@@ -46,19 +45,136 @@ io.on("connection", socket => {
   socket.on("get-game-by-dow", async(dow, playerId) => {
     console.log(`${dow} ${playerId}`);
     const game = await findOrCreateGame(dow, playerId);
+    const gameId = game.gameId;
+    socket.join(gameId);
     console.log(`Sending load-game event to client`);
     socket.emit("load-game", game);
+    socket.on('send-changes', squareState => {
+      io.to(gameId).emit("receive-changes", squareState);
+    });
   });
   socket.on("get-default-game", async(playerId) => {
     const game = await getDefaultGame(playerId);
+    const gameId = game.gameId;
+    socket.join(gameId);
     console.log('Sending load-game to client after fetching default game');
     socket.emit("load-game", game);
+    socket.on('send-changes', squareState => {
+      io.to(gameId).emit("receive-changes", squareState);
+    });
+  });
+
+  socket.on("get-friend-request-name", async(gameId) => {
+    console.log(`Received get-friend-request-name with ${gameId}`);
+    const game = await getGameById(gameId);
+    if (game) {
+      if (game.players) {
+        let ownerId = game.players[0];
+        if (ownerId) {
+          let ownerInfo = await getPlayer(ownerId);
+          if (ownerInfo) {
+            console.log(`Sending display-friend-request event back to client`);
+            socket.emit("display-friend-request", ownerInfo.displayName);
+          }
+        }
+      } else {
+        socket.emit("game-not-found");
+      }
+    } else {
+      socket.emit("game-not-found");
+    }
+  });
+
+  socket.on('get-game-by-id', async (gameId, playerId) => {
+    console.log(`Received get-game-by-id request with ${gameId} and ${playerId}`);
+    const game = await getGameById(gameId);
+    if (game) {
+      if (game.players) {
+        if (playerId) {
+          socket.join(gameId);
+          console.log("Sending game to " + gameId);
+          socket.emit("load-game", game);
+          socket.on('send-changes', squareState => {
+            io.to(gameId).emit("receive-changes", squareState);
+          });
+        } else {
+          let ownerId = game.players[0];
+          if (ownerId) {
+            let ownerInfo = await getPlayer(ownerId);
+            if (ownerInfo) {
+              console.log(`Sending display-friend-request event back to client`);
+              socket.emit("display-friend-request", ownerInfo.displayName);
+            }
+          }
+        }
+      } else {
+        socket.emit("game-not-found");
+      }
+    }
+  });
+
+  console.log(`Connected to ${socket.id}`);
+  const sockets = await io.fetchSockets();
+  console.log(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
+
+  socket.on("disconnect", async(reason) => {
+    console.log(`Disconnected from ${socket.id}: ${reason}`)
+    const sockets = await io.fetchSockets();
+    console.log(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
   });
 
 
-  console.log("connected");
-  console.log(socket.id);
 });
+
+
+const provider = new GoogleAuthProvider();
+const server = express();
+const port = 3002;
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(cookieParser());
+
+server.get('/', (req, res) => {
+  res.send('Yes?')
+})
+
+server.post('/auth', async(req, res) => {
+  console.log(req.body);
+  let csrfCookie = req.cookies['g_csrf_token'];
+  if (!csrfCookie) {
+    res.status(400).send('No CSRF token in Cookie.');
+  }
+  let csrfBody = req.body['g_csrf_token'];
+  if (!csrfBody) {
+    res.status(400).send('No CSRF token in post body.');
+  }
+  if (csrfCookie !== csrfBody) {
+    res.status(400).send('Failed to verify double submit cookie.');
+  }
+
+  const idToken = req.body.credential;
+  const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+
+  const { payload } = await jwtVerify(idToken, JWKS, {
+    issuer: 'https://accounts.google.com',
+    audience: firebaseAppConfig.googleClientId,
+  })
+
+  const nonce = payload.nonce;
+  const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
+  console.log(decodedNonce);
+
+  const redirectUrlRegex = /(http.+)---(.+)/;
+  const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
+  const url = `${redirectUrl}&token=${idToken}`
+  console.log(`Got auth token, redirecting back to front-end`);
+  res.redirect(url);
+})
+
+server.listen(port, () => {
+  console.log(`Express server listening on port ${port}`)
+}) 
+
+
 
 async function createNewPlayer(user) {
   let playerId = user.uid;
@@ -84,7 +200,7 @@ async function createWeekOfGames(playerId) {
 async function createNewGame(dow, playerId) {
   let gameId = uuidv4();
   let puzzle = await getPuzzle(dow);
-  console.log(`Creating game with ${dow} puzzle...`)
+  console.log(`Creating game ${gameId} for ${playerId} with ${dow} puzzle...`)
   let numSquares = puzzle.size.rows * puzzle.size.cols;
   await set(ref(db, 'games/' + gameId), {
     gameId: gameId,
@@ -166,8 +282,8 @@ async function getGameById(gameId) {
   }
 }
 
-async function getPlayer(playerId) {
-  console.log("Looking for player " + playerId);
+async function getPlayer(playerId) { 
+  console.log("Looking for player " + playerId); 
   const snapshot = await get(ref(db, 'players/' + playerId));
   if (snapshot.exists()) {
     return snapshot.val();

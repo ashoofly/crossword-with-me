@@ -4,7 +4,7 @@
 const {ref, get} = require("firebase/database");
 
 // TODO: Update as db switches all keys to capitalized
-const weekdays = ["sunday", "monday", "tuesday", "Wednesday", "Thursday", "friday", "saturday"];
+const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function getCurrentDOW() {
   const currentDate = new Date();
@@ -19,7 +19,6 @@ function getPreviousDOW() {
 
 async function isCurrentPuzzleSaved(db) {
   const currentDate = new Date();
-  console.log(currentDate);
   const currentDOW = weekdays[currentDate.getDay()];
   console.log(`Looking for current ${currentDOW} puzzle`);
 
