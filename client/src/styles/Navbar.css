@@ -130,6 +130,16 @@
   color: rgb(89,110,117);
 }
 
+.submenu-heading.MuiMenuItem-root {
+  padding-top: 7px;
+  padding-bottom: 3px;
+  cursor: default;
+  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: bold;
+  color: rgb(89,110,117);
+}
+
 .focused-menu-item.MuiMenuItem-root {
   font-weight: bold;
   /* color: #278BD2; */

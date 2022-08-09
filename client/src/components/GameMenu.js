@@ -124,6 +124,19 @@ export default React.memo((props) => {
     'Dec'
   ];
 
+  function updateExampleHeading() {
+    handleClose();
+    setHeading({__html: `<span class="heading-dow">Allison's</span> <span class="heading-date">Aug 8</span>`});
+  }
+
+  const soloGameHeading = <MenuItem className="submenu-heading">Solo Games</MenuItem>
+  const gamesWithFriends = <MenuItem className="submenu-heading">Games with Friends</MenuItem>
+  const example = (<MenuItem onClick={updateExampleHeading}>
+    <div dangerouslySetInnerHTML=
+      {{__html: `<span>Allison</span><span class="date-subtitle">Mon Aug 8</span>`}}>
+    </div>
+  </MenuItem>);
+
   function showMenu() {
     const currentMenuItems = menuContent.map((menuItem, index) => {
       return (
@@ -136,6 +149,8 @@ export default React.memo((props) => {
         </MenuItem>
       )
     });
+    currentMenuItems.unshift([gamesWithFriends, example, soloGameHeading]);
+    console.log(currentMenuItems);
     setMenuItems(currentMenuItems);
   }
 
