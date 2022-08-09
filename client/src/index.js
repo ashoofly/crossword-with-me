@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './components/App';
-import JoinGame from './components/JoinGame';
+import SignIn from './components/SignIn';
 import './styles/index.css';
 import { setupStore } from './redux/store';
 import { Provider } from 'react-redux';
@@ -45,7 +45,7 @@ root.render(
           <Route path="/" element={<Navigate replace to={`/crossword-with-friends`} />} />
           <Route path="/crossword-with-friends" element={<App socket={socket} auth={auth} />} />
           <Route path="/crossword-with-friends/:id" element={<App socket={socket} auth={auth} />} />
-          <Route path="/crossword-with-friends/join-game" element={<JoinGame socket={socket} auth={auth} />} />
+          <Route path="/crossword-with-friends/join-game" element={<SignIn socket={socket} auth={auth} />} />
 
         </Routes>
       </Router>

@@ -54,31 +54,15 @@ export default function JoinGame(props) {
     handleCredentialResponse(token, auth);
   }
   const navigate = useNavigate();
-  // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
-  console.log('JoinGame user:');
-  console.log(user);
-  console.log('JoinGame initialized: ' + initialized);
   const firebaseAppConfig = getFirebaseConfig();
 
   const [friendName, setFriendName] = React.useState(null);
   const [gameNotFound, setGameNotFound] = React.useState(false);
 
-  // if user is same as the person who owns game, just act like normal, go to <App />
-
-  // if user is different, add player to game and go to <App />.
-  // game menu should have "Game with Friends" and "Solo Games"
-
-  // React.useEffect(() => {
-  //   if (user) {
-  //     navigate(`/crossword-with-friends`);
-  //   }
-  // }, [user]);
-
   function createNonce() {
     let randomStr = cryptoRandomString({length: 32});
     let url = window.location;
-      console.log(`returning url in nonce: ${url}`);
     return btoa(`${url}---${randomStr}`);
   }
 
@@ -110,11 +94,6 @@ export default function JoinGame(props) {
       setGameNotFound(true);
     });
 
-    socket.on('received-id-token', token => {
-      handleCredentialResponse(token, auth);
-    });
-
-
   }, [socket]);
 
   // React.useEffect(() => {
@@ -142,7 +121,7 @@ export default function JoinGame(props) {
   return (
     <React.Fragment>
       {initialized && !token && !user && !gameNotFound && <div className="join-game">
-        <h1>Please sign in to join {friendName}'s game:</h1>
+        <h1>Please sign in to {gameId ? `join ${friendName}'s game:` : `play Crossword with Friends!`}</h1>
         <div id="signInDiv"></div>
       </div>
       }

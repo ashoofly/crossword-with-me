@@ -24,11 +24,12 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 
 # TODO
 
-* If fetch fails, send message
+* If puzzle fetch fails, send message
 * Board needs to be able to do more than 15 rows for Sunday puzzles (Boards.css)
-* Clear anonymous games from the database every night
 * Clear games with last week's puzzle from database after fetching each new puzzle
-* Update user games every day
+* Allow anonymous players
+  * Clear anonymous games from the database every night
+
 
 # Study
 

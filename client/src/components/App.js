@@ -3,14 +3,10 @@ import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
-import JoinGame from './JoinGame';
+import SignIn from './SignIn';
 import '../styles/common.css';
 import '../styles/App.css';
-import { getFirebaseConfig } from '../firebase-config';
-import { initializeApp } from "firebase/app";
-import { initializeAuth } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { io } from 'socket.io-client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -486,7 +482,8 @@ function App(props) {
 
   return (
     <div className="container" onKeyDown={handleKeyDown}>
-      {(!gameId || (gameId && user)) && <React.Fragment>
+      {initialized && !user && <SignIn auth={auth} socket={socket} />}
+      {user && <React.Fragment>
         {gameId && gameNotFound && <h1>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
         {!gameNotFound && <div className="App">
           <Navbar

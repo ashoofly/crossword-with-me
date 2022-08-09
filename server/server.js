@@ -165,7 +165,12 @@ server.post('/auth', async(req, res) => {
 
   const redirectUrlRegex = /(http.+)---(.+)/;
   const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
-  const url = `${redirectUrl}&token=${idToken}`
+  let url = null;
+  if (redirectUrl.includes("?gameId=")) {
+    url = `${redirectUrl}&token=${idToken}`
+  } else {
+    url = `${redirectUrl}?token=${idToken}`
+  }
   console.log(`Got auth token, redirecting back to front-end`);
   res.redirect(url);
 })
