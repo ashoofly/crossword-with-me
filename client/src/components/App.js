@@ -7,7 +7,7 @@ import SignIn from './SignIn';
 import '../styles/common.css';
 import '../styles/App.css';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
@@ -33,11 +33,9 @@ function App(props) {
     auth
   } = props;
 
-  console.log("App auth:");
-  console.log(auth);
   // console.log("Render App component");
-
-  const { id: gameId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  let gameId = searchParams.get('gameId');
   const navigate = useNavigate();
   // console.log(`App game id: ${gameId}`);
   const dispatch = useDispatch();
@@ -49,17 +47,12 @@ function App(props) {
   const [gameNotFound, setGameNotFound] = React.useState(false);
   // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
-  console.log('App user:');
-  console.log(user);
   // console.log(`App auth initialized: ${initialized}`);
 
   // React.useEffect(() => {
   //   console.log(`Inside app: User: ${user}`)
   // }, [user])
 
-  React.useEffect(() => {
-    console.log(`Inside app: User: ${user}. Auth initialized: ${initialized}`)
-  }, [user, initialized])
 
   /**
    * Load existing or create new player
@@ -68,9 +61,9 @@ function App(props) {
     if (socket === null) return;
     socket.on('load-game', game => {
       console.log(`[Client] Loaded game ${game.gameId}`);
+      setSearchParams({gameId: game.gameId});
       setGameNotFound(false);
       console.log(game);
-      navigate(`/crossword-with-friends/${game.gameId}`);
       dispatch(loadGame({ ...game, loaded: true }));
       dispatch(initializePlayerView({
         numRows: game.numRows,
@@ -104,6 +97,7 @@ function App(props) {
     if (socket === null || !initialized) return;
     if (gameId) {
       if (user) {
+        console.log(`get-game-by-id with ${user.uid}`)
         socket.emit('get-game-by-id', gameId, user.uid);
       } else {
         navigate(`/crossword-with-friends/join-game?gameId=${gameId}`);

@@ -1,6 +1,5 @@
 import React from 'react';
 import lifebuoy from '../images/life-buoy.svg';
-// import phone from '../images/phone.svg';
 import friend from '../images/add-friend.svg';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,7 +18,7 @@ import {
   requestRevealWord,
   requestRevealPuzzle
 } from '../redux/slices/gameSlice';
-import { signin } from '../auth';
+// import { signin } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 
@@ -32,7 +31,6 @@ export default React.memo((props) => {
   // console.log("Render hintmenu");
   const dispatch = useDispatch();
   const [user, initialized] = useAuthenticatedUser(auth);
-  console.log(`User in HintMenu: ${user}`);
   const autocheck = useSelector(state => state.game.autocheck);
   const focus = useSelector(state => state.pov.focused.square);
   const focusedWord = useSelector(state => state.pov.focused.word);
@@ -93,25 +91,25 @@ export default React.memo((props) => {
     dispatch(toggleAutocheck({source: socket.id}));
   }
 
-  function handleSignin() {
-    signin(auth);
-  }
+  // function handleSignin() {
+  //   signin(auth);
+  // }
 
   const mainHintMenuItems = [
-    {
-      id: -1,
-      text: 'Sign in to phone a friend',
-      onClick: handleSignin,
-      icon: {
-        "className": "phone-a-friend",
-        "src": friend,
-        "alt": "add-a-friend-icon"
-      },
-      style: {
-        "color": "#08992e"
-      },
-      hide: user ? true : false
-    },  
+    // {
+    //   id: -1,
+    //   text: 'Sign in to phone a friend',
+    //   onClick: handleSignin,
+    //   icon: {
+    //     "className": "phone-a-friend",
+    //     "src": friend,
+    //     "alt": "add-a-friend-icon"
+    //   },
+    //   style: {
+    //     "color": "#08992e"
+    //   },
+    //   hide: user ? true : false
+    // },  
     {
       id: 0,
       text: 'Phone a Friend',

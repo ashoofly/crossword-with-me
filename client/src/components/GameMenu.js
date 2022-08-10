@@ -23,6 +23,7 @@ export default React.memo((props) => {
   const [menuItems, setMenuItems] = React.useState([]);
   const [puzzleDates, setPuzzleDates] = React.useState(null);
   const [heading, setHeading] = React.useState({__html: "Loading..."});
+  const [displayTeamGames, setDisplayTeamGames] = React.useState(false);
   const open = Boolean(anchorEl);
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
@@ -36,7 +37,6 @@ export default React.memo((props) => {
    */
    React.useEffect(() => {
     if (socket === null) return;
-    console.log("Getting puzzle dates");
     socket.emit('get-puzzle-dates');
 
     socket.once('load-puzzle-dates', puzzleDates => {
@@ -73,17 +73,33 @@ export default React.memo((props) => {
 
   // }, [socket, user, gameId]);
   React.useEffect(() => {
-    console.log(`gameMenu Game id: ${gameId}`);
     if (socket === null || !initialized) return;
     if (!gameId) {
       if (user) {
+        console.log(`Getting default game with ${user.uid}`);
         socket.emit("get-default-game", user.uid);
-      } else {
-        socket.emit("get-default-game");
-      }
+      } 
     }
 
   }, [socket, user, initialized, gameId]);
+
+  React.useEffect(() => {
+    if (socket === null || user === null || !initialized) return;
+    if (user) {
+      console.log(`Get team games with ${user.uid}`)
+      socket.emit("get-team-games", user.uid);
+
+      socket.on("load-team-games", teamGames => {
+        if (teamGames && teamGames.length > 0) {
+          // sort alphabetically by display name
+  
+          setDisplayTeamGames(true);
+        }
+      });
+    }
+
+
+  }, [socket, user, initialized]);
 
   React.useEffect(() => {
     if (game.loaded) {
@@ -129,8 +145,8 @@ export default React.memo((props) => {
     setHeading({__html: `<span class="heading-dow">Allison's</span> <span class="heading-date">Aug 8</span>`});
   }
 
-  const soloGameHeading = <MenuItem className="submenu-heading">Solo Games</MenuItem>
-  const gamesWithFriends = <MenuItem className="submenu-heading">Games with Friends</MenuItem>
+  const soloGameHeading = <MenuItem className="submenu-heading">My Games</MenuItem>
+  const gamesWithFriends = <MenuItem className="submenu-heading">Friends' Games</MenuItem>
   const example = (<MenuItem onClick={updateExampleHeading}>
     <div dangerouslySetInnerHTML=
       {{__html: `<span>Allison</span><span class="date-subtitle">Mon Aug 8</span>`}}>
@@ -160,10 +176,7 @@ export default React.memo((props) => {
     if (user) {
       console.log(`[${socket.id}] Looking for game from ` + user.uid);
       socket.emit('get-game-by-dow', dow, user.uid);
-    } else {
-      console.log("Looking for anonymous game");
-      socket.emit('get-game-by-dow', dow);
-    }
+    } 
   }
   
   function updateHeading() {

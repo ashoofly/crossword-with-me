@@ -11,6 +11,7 @@ import {jwtVerify, createRemoteJWKSet} from 'jose';
 import { getAuth, signInWithCredential } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
 import axios from "axios";
+import url from "url";
 
 const firebaseAppConfig = getFirebaseConfig();
 const app = initializeApp(firebaseAppConfig);
@@ -30,20 +31,23 @@ const io = new Server(3001, {
 io.on("connection", async(socket) => {
 
   socket.on("save-board", async (gameId, board) => {
-    console.log("Saving board..");
+    console.log("Received save-board event...");
     updateGameBoard(gameId, board);
   });
-  socket.on("get-player", async(user) => {
-    const player = await findOrCreatePlayer(user); 
-    socket.join(player.id);
-    io.to(player.id).emit('load-player', player);
-  });
+  // socket.on("get-player", async(user) => {
+
+  //   const player = await findOrCreatePlayer(user); 
+  //   socket.join(player.id);
+  //   io.to(player.id).emit('load-player', player);
+  // });
   socket.on("get-puzzle-dates", async () => {
-    const puzzleDates = await getPuzzleDates();
+    console.log("Received get-puzzle-dates event...")
+    const puzzleDates = await getPuzzleDates(); 
     socket.emit('load-puzzle-dates', puzzleDates); 
   });
   socket.on("get-game-by-dow", async(dow, playerId) => {
-    console.log(`${dow} ${playerId}`);
+    console.log("Received get-game-by-dow event")
+    console.log(`Getting ${dow} game for player ${playerId}`);
     const game = await findOrCreateGame(dow, playerId);
     const gameId = game.gameId;
     socket.join(gameId);
@@ -54,6 +58,7 @@ io.on("connection", async(socket) => {
     });
   });
   socket.on("get-default-game", async(playerId) => {
+    console.log("Received get-default-game event");
     const game = await getDefaultGame(playerId);
     const gameId = game.gameId;
     socket.join(gameId);
@@ -72,15 +77,15 @@ io.on("connection", async(socket) => {
         let ownerId = game.players[0];
         if (ownerId) {
           let ownerInfo = await getPlayer(ownerId);
-          if (ownerInfo) {
+          if (ownerInfo) { 
             console.log(`Sending display-friend-request event back to client`);
             socket.emit("display-friend-request", ownerInfo.displayName);
-          }
+          } 
         }
       } else {
         socket.emit("game-not-found");
       }
-    } else {
+    } else { 
       socket.emit("game-not-found");
     }
   });
@@ -92,7 +97,7 @@ io.on("connection", async(socket) => {
       if (game.players) {
         if (playerId) {
           socket.join(gameId);
-          console.log("Sending game to " + gameId);
+          console.log("Sending game " + gameId);
           socket.emit("load-game", game);
           socket.on('send-changes', squareState => {
             io.to(gameId).emit("receive-changes", squareState);
@@ -108,10 +113,25 @@ io.on("connection", async(socket) => {
           }
         }
       } else {
+        // anonymous game
         socket.emit("game-not-found");
       }
     }
   });
+
+  socket.on('get-team-games', async(playerId) => {
+    console.log("Received get-team-games event")
+    let player = await getPlayer(playerId);
+    let playerGames = player.games;
+    if (playerGames) {
+      let teamGames = playerGames['team'];
+      socket.emit('load-team-games', teamGames);
+    } else {
+      console.log(`No team games found for player ${playerId}`);
+    }
+  });
+
+
 
   console.log(`Connected to ${socket.id}`);
   const sockets = await io.fetchSockets();
@@ -126,6 +146,93 @@ io.on("connection", async(socket) => {
 
 });
 
+function checkCSRFToken(req, res) {
+  let csrfCookie = req.cookies['g_csrf_token'];
+  if (!csrfCookie) {
+    res.status(400).send('No CSRF token in Cookie.');
+  }
+  let csrfBody = req.body['g_csrf_token'];
+  if (!csrfBody) {
+    res.status(400).send('No CSRF token in post body.');
+  }
+  if (csrfCookie !== csrfBody) {
+    res.status(400).send('Failed to verify double submit cookie.');
+  }
+}
+
+async function verifyJWT(idToken) {
+  const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+
+  const { payload } = await jwtVerify(idToken, JWKS, {
+    issuer: 'https://accounts.google.com',
+    audience: firebaseAppConfig.googleClientId,
+  });
+  
+  return payload;
+}
+
+
+async function authenticateUser(token) {
+  // Build Firebase credential with the Google ID token.
+  const credential = GoogleAuthProvider.credential(token);
+
+  // Sign in with credential from the Google user.
+  try {
+    let result = await signInWithCredential(auth, credential);
+    return result.user;
+
+  } catch(error) {
+    console.log(error);
+  }
+}
+
+async function addPlayerToGame(player, gameId) {
+  let game = await getGameById(gameId);
+  let players = game.players;
+
+  if (players.includes(player.id)) {
+    console.log(`Player ${player.id} already part of game ${gameId}.`);
+    return;
+
+  } else {
+    //update game object
+    players.push(player.id);
+    await update(ref(db, 'games/' + gameId), {
+      players: players
+    });
+
+    // update player object
+    let playerGames = player.games;
+    let teamGames = player.games['team'];
+    if (!teamGames) {
+      teamGames = {};
+    }
+
+    // get game owner for front-end to display
+    let ownerId = game.players[0];
+    let owner = await getPlayer(ownerId);
+
+    teamGames.push({
+      gameId: gameId,
+      friend: owner.displayName,
+      dow: game.dow,
+      date: game.date
+    });
+
+    playerGames.team = teamGames;
+
+    console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
+    await update(ref(db, 'players/' + player.id), {
+      games: playerGames
+    });
+  }
+}
+
+async function addUserToGame(jwt, gameId) {
+  let user = await authenticateUser(jwt);
+  let player = await findOrCreatePlayer(user);
+  addPlayerToGame(player, gameId);
+}
 
 const provider = new GoogleAuthProvider();
 const server = express();
@@ -139,38 +246,36 @@ server.get('/', (req, res) => {
 
 server.post('/auth', async(req, res) => {
   console.log(req.body);
-  let csrfCookie = req.cookies['g_csrf_token'];
-  if (!csrfCookie) {
-    res.status(400).send('No CSRF token in Cookie.');
-  }
-  let csrfBody = req.body['g_csrf_token'];
-  if (!csrfBody) {
-    res.status(400).send('No CSRF token in post body.');
-  }
-  if (csrfCookie !== csrfBody) {
-    res.status(400).send('Failed to verify double submit cookie.');
-  }
+
+  checkCSRFToken(req, res);
 
   const idToken = req.body.credential;
-  const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+  const payload = await verifyJWT(idToken);
 
-  const { payload } = await jwtVerify(idToken, JWKS, {
-    issuer: 'https://accounts.google.com',
-    audience: firebaseAppConfig.googleClientId,
-  })
-
+  // Get redirect url
   const nonce = payload.nonce;
   const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
-  console.log(decodedNonce);
-
   const redirectUrlRegex = /(http.+)---(.+)/;
   const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
+
   let url = null;
   if (redirectUrl.includes("?gameId=")) {
-    url = `${redirectUrl}&token=${idToken}`
+    url = `${redirectUrl}&token=${idToken}`;
+
+    // get gameId
+    const queryObj = url.parse(redirectUrl, true).query;
+    const gameId = queryObj['gameId'];
+
+    // add user to game if not already added
+    addUserToGame(idToken, gameId);
+
   } else {
-    url = `${redirectUrl}?token=${idToken}`
+    url = `${redirectUrl}?token=${idToken}`;
+
+    // add player to db if not already added
+    addPlayerToDB(idToken);
   }
+
   console.log(`Got auth token, redirecting back to front-end`);
   res.redirect(url);
 })
@@ -179,9 +284,15 @@ server.listen(port, () => {
   console.log(`Express server listening on port ${port}`)
 }) 
 
+async function addPlayerToDB(jwt) {
+  let user = await authenticateUser(jwt);
+  findOrCreatePlayer(user);
+}
 
 
 async function createNewPlayer(user) {
+  console.log(user);
+  if (!user) return;
   let playerId = user.uid;
   await set(ref(db, 'players/' + playerId), {
     id: playerId,
@@ -285,9 +396,10 @@ async function getGameById(gameId) {
   } else {
     return null;
   }
-}
+} 
 
-async function getPlayer(playerId) { 
+async function getPlayer(playerId) {  
+  if (!playerId) return;
   console.log("Looking for player " + playerId); 
   const snapshot = await get(ref(db, 'players/' + playerId));
   if (snapshot.exists()) {
@@ -295,6 +407,42 @@ async function getPlayer(playerId) {
   } else {
     return null;
   }
+}
+
+async function getGameIfCurrent(gameId, dow) {
+  let currentPuzzle = await getPuzzle(dow);
+  let game = await getGameById(gameId);
+  if (game) {
+    if (game.date === currentPuzzle.date) {
+      return game;
+    }
+  }
+  return null;
+}
+
+async function createGameAndUpdatePlayer(player, dow) {
+  let playerId = player.id;
+
+  // create new game 
+  let newGame = await createNewGame(dow, playerId);
+
+  // update player object
+  let playerGames = player.games;
+  if (!playerGames) {
+    playerGames = {};
+  }
+  let ownerGames = playerGames.owner;
+  if (!ownerGames) {
+    ownerGames = {}
+  }
+  ownerGames[dow] = newGame.gameId;
+  playerGames.owner = ownerGames;
+
+  console.log(`Adding game ${newGame.gameId} to owner game list for ${playerId}.`);
+  await update(ref(db, 'players/' + playerId), {
+    games: playerGames
+  });
+  return newGame;
 }
 
 /**
@@ -306,22 +454,18 @@ async function findOrCreateGame(dow, playerId) {
     let player = await getPlayer(playerId);
     if (player) {
       let playerGames = player.games;
-      if (playerGames && playerGames[dow]) {
-        let gameId = playerGames[dow];
-        return await getGameById(gameId); 
-      } else {
-        // create new player game 
-        let newGame = await createNewGame(dow, playerId);
-        if (!playerGames) {
-          playerGames = {};
+      if (playerGames && playerGames['owner'] && playerGames['owner'][dow]) {
+        let gameId = playerGames['owner'][dow];
+        console.log(`Checking to make sure game ${gameId} is current...`)
+        let currentGame = await getGameIfCurrent(gameId, dow);
+        if (currentGame) {
+          return currentGame; 
+        } else {
+          console.log(`Game ${gameId} is not current. Creating new game for player ${playerId}.`)
+          return await createGameAndUpdatePlayer(player, dow);
         }
-        playerGames[dow] = newGame.gameId;
-  
-        // update player object
-        await update(ref(db, 'players/' + playerId), {
-          games: playerGames
-        });
-        return newGame;
+      } else {
+        return await createGameAndUpdatePlayer(player, dow);
       }
     } else {
       console.log("Cannot find player in database");
@@ -329,10 +473,11 @@ async function findOrCreateGame(dow, playerId) {
     }
 
   } else {
+    console.log("No playerId given. Will not create game.");
     // create new anonymous game
-    return await createNewGame(dow);
+    // return await createNewGame(dow);
   }
-}
+} 
 
 async function findOrCreatePlayer(user) {
   if (user === null) return;

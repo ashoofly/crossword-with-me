@@ -11,7 +11,6 @@ function handleCredentialResponse(token, auth) {
   // Sign in with credential from the Google user.
   signInWithCredential(auth, credential).then(result => {
     const user = result.user;
-    console.log("User successfully signed in.");
 
   }).catch((error) => {
     // Handle Errors here.
@@ -34,7 +33,6 @@ function getUser() {
 function initializeAuth(app) {
   if (!app) return;
   const auth = getAuth(app);
-  console.log("Set up Firebase authentication");
   // if (auth) {
   //   onAuthStateChanged(auth, (returnedUser) => {
   //     if (returnedUser) {

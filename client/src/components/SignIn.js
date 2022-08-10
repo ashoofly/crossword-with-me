@@ -109,12 +109,13 @@ export default function JoinGame(props) {
   }, [socket, gameId]);
 
   React.useEffect(() => {
+    if (socket === null) return;
     if (user && gameId) {
       setSearchParams([]);
       console.log("NAVIGATING TO APP COMPONENT");
-      navigate(`/crossword-with-friends/${gameId}`);
+      navigate(`/crossword-with-friends?gameId=${gameId}`);
     }
-  }, [user, gameId]);
+  }, [socket, user, gameId]);
 
 
 
