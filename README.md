@@ -29,13 +29,8 @@ This app uses Redux to keep track of multi-user changes in real-time, and it use
 * Clear games with last week's puzzle from database after fetching each new puzzle
 * Allow anonymous players
   * Clear anonymous games from the database every night
+* Display when avatar icons exceed title bar
 
-
-# Study
-
-* import vs require
-* how to export modules, const, functions
-* async/await vs promise.then
 
 
 

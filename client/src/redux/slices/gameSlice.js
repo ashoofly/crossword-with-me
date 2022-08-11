@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const defaultState = {
   loaded: false,
   autocheck: false,
+  savedToDB: true,
   board: [...Array(225).keys()].map((num) => ({
     initial: true,
     index: num,

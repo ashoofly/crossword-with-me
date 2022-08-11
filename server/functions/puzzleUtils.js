@@ -19,9 +19,6 @@ function getPreviousDOW() {
 function isGameCurrent(gameId) {
   // const today = new Date((new Date()).toDateString());
   // return today.getTime() === (new Date(dateString)).getTime();
-
-  
-
 }
 
 async function isCurrentPuzzleSaved(db) {

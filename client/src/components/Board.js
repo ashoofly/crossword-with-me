@@ -12,7 +12,13 @@ export default React.memo((props) => {
     squareRefs,
   } = props;
 
-  const gameGrid = useSelector( state => state.game.gameGrid);
+
+  const gameGrid = useSelector(state => state.game.gameGrid);
+  const numRows = useSelector(state => state.game.numRows);
+  const numCols = useSelector(state => state.game.numCols);
+
+  document.documentElement.style.setProperty("--numRows", numRows);
+  document.documentElement.style.setProperty("--numCols", numCols);
 
   const squares = gameGrid.map((square, index) => {
     return (

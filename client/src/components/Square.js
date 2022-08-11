@@ -18,6 +18,9 @@ export default React.memo((props) => {
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });
+  if (!squareGameState) {
+    console.log(id);
+  }
   const autocheck = useSelector(state => { return state.game.autocheck });
 
   const rebusActive = useSelector(state => { return state.pov.rebusActive });

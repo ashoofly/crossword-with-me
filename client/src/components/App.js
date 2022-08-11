@@ -35,12 +35,12 @@ function App(props) {
 
   // console.log("Render App component");
   const [searchParams, setSearchParams] = useSearchParams();
-  let gameId = searchParams.get('gameId');
+  const [gameId, setGameId] = React.useState(searchParams.get('gameId'));
   const navigate = useNavigate();
   // console.log(`App game id: ${gameId}`);
   const dispatch = useDispatch();
   
-
+  const game = useSelector(state => state.game);
   /**
    * React component states
    */
@@ -49,9 +49,10 @@ function App(props) {
   const [user, initialized] = useAuthenticatedUser(auth);
   // console.log(`App auth initialized: ${initialized}`);
 
-  // React.useEffect(() => {
-  //   console.log(`Inside app: User: ${user}`)
-  // }, [user])
+  React.useEffect(() => {
+    console.log(`Inside app: Initialized: ${initialized}`)
+    console.log(user);
+  }, [initialized])
 
 
   /**
@@ -59,9 +60,9 @@ function App(props) {
    */
   React.useEffect(() => {
     if (socket === null) return;
-    socket.on('load-game', game => {
-      console.log(`[Client] Loaded game ${game.gameId}`);
-      setSearchParams({gameId: game.gameId});
+    socket.on('load-game', (game, socketId) => {
+      console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
+      setGameId(game.gameId);
       setGameNotFound(false);
       console.log(game);
       dispatch(loadGame({ ...game, loaded: true }));
@@ -70,9 +71,11 @@ function App(props) {
         numCols: game.numCols,
         gameGrid: game.gameGrid
       }));
+      setSearchParams({gameId: game.gameId});
     });
     
-  }, [socket, user]);
+  }, [socket]);
+
 
 
   // React.useEffect(() => {
@@ -95,18 +98,23 @@ function App(props) {
    */
   React.useEffect(() => {
     if (socket === null || !initialized) return;
-    if (gameId) {
+    // if (game && (game.source === "get-game-by-dow" || game.source === "get-default-game")) {
+    //   return;
+    // }
+    //TODO: This makes a duplicate call when getting game by dow or getting default game
+    let requestedGameId = searchParams.get('gameId');
+    if (requestedGameId) {
       if (user) {
         console.log(`get-game-by-id with ${user.uid}`)
-        socket.emit('get-game-by-id', gameId, user.uid);
+        socket.emit('get-game-by-id', requestedGameId, user.uid);
       } else {
-        navigate(`/crossword-with-friends/join-game?gameId=${gameId}`);
+        navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
       }
       socket.on('game-not-found', () => {
         setGameNotFound(true);
       });
-    }
-  }, [socket, gameId, user, initialized]);
+    } 
+  }, [socket, user, initialized, searchParams]);
 
 
   /**

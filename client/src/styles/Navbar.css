@@ -13,13 +13,26 @@
   font-size: 1rem;
 }
 
+.title-bar {
+  display: flex;
+  margin: 0;
+  padding: 10px 20px;
+  background-color: rgb(6,54,66);
+  justify-content: space-between;
+}
+
+.player-box {
+  display: flex;
+  justify-content: space-evenly;
+  column-gap: 10px;
+}
+
 .title-bar h1 {
   margin: 0;
   /* font-family: 'Roboto Mono', monospace; */
   /* font-weight: 600; */
   font-size: 1.25rem;
   color: rgb(238,232,213);
-  background-color: rgb(6,54,66);
   padding: 10px;
 
 }
@@ -148,4 +161,5 @@
 
 .avatar-img {
   width: 100%;
+  cursor: pointer;
 }

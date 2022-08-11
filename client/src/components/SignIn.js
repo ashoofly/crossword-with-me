@@ -67,7 +67,7 @@ export default function JoinGame(props) {
   }
 
   React.useEffect(() => {
-    if (!initialized) return;
+    if (!initialized || user) return;
     /* global google */
     google.accounts.id.initialize({
       client_id: firebaseAppConfig.googleClientId,
@@ -81,20 +81,25 @@ export default function JoinGame(props) {
       document.getElementById("signInDiv"),
       {theme: "outline", size: "large"}
     );
-    }, [initialized]);
+    }, [user, initialized]);
 
   React.useEffect(() => {
-    if (socket === null) return;
+    if (socket === null || !initialized || !gameId) return;
 
-    socket.on('display-friend-request', friendName => {
-      setFriendName(friendName);
-    });
+    if (!user) {
+      socket.emit("get-friend-request-name", gameId);
 
-    socket.on('game-not-found', () => {
-      setGameNotFound(true);
-    });
+      socket.on('display-friend-request', friendName => {
+        setFriendName(friendName);
+      });
+  
+      socket.on('game-not-found', () => {
+        setGameNotFound(true);
+      });
+    }
 
-  }, [socket]);
+
+  }, [socket, initialized, user, gameId]);
 
   // React.useEffect(() => {
   //   if (token) {
@@ -102,11 +107,6 @@ export default function JoinGame(props) {
   //   }
   // }, [token, auth]);
 
-  React.useEffect(() => {
-    if (socket === null || gameId === null) return;
-    socket.emit("get-friend-request-name", gameId);
-
-  }, [socket, gameId]);
 
   React.useEffect(() => {
     if (socket === null) return;

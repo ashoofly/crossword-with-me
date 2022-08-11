@@ -5,6 +5,7 @@ import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default React.memo((props) => {
   const { 
@@ -15,6 +16,9 @@ export default React.memo((props) => {
   // console.log("Render game menu");
   const dispatch = useDispatch();
   const game = useSelector(state => state.game);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
 
@@ -23,7 +27,8 @@ export default React.memo((props) => {
   const [menuItems, setMenuItems] = React.useState([]);
   const [puzzleDates, setPuzzleDates] = React.useState(null);
   const [heading, setHeading] = React.useState({__html: "Loading..."});
-  const [displayTeamGames, setDisplayTeamGames] = React.useState(false);
+  const [teamGames, setTeamGames] = React.useState(null);
+  const [selectedTeamGameId, setSelectedTeamGameId] = React.useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
@@ -49,11 +54,10 @@ export default React.memo((props) => {
       let menuItemContent = [];
       weekdays.forEach(dow => {
         let date = new Date(puzzleDates[dow]);
-        let capitalizedDay = dow.charAt(0).toUpperCase() + dow.slice(1); //TODO: Remove after db has switched all keys to capitalized
         let month = months[date.getMonth()];
         menuItemContent.push({
-          "dow": capitalizedDay,
-          "innerHTML": {__html: `<span>${capitalizedDay}</span><span class="date-subtitle">${month} ${date.getDate()}</span>`}
+          "dow": dow,
+          "innerHTML": {__html: `<span>${dow}</span><span class="date-subtitle">${month} ${date.getDate()}</span>`}
         });
       });
       setMenuContent(menuItemContent);
@@ -89,11 +93,10 @@ export default React.memo((props) => {
       console.log(`Get team games with ${user.uid}`)
       socket.emit("get-team-games", user.uid);
 
-      socket.on("load-team-games", teamGames => {
+      socket.once("load-team-games", teamGames => {
         if (teamGames && teamGames.length > 0) {
           // sort alphabetically by display name
-  
-          setDisplayTeamGames(true);
+          setTeamGames(teamGames);
         }
       });
     }
@@ -103,12 +106,17 @@ export default React.memo((props) => {
 
   React.useEffect(() => {
     if (game.loaded) {
-      updateHeading();
+      if (game.players[0] === user.uid) {
+        updateHeading();
+      } else {
+        setSelectedTeamGameId(game.gameId);
+        updateTeamGameHeading(game);
+      }
     }
     if (menuContent) {
       showMenu();
     }
-  }, [game, menuContent]);
+  }, [game, menuContent, teamGames, selectedTeamGameId]);
 
   const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const months = [
@@ -139,19 +147,56 @@ export default React.memo((props) => {
     'Nov',
     'Dec'
   ];
+  const abbrevDow = {
+    "Monday": 'Mon',
+    "Tuesday": 'Tues',
+    "Wednesday": 'Wed',
+    "Thursday": 'Thurs',
+    "Friday": 'Fri',
+    "Saturday": 'Sat',
+    "Sunday": 'Sun'
+  }
 
-  function updateExampleHeading() {
-    handleClose();
-    setHeading({__html: `<span class="heading-dow">Allison's</span> <span class="heading-date">Aug 8</span>`});
+  function updateTeamGameHeading(game) {
+    if (!teamGames) return;
+    let date = new Date(game.date);
+    let dow = abbrevDow[game.dow];
+    let month = abbrevMonths[date.getMonth()];
+
+    let gameInfo = teamGames.find(teamGame => teamGame.gameId === game.gameId);
+    setHeading({__html: `<span class="heading-dow">${gameInfo.friend.displayName.split(' ')[0]}'s</span> <span class="heading-date">${dow} ${month} ${date.getDate()}</span>`});
   }
 
   const soloGameHeading = <MenuItem className="submenu-heading">My Games</MenuItem>
   const gamesWithFriends = <MenuItem className="submenu-heading">Friends' Games</MenuItem>
-  const example = (<MenuItem onClick={updateExampleHeading}>
-    <div dangerouslySetInnerHTML=
-      {{__html: `<span>Allison</span><span class="date-subtitle">Mon Aug 8</span>`}}>
-    </div>
-  </MenuItem>);
+
+  function displayTeamGames() {
+    return teamGames.map(game => {
+      let date = new Date(puzzleDates[game.dow]);
+      let month = abbrevMonths[date.getMonth()];
+      let dow = abbrevDow[game.dow];
+
+      return (
+        <MenuItem
+          key={game.gameId}
+          onClick={() => handleTeamGameClick(game)}
+          className={ selectedTeamGameId === game.gameId ? "focused-menu-item": ""}
+        >
+          <div dangerouslySetInnerHTML=
+            {{__html: `<span>${game.friend.displayName.split(' ')[0]}</span><span class="date-subtitle">${dow} ${month} ${date.getDate()}</span>`}}>
+          </div>
+        </MenuItem>
+      )
+    });
+  }
+
+  function handleTeamGameClick(game) {
+    handleClose();
+    setSelectedTeamGameId(game.gameId);
+    navigate(`/crossword-with-friends?gameId=${game.gameId}`);
+
+  }
+
 
   function showMenu() {
     const currentMenuItems = menuContent.map((menuItem, index) => {
@@ -159,19 +204,21 @@ export default React.memo((props) => {
         <MenuItem
           key={index}
           onClick={() => handleMenuItemClick(index)}
-          className={ menuItem.dow === game.dow ? "focused-menu-item" : "" }
+          className={ !selectedTeamGameId && menuItem.dow === game.dow ? "focused-menu-item" : "" }
         >
           <div dangerouslySetInnerHTML={menuItem.innerHTML}></div>
         </MenuItem>
       )
     });
-    currentMenuItems.unshift([gamesWithFriends, example, soloGameHeading]);
-    console.log(currentMenuItems);
+    if (teamGames) {
+      currentMenuItems.unshift([gamesWithFriends, displayTeamGames(), soloGameHeading]);
+    }
     setMenuItems(currentMenuItems);
   }
 
   function handleMenuItemClick(index) {
     handleClose();
+    setSelectedTeamGameId(null);
     const dow = weekdays[index];
     if (user) {
       console.log(`[${socket.id}] Looking for game from ` + user.uid);

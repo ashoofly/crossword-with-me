@@ -57,10 +57,14 @@ export default React.memo((props) => {
 
   return (
     <React.Fragment>
-      <div className="title-bar"><h1>Crossword with Friends</h1></div>
-      <div className="navbar">
+      <div className="title-bar">
+        <div></div>
+        <h1>Crossword with Friends</h1>
         <Account 
           auth={auth} />
+      </div>
+      <div className="navbar">
+
         <GameMenu 
           socket={socket}
           auth={auth}

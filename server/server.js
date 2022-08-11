@@ -49,24 +49,12 @@ io.on("connection", async(socket) => {
     console.log("Received get-game-by-dow event")
     console.log(`Getting ${dow} game for player ${playerId}`);
     const game = await findOrCreateGame(dow, playerId);
-    const gameId = game.gameId;
-    socket.join(gameId);
-    console.log(`Sending load-game event to client`);
-    socket.emit("load-game", game);
-    socket.on('send-changes', squareState => {
-      io.to(gameId).emit("receive-changes", squareState);
-    });
+    sendGame(game, "get-game-by-dow");
   });
   socket.on("get-default-game", async(playerId) => {
     console.log("Received get-default-game event");
     const game = await getDefaultGame(playerId);
-    const gameId = game.gameId;
-    socket.join(gameId);
-    console.log('Sending load-game to client after fetching default game');
-    socket.emit("load-game", game);
-    socket.on('send-changes', squareState => {
-      io.to(gameId).emit("receive-changes", squareState);
-    });
+    sendGame(game, "get-default-game");
   });
 
   socket.on("get-friend-request-name", async(gameId) => {
@@ -90,27 +78,29 @@ io.on("connection", async(socket) => {
     }
   });
 
+  function sendGame(game, source) {
+    console.log("Sending game " + game.gameId);
+    game["source"] = source;
+    socket.emit("load-game", game, socket.id);
+    socket.join(game.gameId);
+    socket.on('send-changes', squareState => {
+      io.to(gameId).emit("receive-changes", squareState);
+    });
+  }
+
   socket.on('get-game-by-id', async (gameId, playerId) => {
     console.log(`Received get-game-by-id request with ${gameId} and ${playerId}`);
     const game = await getGameById(gameId);
     if (game) {
       if (game.players) {
-        if (playerId) {
-          socket.join(gameId);
-          console.log("Sending game " + gameId);
-          socket.emit("load-game", game);
-          socket.on('send-changes', squareState => {
-            io.to(gameId).emit("receive-changes", squareState);
-          });
+        let ownerId = game.players[0];
+        if (playerId === ownerId) {
+          sendGame(game, "get-game-by-id");
+
         } else {
-          let ownerId = game.players[0];
-          if (ownerId) {
-            let ownerInfo = await getPlayer(ownerId);
-            if (ownerInfo) {
-              console.log(`Sending display-friend-request event back to client`);
-              socket.emit("display-friend-request", ownerInfo.displayName);
-            }
-          }
+          let player = await getPlayer(playerId);
+          addPlayerToGame(player, game);
+          sendGame(game, "get-game-by-id");
         }
       } else {
         // anonymous game
@@ -186,35 +176,37 @@ async function authenticateUser(token) {
   }
 }
 
-async function addPlayerToGame(player, gameId) {
-  let game = await getGameById(gameId);
+async function addPlayerToGame(player, game) {
+  //update game object
   let players = game.players;
-
+  let gameId = game.gameId;
   if (players.includes(player.id)) {
     console.log(`Player ${player.id} already part of game ${gameId}.`);
-    return;
 
   } else {
-    //update game object
     players.push(player.id);
     await update(ref(db, 'games/' + gameId), {
       players: players
     });
+  }
 
-    // update player object
-    let playerGames = player.games;
-    let teamGames = player.games['team'];
-    if (!teamGames) {
-      teamGames = {};
-    }
-
+  // update player object
+  let playerGames = player.games;
+  let teamGames = player.games['team'];
+  if (!teamGames) {
+    teamGames = [];
+  }
+  if (!teamGames.find(game => game.gameId === gameId)) {
     // get game owner for front-end to display
     let ownerId = game.players[0];
     let owner = await getPlayer(ownerId);
 
     teamGames.push({
       gameId: gameId,
-      friend: owner.displayName,
+      friend: {
+        displayName: owner.displayName,
+        photoURL: owner.photoURL
+      },
       dow: game.dow,
       date: game.date
     });
@@ -231,7 +223,8 @@ async function addPlayerToGame(player, gameId) {
 async function addUserToGame(jwt, gameId) {
   let user = await authenticateUser(jwt);
   let player = await findOrCreatePlayer(user);
-  addPlayerToGame(player, gameId);
+  let game = await getGameById(gameId);
+  addPlayerToGame(player, game);
 }
 
 const provider = new GoogleAuthProvider();
@@ -258,9 +251,9 @@ server.post('/auth', async(req, res) => {
   const redirectUrlRegex = /(http.+)---(.+)/;
   const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
 
-  let url = null;
+  let returnedUrl = null;
   if (redirectUrl.includes("?gameId=")) {
-    url = `${redirectUrl}&token=${idToken}`;
+    returnedUrl = `${redirectUrl}&token=${idToken}`;
 
     // get gameId
     const queryObj = url.parse(redirectUrl, true).query;
@@ -270,14 +263,14 @@ server.post('/auth', async(req, res) => {
     addUserToGame(idToken, gameId);
 
   } else {
-    url = `${redirectUrl}?token=${idToken}`;
+    returnedUrl = `${redirectUrl}?token=${idToken}`;
 
     // add player to db if not already added
     addPlayerToDB(idToken);
   }
 
   console.log(`Got auth token, redirecting back to front-end`);
-  res.redirect(url);
+  res.redirect(returnedUrl);
 })
 
 server.listen(port, () => {

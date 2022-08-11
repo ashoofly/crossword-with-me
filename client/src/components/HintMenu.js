@@ -40,13 +40,11 @@ export default React.memo((props) => {
   const [menuItems, setMenuItems] = React.useState([]);
   const [openToast, setOpenToast] = React.useState(false);
   const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [user, showDetailedMenu, autocheck, focus]);
-
+  React.useEffect(showMenu, [user, gameId, showDetailedMenu, autocheck, focus]);
 
   function copyUrlToClipboard() {
     handleClose();
-    let url = `${window.location.origin}/crossword-with-friends/join-game?gameId=${gameId}`
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(window.location);
     setOpenToast(true);
   }
 

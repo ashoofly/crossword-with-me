@@ -1,7 +1,13 @@
+:root {
+  --numRows: auto-fill;
+  --numCols: auto-fill;
+}
+
+
 .Board {
   min-width: 100%;
   display: grid;
-  grid-template-columns: repeat(15, 3fr);
+  grid-template-columns: repeat(var(--numCols), 3fr);
   grid-auto-columns: max-content;
   overflow-x: auto;
   padding: 5px;
@@ -9,7 +15,7 @@
 
 @media (max-width: 599px) {
   .Board {
-    grid-template-rows: repeat(15, 3fr);
+    grid-template-rows: repeat(var(--numRows), 3fr);
     max-height: 50vh;
     overflow: scroll;
     touch-action: pinch-zoom pan-x pan-y;
@@ -18,6 +24,6 @@
 
 @media (min-width: 600px) {
   .Board {
-    grid-template-rows: repeat(15, 40px);
+    grid-template-rows: repeat(var(--numRows), 40px);
   }
 }

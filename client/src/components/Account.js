@@ -68,7 +68,9 @@ export default React.memo((props) => {
 
   return (
     <React.Fragment>
-      {avatarIcon}
+      <div className="player-box">
+        {avatarIcon}
+      </div>
       <Menu
         className="menu"
         anchorEl={anchorEl}
