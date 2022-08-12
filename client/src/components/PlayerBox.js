@@ -7,6 +7,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { signin, signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
+import { useSelector } from "react-redux";
 
 export default React.memo((props) => {
   // console.log("Render Account component");
@@ -16,8 +17,10 @@ export default React.memo((props) => {
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
-  const [avatarIcon, setAvatarIcon] = React.useState(null);
+  const [meIcon, setMeIcon] = React.useState(null);
   const [signinText, setSigninText] = React.useState(null);
+
+  const players = useSelector(state => state.game.players);
 
   const open = Boolean(anchorEl);
 
@@ -29,35 +32,34 @@ export default React.memo((props) => {
   }
 
   React.useEffect(() => {
-    if (user) {
-      if (user.photoURL) {
-        setAvatarIcon(
-          <Avatar className="avatar-bg" onClick={handleClick} >
-            <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
-          </Avatar>
-          );
-      } else {
-        // use first letter of first name
-        setAvatarIcon(
-          <Avatar className="avatar-bg" onClick={handleClick}>
-            {user.displayName.charAt(0)}
-          </Avatar>
+    if (!user) return;
+    if (user.photoURL) {
+      setMeIcon(
+        <Avatar className="avatar-bg" onClick={handleClick} >
+          <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
+        </Avatar>
         );
-      }
-      setSigninText("Sign out");
-
-      
-
     } else {
-      // anonymous icon
-      setAvatarIcon(
+      // use first letter of first name
+      setMeIcon(
         <Avatar className="avatar-bg" onClick={handleClick}>
-          <PersonIcon sx={{ color: "rgb(6,54,66)" }} />
+          {user.displayName.charAt(0)}
         </Avatar>
       );
-      setSigninText("Sign in to play with friends");
     }
+    setSigninText("Sign out");
   }, [user]);
+
+  React.useEffect(() => {
+    if (!user || !players) return;
+    let friends = players.filter(player => player !== user.uid);
+    if (friends.length > 0) {
+      let friendIcons = [];
+      friends.forEach(friend => {
+        
+      });
+    }
+  }, [user, players]);
 
   function handleSignout() {
     signout(auth);
@@ -69,7 +71,7 @@ export default React.memo((props) => {
   return (
     <React.Fragment>
       <div className="player-box">
-        {avatarIcon}
+        {meIcon}
       </div>
       <Menu
         className="menu"
@@ -85,7 +87,7 @@ export default React.memo((props) => {
           horizontal: 'left',
         }}
       >
-        {user && <MenuItem className="displayName">{user.displayName ?? user.email}</MenuItem>}
+        {user && <MenuItem className="displayName">{user.displayName ?? user.email} (me)</MenuItem>}
         <MenuItem onClick={user ? handleSignout : handleSignin}>{signinText}</MenuItem>
       </Menu>
     </React.Fragment>

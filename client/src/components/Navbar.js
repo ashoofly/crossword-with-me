@@ -6,7 +6,7 @@ import zoomOut from '../images/zoom-out.svg';
 import GameMenu from './GameMenu';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
-import Account from './Account';
+import Account from './PlayerBox';
 import Button from '@mui/material/Button';
 import '../styles/common.css';
 import "../styles/Navbar.css";

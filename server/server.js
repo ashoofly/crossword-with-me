@@ -62,7 +62,7 @@ io.on("connection", async(socket) => {
     const game = await getGameById(gameId);
     if (game) {
       if (game.players) {
-        let ownerId = game.players[0];
+        let ownerId = game.players[0].playerId;
         if (ownerId) {
           let ownerInfo = await getPlayer(ownerId);
           if (ownerInfo) { 
@@ -93,7 +93,7 @@ io.on("connection", async(socket) => {
     const game = await getGameById(gameId);
     if (game) {
       if (game.players) {
-        let ownerId = game.players[0];
+        let ownerId = game.players[0].playerId;
         if (playerId === ownerId) {
           sendGame(game, "get-game-by-id");
 
@@ -120,8 +120,6 @@ io.on("connection", async(socket) => {
       console.log(`No team games found for player ${playerId}`);
     }
   });
-
-
 
   console.log(`Connected to ${socket.id}`);
   const sockets = await io.fetchSockets();
@@ -167,7 +165,7 @@ async function authenticateUser(token) {
   const credential = GoogleAuthProvider.credential(token);
 
   // Sign in with credential from the Google user.
-  try {
+  try { 
     let result = await signInWithCredential(auth, credential);
     return result.user;
 
@@ -180,32 +178,40 @@ async function addPlayerToGame(player, game) {
   //update game object
   let players = game.players;
   let gameId = game.gameId;
-  if (players.includes(player.id)) {
+  if (players.find(p => p.playerId === player.id)) {
     console.log(`Player ${player.id} already part of game ${gameId}.`);
 
   } else {
-    players.push(player.id);
+    players.push({
+      playerId: player.id,
+      photoURL: player.photoURL,
+      displayName: player.displayName,
+      owner: false
+    });
     await update(ref(db, 'games/' + gameId), {
       players: players
-    });
+    }); 
   }
 
   // update player object
   let playerGames = player.games;
+  if (!playerGames) {
+    playerGames = {}
+  }
   let teamGames = player.games['team'];
-  if (!teamGames) {
+  if (!teamGames) { 
     teamGames = [];
   }
   if (!teamGames.find(game => game.gameId === gameId)) {
     // get game owner for front-end to display
-    let ownerId = game.players[0];
+    let ownerId = game.players[0].playerId;
     let owner = await getPlayer(ownerId);
 
     teamGames.push({
       gameId: gameId,
       friend: {
         displayName: owner.displayName,
-        photoURL: owner.photoURL
+        playerId: owner.id
       },
       dow: game.dow,
       date: game.date
@@ -296,19 +302,10 @@ async function createNewPlayer(user) {
   return (await get(ref(db, 'players/' + playerId))).val();
 }
 
-async function createWeekOfGames(playerId) {
-  let gameIds = [];
-  for(const day of weekdays) {
-    let newGame = await createNewGame(playerId, day);
-    gameIds.push(newGame.gameId);
-  }
-  return gameIds;
-}
-
-
 async function createNewGame(dow, playerId) {
   let gameId = uuidv4();
   let puzzle = await getPuzzle(dow);
+  let player = await getPlayer(playerId);
   console.log(`Creating game ${gameId} for ${playerId} with ${dow} puzzle...`)
   let numSquares = puzzle.size.rows * puzzle.size.cols;
   await set(ref(db, 'games/' + gameId), {
@@ -316,7 +313,12 @@ async function createNewGame(dow, playerId) {
     savedToDB: true,
     autocheck: false,
     advanceCursor: 0,
-    players: playerId ? [playerId] : [],
+    players: [{
+      playerId: player.id,
+      photoURL: player.photoURL,
+      displayName: player.displayName,
+      owner: true
+    }],
     board: [...Array(numSquares).keys()].map( (num) => ({
       initial: true,
       index: num,
@@ -467,8 +469,6 @@ async function findOrCreateGame(dow, playerId) {
 
   } else {
     console.log("No playerId given. Will not create game.");
-    // create new anonymous game
-    // return await createNewGame(dow);
   }
 } 
 

@@ -23,7 +23,8 @@ import {
 import {
   initializePlayerView,
   toggleRebus,
-  toggleOrientation
+  toggleOrientation,
+  setTeamGames
 } from '../redux/slices/povSlice';
 
 
@@ -37,7 +38,6 @@ function App(props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gameId, setGameId] = React.useState(searchParams.get('gameId'));
   const navigate = useNavigate();
-  // console.log(`App game id: ${gameId}`);
   const dispatch = useDispatch();
   
   const game = useSelector(state => state.game);
@@ -45,21 +45,14 @@ function App(props) {
    * React component states
    */
   const [gameNotFound, setGameNotFound] = React.useState(false);
-  // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
-  // console.log(`App auth initialized: ${initialized}`);
-
-  React.useEffect(() => {
-    console.log(`Inside app: Initialized: ${initialized}`)
-    console.log(user);
-  }, [initialized])
 
 
   /**
-   * Load existing or create new player
+   * Respond to socket events loading games
    */
   React.useEffect(() => {
-    if (socket === null) return;
+    if (!user || socket === null) return;
     socket.on('load-game', (game, socketId) => {
       console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
       setGameId(game.gameId);
@@ -75,32 +68,25 @@ function App(props) {
         focus: defaultFocus
       }));
       setSearchParams({gameId: game.gameId});
+
+      if (game.players[0].playerId !== user.uid) {
+        socket.emit('get-team-games', user.uid);
+      }
     });
-    
-  }, [socket]);
 
+    socket.on("load-team-games", returnedGames => {
+      if (returnedGames && returnedGames.length > 0) {
+        dispatch(setTeamGames({teamGames: returnedGames}));
+      }
+    });
 
-
-  // React.useEffect(() => {
-  //   if (socket === null) return;
-  //   if (gameId) {
-  //     if (user) {
-  //       socket.emit('get-game-by-id', gameId, user.uid);
-  //     } else {
-  //       navigate(`/crossword-with-friends/join-game?gameId=${gameId}`);
-  //     }
-  //     socket.on('game-not-found', () => {
-  //       setGameNotFound(true);
-  //     });
-  //   }
-  // }, [socket, gameId, user]);
-
+  }, [socket, user]);
 
   /**
-   * Handle direct request for specific game
+   * Handle direct request for specific game, or get default game if no game ID specified
    */
   React.useEffect(() => {
-    if (socket === null || !initialized) return;
+    if (socket === null || !initialized || !user) return;
     // if (game && (game.source === "get-game-by-dow" || game.source === "get-default-game")) {
     //   return;
     // }
@@ -116,7 +102,14 @@ function App(props) {
       socket.on('game-not-found', () => {
         setGameNotFound(true);
       });
-    } 
+    } else {
+      console.log(`Getting default game with ${user.uid}`);
+      socket.emit("get-default-game", user.uid);
+    }
+
+    console.log(`Get team games with ${user.uid}`)
+    socket.emit("get-team-games", user.uid);
+
   }, [socket, user, initialized, searchParams]);
 
 

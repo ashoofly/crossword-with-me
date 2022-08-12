@@ -13,7 +13,8 @@ const defaultState = {
   },
   numRows: 0,
   numCols: 0,
-  board: []
+  board: [],
+  teamGames: []
 };
 
 
@@ -47,7 +48,8 @@ export const povSlice = createSlice({
             isActiveWord: num !== action.payload.focus && focusedWord.includes(num) ? true : false,
             isActiveSquare: num === action.payload.focus ? true : false,
             ...action.payload.gameGrid[num]
-          }))
+          })),
+        teamGames: []
       };
     },
     'setFocusedSquare': (state, action) => {
@@ -76,6 +78,9 @@ export const povSlice = createSlice({
           state.board[index].isActiveWord = true;
         }
       });
+    },
+    'setTeamGames': (state, action) => {
+      state.teamGames = action.payload.teamGames;
     },
     'highlightActiveWord': (state, action) => {
       state.board[action.payload.id].isActiveWord = true;
@@ -129,6 +134,7 @@ export const {
   toggleZoom,
   toggleRebus,
   togglePencil,
-  toggleOrientation
+  toggleOrientation,
+  setTeamGames
 } = povSlice.actions;
 export default povSlice.reducer;

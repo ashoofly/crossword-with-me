@@ -6,7 +6,9 @@ import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-
+import {
+  setTeamGames
+} from '../redux/slices/povSlice';
 export default React.memo((props) => {
   const { 
     socket,
@@ -21,13 +23,14 @@ export default React.memo((props) => {
 
   // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
+  const teamGames = useSelector(state => state.pov.teamGames);
+
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [menuContent, setMenuContent] = React.useState(null);
   const [menuItems, setMenuItems] = React.useState([]);
   const [puzzleDates, setPuzzleDates] = React.useState(null);
   const [heading, setHeading] = React.useState({__html: "Loading..."});
-  const [teamGames, setTeamGames] = React.useState(null);
   const [selectedTeamGameId, setSelectedTeamGameId] = React.useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (e) => {
@@ -76,37 +79,11 @@ export default React.memo((props) => {
   //   }
 
   // }, [socket, user, gameId]);
-  React.useEffect(() => {
-    if (socket === null || !initialized) return;
-    if (!gameId) {
-      if (user) {
-        console.log(`Getting default game with ${user.uid}`);
-        socket.emit("get-default-game", user.uid);
-      } 
-    }
 
-  }, [socket, user, initialized, gameId]);
-
-  React.useEffect(() => {
-    if (socket === null || user === null || !initialized) return;
-    if (user) {
-      console.log(`Get team games with ${user.uid}`)
-      socket.emit("get-team-games", user.uid);
-
-      socket.once("load-team-games", teamGames => {
-        if (teamGames && teamGames.length > 0) {
-          // sort alphabetically by display name
-          setTeamGames(teamGames);
-        }
-      });
-    }
-
-
-  }, [socket, user, initialized]);
 
   React.useEffect(() => {
     if (game.loaded) {
-      if (game.players[0] === user.uid) {
+      if (game.players[0].playerId === user.uid) {
         updateHeading();
       } else {
         setSelectedTeamGameId(game.gameId);
@@ -158,7 +135,7 @@ export default React.memo((props) => {
   }
 
   function updateTeamGameHeading(game) {
-    if (!teamGames) return;
+    if (!teamGames || teamGames.length === 0) return;
     let date = new Date(game.date);
     let dow = abbrevDow[game.dow];
     let month = abbrevMonths[date.getMonth()];
@@ -171,7 +148,13 @@ export default React.memo((props) => {
   const gamesWithFriends = <MenuItem className="submenu-heading">Friends' Games</MenuItem>
 
   function displayTeamGames() {
-    return teamGames.map(game => {
+    // sort team games alphabetically by friend display name, then dow
+    const sorted = teamGames.slice().sort((a, b) => (a.friend.displayName > b.friend.displayName) ? 1 
+    : (a.friend.displayName === b.friend.displayName) ? 
+        ((weekdays.indexOf(a.dow) > weekdays.indexOf(b.dow)) ? 1 : -1) 
+        : -1);
+
+    return sorted.map(game => {
       let date = new Date(puzzleDates[game.dow]);
       let month = abbrevMonths[date.getMonth()];
       let dow = abbrevDow[game.dow];
@@ -210,7 +193,7 @@ export default React.memo((props) => {
         </MenuItem>
       )
     });
-    if (teamGames) {
+    if (teamGames.length > 0) {
       currentMenuItems.unshift([gamesWithFriends, displayTeamGames(), soloGameHeading]);
     }
     setMenuItems(currentMenuItems);
