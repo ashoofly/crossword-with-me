@@ -26,6 +26,7 @@ export default React.memo((props) => {
 
   function displayClue() {
     let dictionaryKey = gameGrid[focusedWord[0]].gridNum;
+    console.log(dictionaryKey);
     setClueText({__html: clueDictionary[orientation][dictionaryKey].clue});
   }
 

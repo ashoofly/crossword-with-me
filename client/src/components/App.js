@@ -66,10 +66,13 @@ function App(props) {
       setGameNotFound(false);
       console.log(game);
       dispatch(loadGame({ ...game, loaded: true }));
+
+      let defaultFocus = game.clueDictionary.across[1].index;
       dispatch(initializePlayerView({
         numRows: game.numRows,
         numCols: game.numCols,
-        gameGrid: game.gameGrid
+        gameGrid: game.gameGrid,
+        focus: defaultFocus
       }));
       setSearchParams({gameId: game.gameId});
     });
@@ -139,6 +142,7 @@ function App(props) {
    const orientation = useSelector(state => state.pov.focused.orientation);
    const focusedSquare = useSelector(state => state.pov.focused.square);
    const focusedWord = useSelector(state => state.pov.focused.word);
+   const defaultFocus = useSelector(state => state.pov.defaultFocus);
  
    const [squareRefs] = React.useState(Array(numRows * numCols).fill(0).map(() => {
     return React.createRef();
@@ -303,8 +307,7 @@ function App(props) {
 
   function getNextEmptySquare(index, previous) {
     // If last square in orientation, start search at beginning
-    // TODO: edge case where(0,0) square is not valid
-    if (isLastClueSquare(index)) return 0;
+    if (isLastClueSquare(index)) return defaultFocus;
 
     let incrementInterval = orientation === "across" ? 1 : numCols;
 

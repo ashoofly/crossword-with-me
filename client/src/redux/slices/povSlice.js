@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { getFocusedWord } from '../../puzzleUtils';
 
 const defaultState = {
+  defaultFocus: 0,
   rebusActive: false,
   pencilActive: false,
   zoomActive: false,
@@ -21,22 +22,30 @@ export const povSlice = createSlice({
   initialState: defaultState,
   reducers: {
     'initializePlayerView': (state, action) => {
+      let focusedWord = getFocusedWord(
+        action.payload.gameGrid,
+        action.payload.numCols,
+        action.payload.numRows,
+        action.payload.focus,
+        "across"
+      );
       return {
+        defaultFocus: action.payload.focus,
         rebusActive: false,
         pencilActive: false,
         zoomActive: false,
         focused: {
           orientation: "across",
-          word: [0],
-          square: 0,
+          word: focusedWord,
+          square: action.payload.focus,
         },
         numRows: action.payload.numRows,
         numCols: action.payload.numCols,
         board: [...Array(action.payload.numRows * action.payload.numCols).keys()]
           .map(num => ({
             index: num,
-            isActiveWord: false,
-            isActiveSquare: false,
+            isActiveWord: num !== action.payload.focus && focusedWord.includes(num) ? true : false,
+            isActiveSquare: num === action.payload.focus ? true : false,
             ...action.payload.gameGrid[num]
           }))
       };

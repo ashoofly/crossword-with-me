@@ -118,7 +118,7 @@ export default React.memo((props) => {
     }
   }, [game, menuContent, teamGames, selectedTeamGameId]);
 
-  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const months = [
     'January',
     'February',
