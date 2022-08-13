@@ -8,6 +8,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { signin, signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useSelector } from "react-redux";
+import Tooltip from '@mui/material/Tooltip';
 
 export default React.memo((props) => {
   // console.log("Render Account component");
@@ -18,6 +19,7 @@ export default React.memo((props) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
   const [meIcon, setMeIcon] = React.useState(null);
+  const [friendIcons, setFriendIcons] = React.useState(null);
   const [signinText, setSigninText] = React.useState(null);
 
   const players = useSelector(state => state.game.players);
@@ -35,16 +37,20 @@ export default React.memo((props) => {
     if (!user) return;
     if (user.photoURL) {
       setMeIcon(
-        <Avatar className="avatar-bg" onClick={handleClick} >
-          <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
-        </Avatar>
+        <Tooltip title={`${user.displayName} (me)`}>
+          <Avatar className="avatar-bg" onClick={handleClick} >
+            <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
+          </Avatar>
+        </Tooltip>
         );
     } else {
       // use first letter of first name
       setMeIcon(
-        <Avatar className="avatar-bg" onClick={handleClick}>
-          {user.displayName.charAt(0)}
-        </Avatar>
+        <Tooltip title={`${user.displayName} (me)`}>
+          <Avatar className="avatar-bg" onClick={handleClick}>
+            {user.displayName.charAt(0)}
+          </Avatar>
+        </Tooltip>
       );
     }
     setSigninText("Sign out");
@@ -52,12 +58,21 @@ export default React.memo((props) => {
 
   React.useEffect(() => {
     if (!user || !players) return;
-    let friends = players.filter(player => player !== user.uid);
+    let friends = players.filter(player => player.playerId !== user.uid);
+    console.log(`Friends`);
+    console.log(friends);
     if (friends.length > 0) {
       let friendIcons = [];
       friends.forEach(friend => {
-        
+        friendIcons.push(
+          <Tooltip title={friend.displayName} key={friend.playerId}>
+            <Avatar className="avatar-bg" >
+              <img className="avatar-img" alt={friend.displayName} src={friend.photoURL} referrerPolicy="no-referrer" />
+            </Avatar>
+          </Tooltip>
+        )
       });
+      setFriendIcons(friendIcons);
     }
   }, [user, players]);
 
@@ -71,6 +86,7 @@ export default React.memo((props) => {
   return (
     <React.Fragment>
       <div className="player-box">
+        {friendIcons}
         {meIcon}
       </div>
       <Menu
@@ -88,6 +104,16 @@ export default React.memo((props) => {
         }}
       >
         {user && <MenuItem className="displayName">{user.displayName ?? user.email} (me)</MenuItem>}
+        <div className="color-choices">
+          <div className="color-blob yellow"></div>
+          <div className="color-blob orange"></div>
+          <div className="color-blob red"></div>
+          <div className="color-blob magenta"></div>
+          <div className="color-blob violet"></div>
+          <div className="color-blob blue"></div>
+          <div className="color-blob cyan"></div>
+          <div className="color-blob green"></div>
+        </div>
         <MenuItem onClick={user ? handleSignout : handleSignin}>{signinText}</MenuItem>
       </Menu>
     </React.Fragment>

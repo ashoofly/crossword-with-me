@@ -52,6 +52,7 @@ function App(props) {
    * Respond to socket events loading games
    */
   React.useEffect(() => {
+    console.log(socket);
     if (!user || socket === null) return;
     socket.on('load-game', (game, socketId) => {
       console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
@@ -67,18 +68,36 @@ function App(props) {
         gameGrid: game.gameGrid,
         focus: defaultFocus
       }));
-      setSearchParams({gameId: game.gameId});
+      if (game.source === "get-default-game") {
+        setSearchParams({gameId: game.gameId, default: true});
+
+      } else if (game.source === "get-game-by-dow") {
+        setSearchParams({myGame: game.dow, gameId: game.gameId});
+
+      } else {
+        setSearchParams({gameId: game.gameId});
+      }
 
       if (game.players[0].playerId !== user.uid) {
         socket.emit('get-team-games', user.uid);
       }
     });
 
+    socket.on("player-online", (playerId, gameId) => {
+      console.log(`Player ${playerId} signed into game ${gameId}!`);
+    })
+
+    socket.on("player-offline", (playerId, gameId) => {
+      console.log(`Player ${playerId} signed out of game ${gameId}`);
+    })
+
     socket.on("load-team-games", returnedGames => {
       if (returnedGames && returnedGames.length > 0) {
         dispatch(setTeamGames({teamGames: returnedGames}));
       }
     });
+
+
 
   }, [socket, user]);
 
@@ -87,12 +106,10 @@ function App(props) {
    */
   React.useEffect(() => {
     if (socket === null || !initialized || !user) return;
-    // if (game && (game.source === "get-game-by-dow" || game.source === "get-default-game")) {
-    //   return;
-    // }
-    //TODO: This makes a duplicate call when getting game by dow or getting default game
+    let defaultGame = searchParams.get('default');
+    let dow = searchParams.get('myGame');
     let requestedGameId = searchParams.get('gameId');
-    if (requestedGameId) {
+    if (!defaultGame && !dow && requestedGameId) {
       if (user) {
         console.log(`get-game-by-id with ${user.uid}`)
         socket.emit('get-game-by-id', requestedGameId, user.uid);
@@ -102,7 +119,7 @@ function App(props) {
       socket.on('game-not-found', () => {
         setGameNotFound(true);
       });
-    } else {
+    } else if (!requestedGameId) {
       console.log(`Getting default game with ${user.uid}`);
       socket.emit("get-default-game", user.uid);
     }

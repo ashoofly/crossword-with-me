@@ -44,7 +44,6 @@ root.render(
         <Routes>
           <Route path="/" element={<Navigate replace to={`/crossword-with-friends`} />} />
           <Route path="/crossword-with-friends" element={<App socket={socket} auth={auth} />} />
-          <Route path="/crossword-with-friends/:id" element={<App socket={socket} auth={auth} />} />
           <Route path="/crossword-with-friends/join-game" element={<SignIn socket={socket} auth={auth} />} />
 
         </Routes>

@@ -212,7 +212,7 @@ export default React.memo((props) => {
   function updateHeading() {
     let date = new Date(game.date);
     let month = abbrevMonths[date.getMonth()];
-    setHeading({__html: `<span class="heading-dow">${game.dow}</span> <span class="heading-date">${month} ${date.getDate()}</span>`});
+    setHeading({__html: `<span class="heading-dow">My ${game.dow}</span> <span class="heading-date">${month} ${date.getDate()}</span>`});
   }
   return (
     <React.Fragment>

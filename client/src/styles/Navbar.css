@@ -129,6 +129,7 @@
   color: rgb(0,44,54);
 }
 
+
 .navbar .MuiAvatar-root {
   background-color: rgb(211,55,130);
   height: 30px;
@@ -162,4 +163,63 @@
 .avatar-img {
   width: 100%;
   cursor: pointer;
+}
+
+.avatar-bg.MuiAvatar-circular {
+  border: 3px solid rgb(38,139,210);
+}
+
+.offline.avatar-bg.MuiAvatar-circular {
+  opacity: 0.5;
+}
+
+.color-choices {
+  display: flex;
+  column-gap: 5px;
+  padding: 5px 10px;
+  align-items: center;
+}
+
+.color-blob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.yellow {
+  background-color: rgb(181,137,22);
+}
+
+.orange {
+  background-color: rgb(203,75,22);
+}
+
+.red {
+  background-color: rgb(220,50,47);
+}
+
+.magenta {
+  background-color: rgb(211,54,130);
+
+}
+
+.violet {
+  background-color: rgb(108,113,196)
+}
+
+.blue {
+  background-color: rgb(38,139,210);
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgb(240, 233, 3);
+}
+
+.cyan {
+  background-color: rgb(42,161,152);
+}
+
+.green {
+  background-color: rgb(133,153,26);
+
 }

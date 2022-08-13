@@ -44,7 +44,8 @@ export default React.memo((props) => {
 
   function copyUrlToClipboard() {
     handleClose();
-    navigator.clipboard.writeText(window.location);
+    let shareUrl = `${window.location.origin}/crossword-with-friends?gameId=${gameId}`;
+    navigator.clipboard.writeText(shareUrl);
     setOpenToast(true);
   }
 

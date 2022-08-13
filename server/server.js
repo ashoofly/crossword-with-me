@@ -28,6 +28,13 @@ const io = new Server(3001, {
   }
 });
 
+io.of('/').adapter.on("join-room", (room, id) => {
+  console.log(`Socket ${id} has joined room ${room}`);
+});
+
+io.of("/").adapter.on("leave-room", (room, id) => {
+  console.log(`Socket ${id} has left room ${room}`);
+});
 io.on("connection", async(socket) => {
 
   socket.on("save-board", async (gameId, board) => {
@@ -49,12 +56,12 @@ io.on("connection", async(socket) => {
     console.log("Received get-game-by-dow event")
     console.log(`Getting ${dow} game for player ${playerId}`);
     const game = await findOrCreateGame(dow, playerId);
-    sendGame(game, "get-game-by-dow");
+    sendGame(game, playerId, "get-game-by-dow");
   });
   socket.on("get-default-game", async(playerId) => {
     console.log("Received get-default-game event");
     const game = await getDefaultGame(playerId);
-    sendGame(game, "get-default-game");
+    sendGame(game, playerId, "get-default-game");
   });
 
   socket.on("get-friend-request-name", async(gameId) => {
@@ -78,13 +85,42 @@ io.on("connection", async(socket) => {
     }
   });
 
-  function sendGame(game, source) {
-    console.log("Sending game " + game.gameId);
-    game["source"] = source;
+  async function updateGameOnlineStatusForPlayer(socketId, gameId, playerId, online) {
+    let index = 0;
+    await update(ref(db, `games/${gameId}/players/${index}`), {
+      online: online
+    });
+    if (online) {
+    }
+  }
+
+  function sendGame(game, playerId, source) {
+    
+    game['source'] = source;
+    let gameId = game.gameId;
+    console.log("Sending game " + gameId);
     socket.emit("load-game", game, socket.id);
-    socket.join(game.gameId);
+    console.log(`Socket ${socket.id} is currently in these rooms`);
+    let currentRooms = Array.from(socket.rooms);
+    console.log(currentRooms);
+    if (currentRooms.length > 1) {
+      let prevGameId = currentRooms[1];
+      console.log(`Leaving room ${currentRooms[1]}`)
+      socket.leave(prevGameId);
+      io.to(prevGameId).emit('player-offline', playerId, prevGameId);
+    }
+    socket.join(gameId);
+    io.to(gameId).emit('player-online', playerId, gameId);
+
+    console.log(`Socket ${socket.id} is currently in these rooms`);
+    console.log(socket.rooms);
     socket.on('send-changes', squareState => {
       io.to(gameId).emit("receive-changes", squareState);
+    });
+    socket.on('disconnect', () => {
+      // markPlayerOffline(playerId);
+      console.log(`Send disconnect event to room ${gameId}`);
+      io.to(gameId).emit("player-offline", playerId);
     });
   }
 
@@ -95,12 +131,12 @@ io.on("connection", async(socket) => {
       if (game.players) {
         let ownerId = game.players[0].playerId;
         if (playerId === ownerId) {
-          sendGame(game, "get-game-by-id");
+          sendGame(game, playerId, "get-game-by-id");
 
         } else {
           let player = await getPlayer(playerId);
           addPlayerToGame(player, game);
-          sendGame(game, "get-game-by-id");
+          sendGame(game, playerId, "get-game-by-id");
         }
       } else {
         // anonymous game
