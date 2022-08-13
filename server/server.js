@@ -85,42 +85,51 @@ io.on("connection", async(socket) => {
     }
   });
 
-  async function updateGameOnlineStatusForPlayer(socketId, gameId, playerId, online) {
-    let index = 0;
-    await update(ref(db, `games/${gameId}/players/${index}`), {
-      online: online
-    });
-    if (online) {
+  async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
+    let players = await getGamePlayers(gameId);
+    if (players) {
+      let index = players.findIndex(player => player.playerId === playerId);
+      if (index !== -1) {
+        update(ref(db, `games/${gameId}/players/${index}`), {
+          online: online
+        });
+      } else {
+        console.log(`Could not find player ${playerId} in game ${gameId} so could not update the online status.`);
+      }
+
+    } else {
+      console.log(`Could not find players for game ${gameId}`);
     }
   }
 
   function sendGame(game, playerId, source) {
-    
     game['source'] = source;
     let gameId = game.gameId;
     console.log("Sending game " + gameId);
     socket.emit("load-game", game, socket.id);
-    console.log(`Socket ${socket.id} is currently in these rooms`);
+
+    // leave any previous game rooms
     let currentRooms = Array.from(socket.rooms);
-    console.log(currentRooms);
     if (currentRooms.length > 1) {
       let prevGameId = currentRooms[1];
-      console.log(`Leaving room ${currentRooms[1]}`)
       socket.leave(prevGameId);
       io.to(prevGameId).emit('player-offline', playerId, prevGameId);
+      updateGameOnlineStatusForPlayer(gameId, playerId, false);
     }
+
+    // join current game room
     socket.join(gameId);
     io.to(gameId).emit('player-online', playerId, gameId);
+    updateGameOnlineStatusForPlayer(gameId, playerId, true);
 
-    console.log(`Socket ${socket.id} is currently in these rooms`);
-    console.log(socket.rooms);
+    // attach game listeners
     socket.on('send-changes', squareState => {
       io.to(gameId).emit("receive-changes", squareState);
     });
     socket.on('disconnect', () => {
-      // markPlayerOffline(playerId);
       console.log(`Send disconnect event to room ${gameId}`);
       io.to(gameId).emit("player-offline", playerId);
+      updateGameOnlineStatusForPlayer(gameId, playerId, false);
     });
   }
 
@@ -383,13 +392,17 @@ async function createNewGame(dow, playerId) {
 
 
 async function getDefaultGame(playerId) {
-  let dow;
-  if (isCurrentPuzzleSaved(db)) {
-    dow = getCurrentDOW();
-  } else {
-    dow = getPreviousDOW();
+  console.log("Getting default game...");
+  let player = await getPlayer(playerId);
+  if (player) {
+    let dow;
+    if (isCurrentPuzzleSaved(db)) {
+      dow = getCurrentDOW();
+    } else {
+      dow = getPreviousDOW();
+    }
+    return await findOrCreateGame(dow, playerId);
   }
-  return await findOrCreateGame(dow, playerId);
 }
 
 async function getPuzzle(dow) {
@@ -422,6 +435,16 @@ async function getPuzzleDates() {
 async function getGameById(gameId) {
   console.log("Looking for game " + gameId);
   const snapshot = await get(ref(db, 'games/' + gameId));
+  if (snapshot.exists()) {
+    return snapshot.val();
+  } else {
+    return null;
+  }
+} 
+
+async function getGamePlayers(gameId) {
+  console.log("Looking for players for game " + gameId);
+  const snapshot = await get(ref(db, `games/${gameId}/players`));
   if (snapshot.exists()) {
     return snapshot.val();
   } else {

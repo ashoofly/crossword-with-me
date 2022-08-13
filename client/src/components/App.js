@@ -12,6 +12,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
   loadGame,
+  enteringPlayer,
+  exitingPlayer,
   removeCheck,
   boardSaved,
   loadSquareState,
@@ -52,8 +54,8 @@ function App(props) {
    * Respond to socket events loading games
    */
   React.useEffect(() => {
-    console.log(socket);
     if (!user || socket === null) return;
+    console.log(`Adding all listeners... to ${socket.id}`);
     socket.on('load-game', (game, socketId) => {
       console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
       setGameId(game.gameId);
@@ -85,10 +87,12 @@ function App(props) {
 
     socket.on("player-online", (playerId, gameId) => {
       console.log(`Player ${playerId} signed into game ${gameId}!`);
+      dispatch(enteringPlayer({playerId: playerId}));
     })
 
     socket.on("player-offline", (playerId, gameId) => {
       console.log(`Player ${playerId} signed out of game ${gameId}`);
+      dispatch(exitingPlayer({playerId: playerId}));
     })
 
     socket.on("load-team-games", returnedGames => {
@@ -96,9 +100,7 @@ function App(props) {
         dispatch(setTeamGames({teamGames: returnedGames}));
       }
     });
-
-
-
+  
   }, [socket, user]);
 
   /**

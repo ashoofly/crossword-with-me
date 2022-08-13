@@ -47,7 +47,18 @@ const defaultState = {
     scope: "word",
     state: [],
     type: ""
-  }
+  },
+  players: [{
+    displayName: "Fred Rogers",
+    owner: true,
+    playerId: "abc123",
+    currentFocus: {
+      orientation: "across",
+      square: 0,
+      word: [0,1,2,3,4]
+    },
+    online: true
+  }]
 };
 
 
@@ -57,6 +68,20 @@ export const gameSlice = createSlice({
   name: 'game',
   initialState: defaultState,
   reducers: {
+    'enteringPlayer': (state, action) => {
+      state.players = state.players.map(player => {
+        return action.payload.playerId === player.playerId ? 
+          {...player, online: true}
+          : player;
+      })
+    },
+    'exitingPlayer': (state, action) => {
+      state.players = state.players.map(player => {
+        return action.payload.playerId === player.playerId ? 
+          {...player, online: false}
+          : player;
+      })
+    },
     'loadGame': (state, action) => {
       return {
         ...action.payload,
@@ -246,6 +271,8 @@ export const gameSlice = createSlice({
 
 export const {
   loadGame,
+  enteringPlayer,
+  exitingPlayer,
   loadSquareState,
   loadWordState,
   loadBoardState,
