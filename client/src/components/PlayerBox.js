@@ -3,6 +3,7 @@ import '../styles/common.css';
 import '../styles/Navbar.css';
 import Avatar from '@mui/material/Avatar';
 import PersonIcon from '@mui/icons-material/Person';
+import Badge from '@mui/material/Badge';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { signin, signout } from '../auth';
@@ -37,20 +38,24 @@ export default React.memo((props) => {
     if (!user) return;
     if (user.photoURL) {
       setMeIcon(
-        <Tooltip title={`${user.displayName} (me)`}>
-          <Avatar className="avatar-bg" onClick={handleClick} >
-            <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
-          </Avatar>
-        </Tooltip>
+        <Badge color="success" overlap="circular" badgeContent="">
+          <Tooltip title={`${user.displayName} (me)`}>
+            <Avatar className="avatar-bg" onClick={handleClick} >
+              <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
+            </Avatar>
+          </Tooltip>
+        </Badge>
         );
     } else {
       // use first letter of first name
       setMeIcon(
-        <Tooltip title={`${user.displayName} (me)`}>
-          <Avatar className="avatar-bg" onClick={handleClick}>
-            {user.displayName.charAt(0)}
-          </Avatar>
-        </Tooltip>
+        <Badge color="success" variant="dot">
+          <Tooltip title={`${user.displayName} (me)`}>
+            <Avatar className="avatar-bg" onClick={handleClick}>
+              {user.displayName.charAt(0)}
+            </Avatar>
+          </Tooltip>
+        </Badge>
       );
     }
     setSigninText("Sign out");
@@ -59,14 +64,12 @@ export default React.memo((props) => {
   React.useEffect(() => {
     if (!user || !players) return;
     let friends = players.filter(player => player.playerId !== user.uid);
-    console.log(`Friends`);
-    console.log(friends);
     if (friends.length > 0) {
       let friendIcons = [];
       friends.forEach(friend => {
         friendIcons.push(
           <Tooltip title={friend.displayName} key={friend.playerId}>
-            <Avatar className="avatar-bg" >
+            <Avatar className={`avatar-bg ${friend.online ? '' : "offline"}`} >
               <img className="avatar-img" alt={friend.displayName} src={friend.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
           </Tooltip>

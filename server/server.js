@@ -90,6 +90,7 @@ io.on("connection", async(socket) => {
     if (players) {
       let index = players.findIndex(player => player.playerId === playerId);
       if (index !== -1) {
+        console.log(`Updating ${playerId} status for ${gameId} to ${online ? "online" : "offline"}`)
         update(ref(db, `games/${gameId}/players/${index}`), {
           online: online
         });
@@ -102,7 +103,8 @@ io.on("connection", async(socket) => {
     }
   }
 
-  function sendGame(game, playerId, source) {
+  async function sendGame(game, playerId, source) {
+    let player = await getPlayer(playerId);
     game['source'] = source;
     let gameId = game.gameId;
     console.log("Sending game " + gameId);
@@ -114,12 +116,12 @@ io.on("connection", async(socket) => {
       let prevGameId = currentRooms[1];
       socket.leave(prevGameId);
       io.to(prevGameId).emit('player-offline', playerId, prevGameId);
-      updateGameOnlineStatusForPlayer(gameId, playerId, false);
+      updateGameOnlineStatusForPlayer(prevGameId, playerId, false);
     }
 
     // join current game room
     socket.join(gameId);
-    io.to(gameId).emit('player-online', playerId, gameId);
+    io.to(gameId).emit('player-online', playerId, gameId, player.displayName);
     updateGameOnlineStatusForPlayer(gameId, playerId, true);
 
     // attach game listeners
@@ -128,7 +130,7 @@ io.on("connection", async(socket) => {
     });
     socket.on('disconnect', () => {
       console.log(`Send disconnect event to room ${gameId}`);
-      io.to(gameId).emit("player-offline", playerId);
+      io.to(gameId).emit("player-offline", playerId, gameId);
       updateGameOnlineStatusForPlayer(gameId, playerId, false);
     });
   }
@@ -144,7 +146,8 @@ io.on("connection", async(socket) => {
 
         } else {
           let player = await getPlayer(playerId);
-          addPlayerToGame(player, game);
+          let teamGames = await addPlayerToGame(player, game);
+          socket.emit("load-team-games", teamGames);
           sendGame(game, playerId, "get-game-by-id");
         }
       } else {
@@ -269,6 +272,7 @@ async function addPlayerToGame(player, game) {
       games: playerGames
     });
   }
+  return await getPlayerTeamGames(player.playerId);
 }
 
 async function addUserToGame(jwt, gameId) {
@@ -286,7 +290,7 @@ server.use(cookieParser());
 
 server.get('/', (req, res) => {
   res.send('Yes?')
-})
+}) 
 
 server.post('/auth', async(req, res) => {
   console.log(req.body);
@@ -452,6 +456,16 @@ async function getGamePlayers(gameId) {
   }
 } 
 
+async function getPlayerTeamGames(playerId) {
+  console.log(`Looking for player ${playerId} team games`);
+  const snapshot = await get(ref(db, `players/${playerId}/games/team`));
+  if (snapshot.exists()) {
+    return snapshot.val();
+  } else {
+    return null;
+  }
+} 
+
 async function getPlayer(playerId) {  
   if (!playerId) return;
   console.log("Looking for player " + playerId); 
@@ -549,6 +563,18 @@ async function updateGameBoard(gameId, board) {
   });
 }
 
+async function updatePlayerTeamGames(playerId) {
+  const snapshot = await get(ref(db,`players/${playerId}/games/team`));
+  if (snapshot.exists()) {
+    let teamGames = snapshot.val();
+    let updatedTeamGames = teamGames.filter(game => game !== null);
+    update(ref(db, `players/${playerId}/games`), {
+      team: updatedTeamGames
+    });
+  } 
+}
+
+//updatePlayerTeamGames("RJuKVBvMmeOipdaxDXYKQA9mHZY2");
 // function addPlayer(gameId, playerId) {
 //   const playersListRef = ref(db, 'games/' + gameId, 'players')
 //   const newPlayerRef = push(playersListRef);

@@ -4,6 +4,8 @@ import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
 import SignIn from './SignIn';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import '../styles/common.css';
 import '../styles/App.css';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
@@ -39,10 +41,13 @@ function App(props) {
   // console.log("Render App component");
   const [searchParams, setSearchParams] = useSearchParams();
   const [gameId, setGameId] = React.useState(searchParams.get('gameId'));
+  const [openToast, setOpenToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
   const game = useSelector(state => state.game);
+  const players = useSelector(state => state.game.players);
   /**
    * React component states
    */
@@ -55,7 +60,18 @@ function App(props) {
    */
   React.useEffect(() => {
     if (!user || socket === null) return;
+
     console.log(`Adding all listeners... to ${socket.id}`);
+
+    socket.on("load-team-games", returnedGames => {
+      if (returnedGames && returnedGames.length > 0) {
+        dispatch(setTeamGames({teamGames: returnedGames}));
+      }
+    });
+
+    console.log(`Get team games with ${user.uid}`)
+    socket.emit("get-team-games", user.uid);
+
     socket.on('load-game', (game, socketId) => {
       console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
       setGameId(game.gameId);
@@ -70,36 +86,34 @@ function App(props) {
         gameGrid: game.gameGrid,
         focus: defaultFocus
       }));
-      if (game.source === "get-default-game") {
-        setSearchParams({gameId: game.gameId, default: true});
+      setSearchParams({gameId: game.gameId});
 
-      } else if (game.source === "get-game-by-dow") {
-        setSearchParams({myGame: game.dow, gameId: game.gameId});
-
-      } else {
-        setSearchParams({gameId: game.gameId});
-      }
-
-      if (game.players[0].playerId !== user.uid) {
-        socket.emit('get-team-games', user.uid);
-      }
+      socket.on("player-online", (playerId, serverGameId, displayName) => {
+        console.log(`Player ${playerId} signed into game ${serverGameId}!`);
+        dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
+        if (user && (playerId !== user.uid) && (serverGameId === gameId)) {
+          console.log("Setting toast message");
+          let firstName = displayName.split(' ')[0];
+          setToastMessage(`${firstName} has entered the game!`);
+          setOpenToast(true);
+        } else {
+          console.log(`Not setting toast message`);
+          console.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
+        }
+      })
+  
+      socket.on("player-offline", (playerId, serverGameId) => {
+        console.log(`Player ${playerId} signed out of game ${serverGameId}`);
+        dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
+      })
+  
     });
 
-    socket.on("player-online", (playerId, gameId) => {
-      console.log(`Player ${playerId} signed into game ${gameId}!`);
-      dispatch(enteringPlayer({playerId: playerId}));
-    })
 
-    socket.on("player-offline", (playerId, gameId) => {
-      console.log(`Player ${playerId} signed out of game ${gameId}`);
-      dispatch(exitingPlayer({playerId: playerId}));
-    })
-
-    socket.on("load-team-games", returnedGames => {
-      if (returnedGames && returnedGames.length > 0) {
-        dispatch(setTeamGames({teamGames: returnedGames}));
-      }
+    socket.on('game-not-found', () => {
+      setGameNotFound(true);
     });
+
   
   }, [socket, user]);
 
@@ -107,27 +121,23 @@ function App(props) {
    * Handle direct request for specific game, or get default game if no game ID specified
    */
   React.useEffect(() => {
-    if (socket === null || !initialized || !user) return;
-    let defaultGame = searchParams.get('default');
-    let dow = searchParams.get('myGame');
+    if (socket === null || !initialized) return;
+
     let requestedGameId = searchParams.get('gameId');
-    if (!defaultGame && !dow && requestedGameId) {
+    if (!requestedGameId) {
+      if (user) {
+        console.log(`Getting default game with ${user.uid}`);
+        socket.emit("get-default-game", user.uid);
+      }
+
+    } else if (requestedGameId !== game.gameId) {
       if (user) {
         console.log(`get-game-by-id with ${user.uid}`)
         socket.emit('get-game-by-id', requestedGameId, user.uid);
       } else {
         navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
       }
-      socket.on('game-not-found', () => {
-        setGameNotFound(true);
-      });
-    } else if (!requestedGameId) {
-      console.log(`Getting default game with ${user.uid}`);
-      socket.emit("get-default-game", user.uid);
-    }
-
-    console.log(`Get team games with ${user.uid}`)
-    socket.emit("get-team-games", user.uid);
+    } 
 
   }, [socket, user, initialized, searchParams]);
 
@@ -522,6 +532,19 @@ function App(props) {
               jumpToSquare={jumpToSquare}
               handleKeyDown={handleKeyDown}
             />
+            <Snackbar
+                open={openToast}
+                onClose={() => setOpenToast(false)}
+                autoHideDuration={2000}
+            >
+              <Alert 
+                onClose={() => setOpenToast(false)} 
+                severity="info" 
+                sx={{ width: '100%' }}
+              >
+                {toastMessage}
+              </Alert>
+              </Snackbar>
             </React.Fragment>
           }
         </div>}

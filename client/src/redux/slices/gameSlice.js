@@ -69,18 +69,23 @@ export const gameSlice = createSlice({
   initialState: defaultState,
   reducers: {
     'enteringPlayer': (state, action) => {
-      state.players = state.players.map(player => {
-        return action.payload.playerId === player.playerId ? 
-          {...player, online: true}
-          : player;
-      })
+      if (action.payload.gameId === state.gameId) {
+        state.players = state.players.map(player => {
+          return action.payload.playerId === player.playerId ? 
+            {...player, online: true}
+            : player;
+        });
+      }
+
     },
     'exitingPlayer': (state, action) => {
-      state.players = state.players.map(player => {
-        return action.payload.playerId === player.playerId ? 
-          {...player, online: false}
-          : player;
-      })
+      if (action.payload.gameId === state.gameId) {
+        state.players = state.players.map(player => {
+          return action.payload.playerId === player.playerId ? 
+            {...player, online: false}
+            : player;
+        })
+      }
     },
     'loadGame': (state, action) => {
       return {

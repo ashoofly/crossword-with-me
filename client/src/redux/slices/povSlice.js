@@ -31,6 +31,7 @@ export const povSlice = createSlice({
         "across"
       );
       return {
+        ...state,
         defaultFocus: action.payload.focus,
         rebusActive: false,
         pencilActive: false,
@@ -48,8 +49,7 @@ export const povSlice = createSlice({
             isActiveWord: num !== action.payload.focus && focusedWord.includes(num) ? true : false,
             isActiveSquare: num === action.payload.focus ? true : false,
             ...action.payload.gameGrid[num]
-          })),
-        teamGames: []
+          }))
       };
     },
     'setFocusedSquare': (state, action) => {
