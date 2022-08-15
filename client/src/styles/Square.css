@@ -102,10 +102,10 @@
 }
 
 
-.focused-square {
-  background-color: rgb(101,123,131);
+.blue-focused-square {
+  background-color: var(--violet);
 }
 
-.focused-word {
-  background-color: rgb(147,161,161);
+.blue-focused-word {
+  background-color: var(--violet-shaded);
 }

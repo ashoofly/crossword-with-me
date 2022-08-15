@@ -18,15 +18,16 @@ export default React.memo((props) => {
   const clueDictionary = useSelector(state => state.game.clueDictionary);
   const gameGrid = useSelector(state => state.game.gameGrid);
 
-  const orientation = useSelector(state => state.pov.focused.orientation);
-  const focusedWord = useSelector(state => state.pov.focused.word);
+  const currentFocus = useSelector(state => state.pov.focused);
 
   const [ clueText, setClueText ] = React.useState({__html: ''});
-  React.useEffect(displayClue, [focusedWord, gameGrid, clueDictionary, orientation]);
+  React.useEffect(displayClue, [currentFocus, gameGrid, clueDictionary]);
 
   function displayClue() {
-    let dictionaryKey = gameGrid[focusedWord[0]].gridNum;
-    setClueText({__html: clueDictionary[orientation][dictionaryKey].clue});
+    if (currentFocus && currentFocus.orientation && currentFocus.word) {
+      let dictionaryKey = gameGrid[currentFocus.word[0]].gridNum;
+      setClueText({__html: clueDictionary[currentFocus.orientation][dictionaryKey].clue});    
+    }
   }
 
   return (

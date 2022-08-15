@@ -6,7 +6,7 @@ import zoomOut from '../images/zoom-out.svg';
 import GameMenu from './GameMenu';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
-import Account from './PlayerBox';
+import PlayerBox from './PlayerBox';
 import Button from '@mui/material/Button';
 import '../styles/common.css';
 import "../styles/Navbar.css";
@@ -60,8 +60,11 @@ export default React.memo((props) => {
       <div className="title-bar">
         <div></div>
         <h1>Crossword with Friends</h1>
-        <Account 
-          auth={auth} />
+        <PlayerBox 
+          auth={auth}
+          socket={socket}
+          gameId={gameId}
+        />
       </div>
       <div className="navbar">
 

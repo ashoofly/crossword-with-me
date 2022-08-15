@@ -16,6 +16,7 @@ import {
   loadGame,
   enteringPlayer,
   exitingPlayer,
+  updatePlayerFocus,
   removeCheck,
   boardSaved,
   loadSquareState,
@@ -53,7 +54,6 @@ function App(props) {
    */
   const [gameNotFound, setGameNotFound] = React.useState(false);
   const [user, initialized] = useAuthenticatedUser(auth);
-
 
   /**
    * Respond to socket events loading games
@@ -106,8 +106,15 @@ function App(props) {
         console.log(`Player ${playerId} signed out of game ${serverGameId}`);
         dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
       })
+
+
   
     });
+
+    socket.on("load-player-cursor-change", (playerId, serverGameId, currentFocus) => {
+      console.log(`Received load-player-cursor-change from ${playerId}`);
+      dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
+    })
 
 
     socket.on('game-not-found', () => {
@@ -521,7 +528,9 @@ function App(props) {
           />
           {loaded && <React.Fragment>
             <Board
+              user={user}
               socket={socket}
+              gameId={gameId}
               squareRefs={squareRefs}
             />
             <Clue

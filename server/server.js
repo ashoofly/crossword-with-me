@@ -85,6 +85,11 @@ io.on("connection", async(socket) => {
     }
   });
 
+  socket.on('send-player-cursor-change', (playerId, gameId, currentFocus) => {
+    console.log(`Sending load-player-cursor-change event to room ${gameId}`);
+    io.to(gameId).emit("load-player-cursor-change", playerId, gameId, currentFocus);
+  });
+
   async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
     let players = await getGamePlayers(gameId);
     if (players) {
@@ -102,6 +107,14 @@ io.on("connection", async(socket) => {
       console.log(`Could not find players for game ${gameId}`);
     }
   }
+
+  socket.on('leave-game', async(playerId, gameId) => {
+    console.log(`Received leave-game event from ${playerId} for game ${gameId}`);
+    socket.leave(gameId);
+    console.log(`Sending player-offline event to room ${gameId}`);
+    io.to(gameId).emit('player-offline', playerId, gameId);
+    updateGameOnlineStatusForPlayer(gameId, playerId, false); 
+  });
 
   async function sendGame(game, playerId, source) {
     let player = await getPlayer(playerId);
@@ -128,6 +141,9 @@ io.on("connection", async(socket) => {
     socket.on('send-changes', squareState => {
       io.to(gameId).emit("receive-changes", squareState);
     });
+
+
+
     socket.on('disconnect', () => {
       console.log(`Send disconnect event to room ${gameId}`);
       io.to(gameId).emit("player-offline", playerId, gameId);
@@ -189,7 +205,7 @@ function checkCSRFToken(req, res) {
   }
   let csrfBody = req.body['g_csrf_token'];
   if (!csrfBody) {
-    res.status(400).send('No CSRF token in post body.');
+    res.status(400).send('No CSRF token in post body.'); 
   }
   if (csrfCookie !== csrfBody) {
     res.status(400).send('Failed to verify double submit cookie.');
@@ -222,6 +238,27 @@ async function authenticateUser(token) {
   }
 }
 
+// const playerColors = [
+//   "#278BD2", // "blue",
+//   "#D33782", // "magenta",
+//   "#6C71C4", // "violet",
+//   "#859900", // "green",
+//   "#DC3130", // "red",
+//   "#2BA198", // "cyan",
+//   "#CB4B16", // "orange",
+//   "#B58900"  // "yellow
+// ];
+
+const defaultPlayerColors = [
+  "blue",
+  "magenta",
+  "violet",
+  "green",
+  "red",
+  "cyan", 
+  "orange",
+  "yellow"
+];
 async function addPlayerToGame(player, game) {
   //update game object
   let players = game.players;
@@ -230,11 +267,13 @@ async function addPlayerToGame(player, game) {
     console.log(`Player ${player.id} already part of game ${gameId}.`);
 
   } else {
+    let numCurrentPlayers = players.length;
     players.push({
       playerId: player.id,
       photoURL: player.photoURL,
       displayName: player.displayName,
-      owner: false
+      owner: false,
+      color: defaultPlayerColors[numCurrentPlayers]
     });
     await update(ref(db, 'games/' + gameId), {
       players: players
@@ -244,9 +283,9 @@ async function addPlayerToGame(player, game) {
   // update player object
   let playerGames = player.games;
   if (!playerGames) {
-    playerGames = {}
-  }
-  let teamGames = player.games['team'];
+    playerGames = {owner: {}, team: []};
+  } 
+  let teamGames = playerGames['team'];
   if (!teamGames) { 
     teamGames = [];
   }
@@ -366,7 +405,8 @@ async function createNewGame(dow, playerId) {
       playerId: player.id,
       photoURL: player.photoURL,
       displayName: player.displayName,
-      owner: true
+      owner: true,
+      color: defaultPlayerColors[0]
     }],
     board: [...Array(numSquares).keys()].map( (num) => ({
       initial: true,
@@ -377,7 +417,9 @@ async function createNewGame(dow, playerId) {
       verified: false,
       incorrect: false,
       partial: false,
-      penciled: false
+      penciled: false,
+      activeWordColors: [],
+      activeLetterColors: [] 
     })),
     clueDictionary: puzzle.clueDictionary,
     gameGrid: puzzle.gameGrid,

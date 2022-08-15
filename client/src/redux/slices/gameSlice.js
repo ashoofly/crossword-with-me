@@ -13,7 +13,9 @@ const defaultState = {
     verified: false,
     incorrect: false,
     partial: false,
-    penciled: false
+    penciled: false,
+    activeWordColors: [],
+    activeLetterColors: []
   })),
   numCols: 15,
   numRows: 15,
@@ -57,6 +59,7 @@ const defaultState = {
       square: 0,
       word: [0,1,2,3,4]
     },
+    color: "blue",
     online: true
   }]
 };
@@ -80,9 +83,85 @@ export const gameSlice = createSlice({
     },
     'exitingPlayer': (state, action) => {
       if (action.payload.gameId === state.gameId) {
+        let playerInfo = state.players.find(player => player.playerId === action.payload.playerId);
+        let playerColor = playerInfo.color;
+        let playerFocus = playerInfo.currentFocus;
+
+        // remove player highlighted cursor
+        if (playerFocus) {
+          for (const index of playerFocus.word) {
+            state.board[index].activeWordColors = state.board[index].activeWordColors.filter(
+              color => color !== playerColor
+            )
+            state.board[index].activeLetterColors = state.board[index].activeLetterColors.filter(
+              color => color !== playerColor
+            )
+          }
+        }
+
         state.players = state.players.map(player => {
           return action.payload.playerId === player.playerId ? 
             {...player, online: false}
+            : player;
+        })
+      }
+    },
+    'updatePlayerFocus': (state, action) => {
+      if (action.payload.gameId === state.gameId) {
+        let playerInfo = state.players.find(player => player.playerId === action.payload.playerId);
+        let playerColor = playerInfo.color;
+        let playerFocus = playerInfo.currentFocus;
+        
+
+        // remove player's previous highlighted cursor
+        if (playerFocus) {
+          for (const index of playerFocus.word) {
+
+            let activeWordColors = state.board[index].activeWordColors;
+            let activeLetterColors = state.board[index].activeLetterColors;
+
+            if (activeWordColors) {
+              state.board[index].activeWordColors = activeWordColors.filter(
+                color => color !== playerColor
+              )
+            }
+            if (activeLetterColors) {
+              state.board[index].activeLetterColors = activeLetterColors.filter(
+                color => color !== playerColor
+              )
+            }
+          }
+        }
+
+        // add highlight to player's current focus
+        for (const index of action.payload.currentFocus.word) {
+          let activeWordColors = state.board[index].activeWordColors;
+          if (!activeWordColors) {
+            activeWordColors = [];
+          }
+          let activeLetterColors = state.board[index].activeLetterColors;
+          if (!activeLetterColors) {
+            activeLetterColors = [];
+          }
+
+          if (index !== action.payload.currentFocus.square) {
+            if (!activeWordColors.includes(playerColor)) {
+              activeWordColors.push(playerColor);
+            }
+          } else {
+            if (!activeLetterColors.includes(playerColor)) {
+              activeLetterColors.push(playerColor);
+            }
+          }
+          state.board[index].activeWordColors = activeWordColors;
+          state.board[index].activeLetterColors = activeLetterColors;
+        }
+        
+        state.players = state.players.map(player => {
+          return action.payload.playerId === player.playerId ? 
+            {...player, 
+              currentFocus: action.payload.currentFocus
+            }
             : player;
         })
       }
@@ -278,6 +357,7 @@ export const {
   loadGame,
   enteringPlayer,
   exitingPlayer,
+  updatePlayerFocus,
   loadSquareState,
   loadWordState,
   loadBoardState,

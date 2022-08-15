@@ -166,7 +166,40 @@
 }
 
 .avatar-bg.MuiAvatar-circular {
-  border: 3px solid rgb(38,139,210);
+  border: 5px solid;
+}
+
+.yellow-border.avatar-bg.MuiAvatar-circular {
+  border-color: rgb(181,137,22);
+}
+
+.orange-border.avatar-bg.MuiAvatar-circular {
+  border-color: rgb(203,75,22);
+}
+
+.red-border.avatar-bg.MuiAvatar-circular {
+  border-color:  rgb(220,50,47);
+}
+
+.magenta-border.avatar-bg.MuiAvatar-circular {
+  border-color:  rgb(211,54,130);
+  background-color: rgb(211,54,130);
+}
+
+.violet-border.avatar-bg.MuiAvatar-circular {
+  border-color: rgb(108,113,196)
+}
+
+.blue-border.avatar-bg.MuiAvatar-circular {
+  border-color: rgb(38,139,210);
+}
+
+.cyan-border.avatar-bg.MuiAvatar-circular {
+  border: 3px solid rgb(42,161,152);
+}
+
+.green-border.avatar-bg.MuiAvatar-circular {
+  border: 3px solid rgb(133,153,26);
 }
 
 .offline.avatar-bg.MuiAvatar-circular {
@@ -221,5 +254,4 @@
 
 .green {
   background-color: rgb(133,153,26);
-
 }

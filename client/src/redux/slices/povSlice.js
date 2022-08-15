@@ -7,9 +7,9 @@ const defaultState = {
   pencilActive: false,
   zoomActive: false,
   focused: {
-    orientation: "across",
-    word: [0],
-    square: 0,
+    // orientation: "across",
+    // word: [0],
+    // square: 0,
   },
   numRows: 0,
   numCols: 0,
@@ -37,9 +37,9 @@ export const povSlice = createSlice({
         pencilActive: false,
         zoomActive: false,
         focused: {
-          orientation: "across",
-          word: focusedWord,
-          square: action.payload.focus,
+          // orientation: "across",
+          // word: focusedWord,
+          // square: action.payload.focus,
         },
         numRows: action.payload.numRows,
         numCols: action.payload.numCols,
@@ -53,12 +53,6 @@ export const povSlice = createSlice({
       };
     },
     'setFocusedSquare': (state, action) => {
-      // remove previous focus
-      state.focused.word.forEach( index => {
-        state.board[index].isActiveSquare = false;
-        state.board[index].isActiveWord = false;
-      });
-      // set new focus
       state.focused = {
         ...state.focused,
         square: action.payload.focus,
@@ -70,14 +64,6 @@ export const povSlice = createSlice({
           state.focused.orientation
         )
       }
-      // highlight new focus
-      state.focused.word.forEach( index => {
-        if (index === action.payload.focus) {
-          state.board[index].isActiveSquare = true;
-        } else {
-          state.board[index].isActiveWord = true;
-        }
-      });
     },
     'setTeamGames': (state, action) => {
       state.teamGames = action.payload.teamGames;
@@ -90,12 +76,6 @@ export const povSlice = createSlice({
     },
     'toggleOrientation': (state) => {
       let newOrientation = state.focused.orientation === "across" ? "down" : "across";
-      // remove previous focus
-      state.focused.word.forEach( index => {
-        state.board[index].isActiveSquare = false;
-        state.board[index].isActiveWord = false;
-      });
-      // toggle orientation & set new focus
       state.focused = {
         ...state.focused, 
         orientation: newOrientation,
@@ -107,14 +87,6 @@ export const povSlice = createSlice({
           newOrientation
         )
       };
-      // highlight new focus
-      state.focused.word.forEach( index => {
-        if (index === state.focused.square) {
-          state.board[index].isActiveSquare = true;
-        } else {
-          state.board[index].isActiveWord = true;
-        }
-      });
     },
     'toggleZoom': (state) => {
       state.zoomActive = !state.zoomActive;

@@ -1,13 +1,8 @@
-:root {
-  --numRows: auto-fill;
-  --numCols: auto-fill;
-}
-
 
 .Board {
   min-width: 100%;
   display: grid;
-  grid-template-columns: repeat(var(--numCols), 3fr);
+  grid-template-columns: repeat(var(--numCols), 1fr);
   grid-auto-columns: max-content;
   overflow-x: auto;
   padding: 5px;
@@ -24,6 +19,6 @@
 
 @media (min-width: 600px) {
   .Board {
-    grid-template-rows: repeat(var(--numRows), 3fr);
+    grid-template-rows: repeat(var(--numRows), calc(600px/var(--numRows)));
   }
 }

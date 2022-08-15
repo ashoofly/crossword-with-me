@@ -18,11 +18,9 @@ export default React.memo((props) => {
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });
-  if (!squareGameState) {
-    console.log(id);
-  }
   const autocheck = useSelector(state => { return state.game.autocheck });
-
+  const activeWordColors = useSelector(state => state.game.board[id].activeWordColors);
+  const activeLetterColors = useSelector(state => state.game.board[id].activeLetterColors);
   const rebusActive = useSelector(state => { return state.pov.rebusActive });
   const zoomActive = useSelector(state => { return state.pov.zoomActive });
   const isActiveWord = useSelector(state => { return state.pov.board[id].isActiveWord });
@@ -31,8 +29,30 @@ export default React.memo((props) => {
   const dispatch = useDispatch();
 
   let [squareText, setSquareText] = React.useState('');
+  let [highlightClasses, setHighlightClasses] = React.useState('');
+
+
   React.useEffect(displaySquare, [squareGameState, squareGrid]);
   React.useEffect(checkAnswer, [autocheck, squareGameState, squareGrid]);
+
+  React.useEffect(() => {
+    if (!activeWordColors || !activeLetterColors) return;
+    let colorClasses = [];
+    for (const color of activeWordColors) {
+      colorClasses.push(`${color}-focused-word`);
+    }
+    for (const color of activeLetterColors) {
+      colorClasses.push(`${color}-focused-square`)
+    }
+    if (activeWordColors || activeLetterColors) {
+      console.log(`Setting highlight classes for ${id}:`);
+      console.log(colorClasses);
+    }
+
+    setHighlightClasses(colorClasses);
+
+  }, [activeWordColors, activeLetterColors]);
+
 
   function displaySquare() {
     if (!squareGrid.isPlayable) return;
@@ -104,8 +124,7 @@ export default React.memo((props) => {
       className={oneLine`square
                   ${!squareGrid.isPlayable ? "block" : ""}
                   ${squareGameState.reveal ? "revealed-overlay" : ""}
-                  ${isActiveWord ? "focused-word" : ""}
-                  ${isActiveSquare ? "focused-square" : ""}
+                  ${highlightClasses}
                   ${zoomActive ? "zoomed" : ""}
                   ${rebusActive && isActiveSquare ? "rebus-square" : ""}
                   `}
