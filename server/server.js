@@ -176,13 +176,18 @@ io.on("connection", async(socket) => {
   socket.on('get-team-games', async(playerId) => {
     console.log("Received get-team-games event")
     let player = await getPlayer(playerId);
-    let playerGames = player.games;
-    if (playerGames) {
-      let teamGames = playerGames['team'];
-      socket.emit('load-team-games', teamGames);
+    if (player) {
+      let playerGames = player.games;
+      if (playerGames) {
+        let teamGames = playerGames['team'];
+        socket.emit('load-team-games', teamGames);
+      } else {
+        console.log(`No team games found for player ${playerId}`);
+      }
     } else {
-      console.log(`No team games found for player ${playerId}`);
+      console.log(`Could not find player ${playerId}`);
     }
+
   });
 
   console.log(`Connected to ${socket.id}`);
@@ -587,11 +592,21 @@ async function findOrCreateGame(dow, playerId) {
   }
 } 
 
+// async function updatePhotoIfNeeded(user, player) {
+//   if (user.photoURL !== player.photoURL) {
+//     console.log("Updating photoURL for " + player.displayName);
+//     await update(ref(db, `players/${player.playerId}`), {
+//       photoURL: user.photoURL
+//     });
+//   }
+// }
+
 async function findOrCreatePlayer(user) {
   if (user === null) return;
   const player = await getPlayer(user.uid);
   if (player) {
     console.log("Found player!");
+    // await updatePhotoIfNeeded(user, player);
     return player;
   } else {
     console.log("Could not find player, creating new one");

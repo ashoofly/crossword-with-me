@@ -48,7 +48,8 @@ const defaultState = {
     initial: true,
     scope: "word",
     state: [],
-    type: ""
+    type: "",
+    socketId: "12345"
   },
   players: [{
     displayName: "Fred Rogers",
@@ -221,7 +222,8 @@ export const gameSlice = createSlice({
       }
       state.mostRecentAction = {
         scope: "game",
-        type: "resetGame"
+        type: "resetGame", 
+        source: action.payload.source
       };
     },
     'toggleAutocheck': (state, action) => {
@@ -231,7 +233,8 @@ export const gameSlice = createSlice({
       }
       state.mostRecentAction = {
         scope: "game",
-        type: "toggleAutocheck"
+        type: "toggleAutocheck",
+        source: action.payload.source
       };
     },
     'changeInput': (state, action) => {
@@ -239,6 +242,7 @@ export const gameSlice = createSlice({
       state.board[action.payload.id].source = action.payload.source;
       state.board[action.payload.id].input = action.payload.value;
       state.board[action.payload.id].penciled = action.payload.penciled;
+      state.board[action.payload.id].color = action.payload.color;
       if (action.payload.advanceCursor) {
         state.advanceCursor = state.advanceCursor + 1;
       }
@@ -259,11 +263,12 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "word",
-        state: action.payload.word
+        state: action.payload.word,
+        source: action.payload.source
       };
       state.savedToDB = false;
     },
-    'requestCheckPuzzle': (state) => {
+    'requestCheckPuzzle': (state, action) => {
       state.board = state.board.map(square => {
         return (square.input !== '') ? 
           ({
@@ -274,7 +279,8 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "board",
-        state: state.board
+        state: state.board,
+        source: action.payload.source
       }
       state.savedToDB = false;
     },
@@ -306,11 +312,12 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "word",
-        state: action.payload.word
+        state: action.payload.word,
+        source: action.payload.source
       };
       state.savedToDB = false;
     },
-    'requestRevealPuzzle': (state) => {
+    'requestRevealPuzzle': (state, action) => {
       state.board.forEach((square, i) => {
         if (state.gameGrid[i].isPlayable && !state.board[i].reveal && !state.board[i].verified) {
           if (state.board[i].input === state.gameGrid[i].answer) {
@@ -325,7 +332,8 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "board",
-        state: state.board
+        state: state.board,
+        source: action.payload.source
       };
       state.savedToDB = false;
     },

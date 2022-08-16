@@ -1,6 +1,6 @@
 .square {
-  border: 0.1px solid rgb(6,54,66);
-  background-color: rgb(60, 85, 92);
+  border: 0.1px solid rgb(87,110,117);
+  background-color: #EEE8D5;
   display: grid;
   padding-bottom: 5px;
   overflow: hidden;
@@ -29,11 +29,11 @@
   height: 9px;
   font-size: 8px;
   display: flex;
-  color: rgb(253,246,227);
+  color: rgb(60, 85, 92);
 }
 
 .square-value {
-  color: rgb(253,246,227);
+  font-weight: bold;
 }
 
 .penciled-color {
@@ -54,7 +54,7 @@
 }
 
 .block {
-  background-color: rgb(0,44,54);
+  background-color: rgb(87,110,117);
   border: none;
 }
 
@@ -101,11 +101,81 @@
   margin: 2px;
 }
 
-
-.blue-focused-square {
-  background-color: var(--violet);
+.red-text {
+  color: var(--red);
+}
+.orange-text {
+  color: var(--orange);
+}
+.yellow-text {
+  color: var(--yellow);
+}
+.magenta-text {
+  color: var(--magenta);
+}
+.green-text {
+  color: var(--green);
+}
+.cyan-text {
+  color: var(--cyan);
+}
+.blue-text {
+  color: var(--blue);
+}
+.violet-text {
+  color: var(--violet);
 }
 
-.blue-focused-word {
-  background-color: var(--violet-shaded);
+.focus-overlap {
+  background-color: rgb(204, 192.5, 183.5);
+}
+
+.red-focus-square {
+  background-color: var(--red-focus-square);
+}
+.red-focus-word {
+  background-color: var(--red-focus-word);
+}
+
+.orange-focus-square {
+  background-color: var(--orange-focus-square);
+}
+.orange-focus-word {
+  background-color: var(--orange-focus-word);
+}
+.yellow-focus-square {
+  background-color: var(--yellow-focus-square);
+}
+.yellow-focus-word {
+  background-color: var(--yellow-focus-word);
+}
+.green-focus-square {
+  background-color: var(--green-focus-square);
+}
+.green-focus-word {
+  background-color: var(--green-focus-word);
+}
+.cyan-focus-square {
+  background-color: var(--cyan-focus-square);
+}
+.cyan-focus-word {
+  background-color: var(--cyan-focus-word);
+}
+.blue-focus-square {
+  background-color: var(--blue-focus-square);
+}
+.blue-focus-word {
+  background-color: var(--blue-focus-word);
+}
+.violet-focus-square {
+  background-color: var(--violet-focus-square);
+}
+.violet-focus-word {
+  background-color: var(--violet-focus-word);
+}
+.magenta-focus-square {
+  background-color: var(--magenta-focus-square);
+}
+.magenta-focus-word {
+  background-color: var(--magenta-focus-word);
 }

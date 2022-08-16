@@ -44,6 +44,7 @@ function App(props) {
   const [gameId, setGameId] = React.useState(searchParams.get('gameId'));
   const [openToast, setOpenToast] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState(null);
+  const [myColor, setMyColor] = React.useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
@@ -54,6 +55,14 @@ function App(props) {
    */
   const [gameNotFound, setGameNotFound] = React.useState(false);
   const [user, initialized] = useAuthenticatedUser(auth);
+
+  React.useEffect(() => {
+    if (!user) return;
+    let me = players.find(player => player.playerId === user.uid);
+    if (me) {
+      setMyColor(me.color);
+    }
+  }, [user, players]);
 
   /**
    * Respond to socket events loading games
@@ -74,6 +83,7 @@ function App(props) {
 
     socket.on('load-game', (game, socketId) => {
       console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
+      console.log("Setting game id to " + game.gameId);
       setGameId(game.gameId);
       setGameNotFound(false);
       console.log(game);
@@ -87,34 +97,8 @@ function App(props) {
         focus: defaultFocus
       }));
       setSearchParams({gameId: game.gameId});
-
-      socket.on("player-online", (playerId, serverGameId, displayName) => {
-        console.log(`Player ${playerId} signed into game ${serverGameId}!`);
-        dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
-        if (user && (playerId !== user.uid) && (serverGameId === gameId)) {
-          console.log("Setting toast message");
-          let firstName = displayName.split(' ')[0];
-          setToastMessage(`${firstName} has entered the game!`);
-          setOpenToast(true);
-        } else {
-          console.log(`Not setting toast message`);
-          console.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
-        }
-      })
-  
-      socket.on("player-offline", (playerId, serverGameId) => {
-        console.log(`Player ${playerId} signed out of game ${serverGameId}`);
-        dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
-      })
-
-
-  
     });
 
-    socket.on("load-player-cursor-change", (playerId, serverGameId, currentFocus) => {
-      console.log(`Received load-player-cursor-change from ${playerId}`);
-      dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
-    })
 
 
     socket.on('game-not-found', () => {
@@ -123,6 +107,34 @@ function App(props) {
 
   
   }, [socket, user]);
+
+  React.useEffect(() => {    
+    if (!user || socket === null || !gameId) return;
+
+    socket.on("player-online", (playerId, serverGameId, displayName) => {
+      console.log(`Player ${playerId} signed into game ${serverGameId}!`);
+      dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
+      if (user && (playerId !== user.uid) && (serverGameId === gameId)) {
+        console.log("Setting toast message");
+        let firstName = displayName.split(' ')[0];
+        setToastMessage(`${firstName} has entered the game!`);
+        setOpenToast(true);
+      } else {
+        console.log(`Not setting toast message`);
+        console.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
+      }
+    })
+
+    socket.on("player-offline", (playerId, serverGameId) => {
+      console.log(`Player ${playerId} signed out of game ${serverGameId}`);
+      dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
+    })
+
+    socket.on("load-player-cursor-change", (playerId, serverGameId, currentFocus) => {
+      console.log(`Received load-player-cursor-change from ${playerId}`);
+      dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
+    })
+  }, [gameId, socket, user]);
 
   /**
    * Handle direct request for specific game, or get default game if no game ID specified
@@ -221,13 +233,15 @@ function App(props) {
    * Send state updates through socket to other clients
    */
   React.useEffect(() => {
-    if (!mostRecentAction || mostRecentAction.initial) return;
-    if (mostRecentAction.scope === "word" || mostRecentAction.scope === "puzzle") {
-      socket.emit("send-changes", { state: mostRecentAction.state, scope: mostRecentAction.scope});
-    } else if (mostRecentAction.scope === "game") {
-      socket.emit("send-changes", { type: mostRecentAction.type, scope: mostRecentAction.scope});
-    } else {
-      console.log(`Unrecognizable action: ${mostRecentAction}`);
+    if (!mostRecentAction || mostRecentAction.initial || socket === null) return;
+    if (mostRecentAction.source === socket.id) {
+      if (mostRecentAction.scope === "word" || mostRecentAction.scope === "puzzle") {
+        socket.emit("send-changes", { state: mostRecentAction.state, scope: mostRecentAction.scope});
+      } else if (mostRecentAction.scope === "game") {
+        socket.emit("send-changes", { type: mostRecentAction.type, scope: mostRecentAction.scope});
+      } else {
+        console.log(`Unrecognizable action: ${mostRecentAction}`);
+      }
     }
 
   }, [mostRecentAction, socket]);
@@ -285,7 +299,7 @@ function App(props) {
       }
       dispatch(removeCheck({id: currentIndex }));
       if (!board[currentIndex].verified) {
-        dispatch(changeInput({ id: currentIndex, value: '', source: socket.id }));
+        dispatch(changeInput({ id: currentIndex, value: '', source: socket.id, color: null }));
       }
     } else {
       setDeleteMode(false);
@@ -295,7 +309,7 @@ function App(props) {
           dispatch(removeCheck({id: focusedSquare }));
           let currentInput = board[focusedSquare].input;
           let newValue = currentInput + e.key.toUpperCase();
-          dispatch(changeInput({ id: focusedSquare, value: newValue, source: socket.id, penciled: pencilActive, advanceCursor: true }));
+          dispatch(changeInput({ color: myColor, id: focusedSquare, value: newValue, source: socket.id, penciled: pencilActive, advanceCursor: true }));
         } else {
           // if letter already in square, go into 'overwrite' mode
           if (board[focusedSquare].input !== "") {
@@ -304,7 +318,7 @@ function App(props) {
           } else {
             if (overwriteMode) setOverwriteMode(false);
           }
-          dispatch(changeInput({ id: focusedSquare, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive, advanceCursor: true }));
+          dispatch(changeInput({ color: myColor, id: focusedSquare, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive, advanceCursor: true }));
         }
       }
     }

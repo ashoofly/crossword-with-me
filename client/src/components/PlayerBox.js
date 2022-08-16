@@ -75,7 +75,7 @@ export default React.memo((props) => {
       friends.forEach(friend => {
         friendIcons.push(
           <Tooltip title={friend.displayName} key={friend.playerId}>
-            <Avatar sx={{ bgcolor: deepOrange[500] }} className={`avatar-bg ${friend.color}-border ${friend.online ? '' : "offline"}`} >
+            <Avatar className={`avatar-bg ${friend.color}-border ${friend.online ? '' : "offline"}`} >
               <img className="avatar-img" alt={friend.displayName} src={friend.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
           </Tooltip>
@@ -92,7 +92,7 @@ export default React.memo((props) => {
   function handleSignin() {
     signin(auth);
   }
-
+  console.log(user);
   return (
     <React.Fragment>
       <div className="player-box">

@@ -1,18 +1,38 @@
 :root {
   --numRows: auto-fill;
   --numCols: auto-fill;
-  --my-focused-word-color: rgb(38,139,210);
-  --my-focused-letter-color: rgb(38,139,210);
   --opacity: 0.5;
+  --my-game-color: rgb(38,139,210);
   --yellow: rgb(181,137,22);
   --orange: rgb(203,75,22);
   --red: rgb(220,50,47);
   --magenta: rgb(211,54,130);
   --violet: rgb(108,113,196);
-  --violet-shaded: rgb(132, 134, 174);
   --blue: rgb(38,139,210);
   --cyan: rgb(42,161,152);
   --green: rgb(133,153,26);
+  --red-focus-square: rgb(227, 169, 168);
+  --red-focus-word: rgb(227, 194, 194);
+  --orange-focus-square: rgb(226, 179, 159);
+  --orange-focus-word: rgb(209, 181, 171);
+  --yellow-focus-square: rgb(209, 190, 142);
+  --yellow-focus-word: rgb(212, 202, 177);
+  --violet-focus-square: rgba(205, 205, 231);
+  --violet-focus-word: rgb(185, 185, 194);
+  --blue-focus-square: rgb(164, 200, 228);
+  --blue-focus-word: rgb(187, 202, 213);
+  --magenta-focus-square: rgb(230, 156, 192);
+  --magenta-focus-word: rgb(221, 183, 201);
+  --green-focus-square: rgb(202, 219, 120);
+  --green-focus-word: rgb(193, 200, 154);
+  --cyan-focus-square: rgb(165, 219, 214);
+  --cyan-focus-word: rgb(190, 215, 212);
+
+  --blue-red-overlap: rgb(204,193,207);
+  --blue-green-overlap: rgb(190,201,186);
+  --red-green-overlap: rgb(206,192,175); 
+  --overlap: rgb(206,192,175); 
+  /* rgb(179, 169, 182); */
 }
 
 * {

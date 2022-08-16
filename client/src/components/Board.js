@@ -38,6 +38,7 @@ export default React.memo((props) => {
     return (
       <Square key={square.id}
         {...square}
+        user={user}
         squareRef={squareRefs[index]}
         socket={socket}
       />

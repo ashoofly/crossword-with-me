@@ -131,7 +131,7 @@
 
 
 .navbar .MuiAvatar-root {
-  background-color: rgb(211,55,130);
+  /* background-color: rgb(211,55,130); */
   height: 30px;
   width: 30px;
   cursor: pointer;

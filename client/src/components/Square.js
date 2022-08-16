@@ -9,6 +9,7 @@ import { oneLine } from 'common-tags';
 export default React.memo((props) => {
   const {
     id,
+    user,
     squareRef,
     // handleRerender,
     socket,
@@ -25,31 +26,78 @@ export default React.memo((props) => {
   const zoomActive = useSelector(state => { return state.pov.zoomActive });
   const isActiveWord = useSelector(state => { return state.pov.board[id].isActiveWord });
   const isActiveSquare = useSelector(state => { return state.pov.board[id].isActiveSquare });
-
+  const textColor = useSelector(state => state.game.board[id].color);
+  const players = useSelector(state => state.game.players);
+  const playerColor = players.find(player => player.playerId === user.uid).color;
   const dispatch = useDispatch();
 
   let [squareText, setSquareText] = React.useState('');
   let [highlightClasses, setHighlightClasses] = React.useState('');
+  let [textColorClass, setTextColorClass] = React.useState('');
+  let [multipleFocus, setMultipleFocus] = React.useState(false);
+  let [customStyle, setCustomStyle] = React.useState(null);
+
 
 
   React.useEffect(displaySquare, [squareGameState, squareGrid]);
   React.useEffect(checkAnswer, [autocheck, squareGameState, squareGrid]);
 
   React.useEffect(() => {
-    if (!activeWordColors || !activeLetterColors) return;
-    let colorClasses = [];
-    for (const color of activeWordColors) {
-      colorClasses.push(`${color}-focused-word`);
-    }
-    for (const color of activeLetterColors) {
-      colorClasses.push(`${color}-focused-square`)
-    }
-    if (activeWordColors || activeLetterColors) {
-      console.log(`Setting highlight classes for ${id}:`);
-      console.log(colorClasses);
-    }
+    setTextColorClass( textColor ? `${textColor}-text` : '');
+    
+  }, [textColor]);
 
-    setHighlightClasses(colorClasses);
+  React.useEffect(() => {
+    if (!activeWordColors || !activeLetterColors) return;
+    if (activeLetterColors.includes(playerColor)) {
+      setHighlightClasses(`${playerColor}-focus-square`);
+      setCustomStyle({});
+    }
+    else if ((activeWordColors.length + activeLetterColors.length) > 1) {
+      let allColors = [];
+      for (const color of activeWordColors) {
+        let cssProperty = `--${color}-focus-word`
+        let cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
+        let rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
+        allColors.push(rgbArray);
+      } 
+      for (const color in activeLetterColors) {
+        let cssProperty = `--${color}-focus-square`;
+        let cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
+        let rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
+        allColors.push(rgbArray);
+      }
+      console.log(allColors);
+
+      const minR = Math.min(...allColors.map(rgbVal => rgbVal[0]));
+      const minG = Math.min(...allColors.map(rgbVal => rgbVal[1]));
+      const minB = Math.min(...allColors.map(rgbVal => rgbVal[2]));
+      const minRGB = [minR, minG, minB];
+      console.log(minRGB);
+
+      const maxR = Math.max(...allColors.map(rgbVal => rgbVal[0]));
+      const maxG = Math.max(...allColors.map(rgbVal => rgbVal[1]));
+      const maxB = Math.max(...allColors.map(rgbVal => rgbVal[2]));
+      const maxRGB = [maxR, maxG, maxB];
+      console.log(maxRGB);
+
+      let midRGB = [];
+      minRGB.forEach((minColorComp, index) => {
+        midRGB.push((minColorComp + maxRGB[index])/2);
+      })
+      console.log(midRGB);
+      setCustomStyle({backgroundColor: `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`});
+//rgb(204, 192.5, 183.5)
+    } else {
+      let color = activeWordColors[0];
+      if (color) {
+        setHighlightClasses(`${color}-focus-word`);
+      } else {
+        color = activeLetterColors[0];
+        setHighlightClasses(`${color}-focus-square`);
+      }
+      setCustomStyle({});
+    }
 
   }, [activeWordColors, activeLetterColors]);
 
@@ -116,6 +164,7 @@ export default React.memo((props) => {
 
   return (
     <div
+      style={customStyle}
       id={id}
       tabIndex="0"
       ref={squareRef}
@@ -139,6 +188,7 @@ export default React.memo((props) => {
       {squareGrid.isPlayable && squareGameState.reveal && <div className="revealed-marker"></div>}
 
       <div className={oneLine`square-value
+                      ${textColorClass}
                       ${squareGameState.penciled ? "penciled-color" : ""}
                       ${squareGameState.verified ? "verified-color" : ""}
                       `}>
