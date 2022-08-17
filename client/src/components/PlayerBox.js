@@ -6,7 +6,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import Badge from '@mui/material/Badge';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { signin, signout } from '../auth';
+import { signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useSelector } from "react-redux";
 import Tooltip from '@mui/material/Tooltip';
@@ -89,9 +89,9 @@ export default React.memo((props) => {
     socket.emit('leave-game', user.uid, gameId);
     signout(auth);
   }
-  function handleSignin() {
-    signin(auth);
-  }
+  // function handleSignin() {
+  //   signin(auth);
+  // }
   console.log(user);
   return (
     <React.Fragment>
@@ -134,7 +134,7 @@ export default React.memo((props) => {
 
           <div className="color-blob yellow"></div>
         </div>
-        <MenuItem onClick={user ? handleSignout : handleSignin}>Sign out</MenuItem>
+        <MenuItem onClick={handleSignout}>Sign out</MenuItem>
       </Menu>
     </React.Fragment>
   )

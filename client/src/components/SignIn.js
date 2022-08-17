@@ -51,7 +51,7 @@ export default function JoinGame(props) {
   let gameId = searchParams.get('gameId');
   let token = searchParams.get('token');
   if (token) {
-    handleCredentialResponse(token, auth);
+    handleCredentialResponse(token, auth, socket, gameId);
   }
   const navigate = useNavigate();
   const [user, initialized] = useAuthenticatedUser(auth);

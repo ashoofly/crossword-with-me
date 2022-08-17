@@ -1,6 +1,4 @@
-import { getFirebaseConfig } from '../firebase-config.js';
-import { getDatabase, ref, set, get, update } from "firebase/database";
-import { initializeApp } from "firebase/app";
+import { getFirebaseConfig } from './firebase-config.js';
 import { Server } from "socket.io";
 import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW } from "./functions/puzzleUtils.js";
 import { v4 as uuidv4 } from 'uuid';
@@ -8,18 +6,20 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import {jwtVerify, createRemoteJWKSet} from 'jose';
-import { getAuth, signInWithCredential } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth";
-import axios from "axios";
 import url from "url";
+import admin from "firebase-admin";
+
+//These need to be replaced with admin SDK
+import { getDatabase, ref, set, get, update } from "firebase/database";
+
 
 const firebaseAppConfig = getFirebaseConfig();
-const app = initializeApp(firebaseAppConfig);
+const app = admin.initializeApp(firebaseAppConfig);
 console.log("Initialized Firebase app");
-const db = getDatabase(app); 
-console.log("Initialized Firebase realtime database");
-const auth = getAuth(app);
+const auth = admin.auth(app);
 console.log("Initialized Firebase authentication");
+const db = admin.database(app); 
+console.log("Initialized Firebase realtime database");
 
 const io = new Server(3001, {
   cors: {
@@ -200,6 +200,17 @@ io.on("connection", async(socket) => {
     console.log(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
   });
 
+  socket.on('user-signed-in', (idToken, gameId) => {
+    console.log(`Received user-signed-in event with gameId: ${gameId}`);
+    if (gameId) {
+      // add user to game if not already added
+      addUserToGame(idToken, gameId);
+
+    } else {
+      // add player to db if not already added
+      addPlayerToDB(idToken);
+    }
+  });
 
 });
 
@@ -229,18 +240,20 @@ async function verifyJWT(idToken) {
 }
 
 
-async function authenticateUser(token) {
-  // Build Firebase credential with the Google ID token.
-  const credential = GoogleAuthProvider.credential(token);
+async function verifyFirebaseClientToken(idToken) {
+  console.log('Verifying Firebase client token...');
+  try {
+    let decodedToken = await auth.verifyIdToken(idToken);
+    console.log(decodedToken);
+    const uid = decodedToken.uid;
 
-  // Sign in with credential from the Google user.
-  try { 
-    let result = await signInWithCredential(auth, credential);
-    return result.user;
-
+    let user = await auth.getUser(uid);
+    console.log(user);
+    return user;
+    
   } catch(error) {
     console.log(error);
-  }
+  };
 }
 
 // const playerColors = [
@@ -319,14 +332,13 @@ async function addPlayerToGame(player, game) {
   return await getPlayerTeamGames(player.playerId);
 }
 
-async function addUserToGame(jwt, gameId) {
-  let user = await authenticateUser(jwt);
+async function addUserToGame(firebaseClientToken, gameId) {
+  let user = await verifyFirebaseClientToken(firebaseClientToken);
   let player = await findOrCreatePlayer(user);
   let game = await getGameById(gameId);
   addPlayerToGame(player, game);
 }
 
-const provider = new GoogleAuthProvider();
 const server = express();
 const port = 3002;
 server.use(bodyParser.urlencoded({ extended: true }));
@@ -354,21 +366,10 @@ server.post('/auth', async(req, res) => {
   if (redirectUrl.includes("?gameId=")) {
     returnedUrl = `${redirectUrl}&token=${idToken}`;
 
-    // get gameId
-    const queryObj = url.parse(redirectUrl, true).query;
-    const gameId = queryObj['gameId'];
-
-    // add user to game if not already added
-    addUserToGame(idToken, gameId);
-
   } else {
     returnedUrl = `${redirectUrl}?token=${idToken}`;
-
-    // add player to db if not already added
-    addPlayerToDB(idToken);
   }
-
-  console.log(`Got auth token, redirecting back to front-end`);
+  console.log(`Redirecting Google auth token back to front-end`);
   res.redirect(returnedUrl);
 })
 
@@ -376,8 +377,8 @@ server.listen(port, () => {
   console.log(`Express server listening on port ${port}`)
 }) 
 
-async function addPlayerToDB(jwt) {
-  let user = await authenticateUser(jwt);
+async function addPlayerToDB(firebaseClientToken) {
+  let user = await verifyFirebaseClientToken(firebaseClientToken);
   findOrCreatePlayer(user);
 }
 

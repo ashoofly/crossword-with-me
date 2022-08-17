@@ -1,26 +1,32 @@
-import { getAuth, signInWithRedirect, signInWithCredential, signOut, onAuthStateChanged } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth";
+import { 
+  getAuth, 
+  signInWithCredential, 
+  signOut, 
+  GoogleAuthProvider 
+} from "firebase/auth";
 
-const provider = new GoogleAuthProvider();
+let auth = null;
 let user = null;
 
-function handleCredentialResponse(token, auth) {
+function handleCredentialResponse(googleToken, auth, socket, gameId) {
     // Build Firebase credential with the Google ID token.
-  const credential = GoogleAuthProvider.credential(token);
+  const credential = GoogleAuthProvider.credential(googleToken);
 
   // Sign in with credential from the Google user.
   signInWithCredential(auth, credential).then(result => {
-    const user = result.user;
+    user = result.user;
+    // Send Firebase token to server so player can be 
+    // added to database or relevant game if needed
+    auth.currentUser.getIdToken(true).then(function(firebaseToken) {
+      console.log(`Sending user-signed-in event to server with ${gameId} and ${firebaseToken}`);
+      socket.emit('user-signed-in', firebaseToken, gameId);
+
+    }).catch(function(error) {
+      // Handle error
+      console.log(error);
+    });
 
   }).catch((error) => {
-    // Handle Errors here.
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    // The email of the user's account used.
-    const email = error.email;
-    // The credential that was used.
-    const credential = GoogleAuthProvider.credentialFromError(error);
-    // ...
     console.log(error);
   });
 }
@@ -32,31 +38,21 @@ function getUser() {
 
 function initializeAuth(app) {
   if (!app) return;
-  const auth = getAuth(app);
-  // if (auth) {
-  //   onAuthStateChanged(auth, (returnedUser) => {
-  //     if (returnedUser) {
-  //       // User is signed in, see docs for a list of available properties
-  //       // https://firebase.google.com/docs/reference/js/firebase.User
-  //       console.log("Auth state change:");
-  //       console.log(returnedUser);
-  //       user = returnedUser;
-  //     } 
-  //   });
-  // }
+  auth = getAuth(app);
   return auth;
 }
 
-function signin(auth) {
-  if (!auth) return;
-  signInWithRedirect(auth, provider).then(result => {
-    const user = result.user;
-    console.log("User successfully signed in.");
-    console.log(user);
-  }).catch((error) => {
-    console.log(error);
-});
-}
+// Doesn't work for Chrome Incognito browsers, so had to switch to manual Google Identity Platform 
+// function signin(auth) {
+//   if (!auth) return;
+//   signInWithRedirect(auth, provider).then(result => {
+//     const user = result.user;
+//     console.log("User successfully signed in.");
+//     console.log(user);
+//   }).catch((error) => {
+//     console.log(error);
+// });
+// }
 
 function signout(auth) {
   if (!auth) return;
@@ -70,7 +66,7 @@ function signout(auth) {
 
 export {
   initializeAuth,
-  signin,
+  // signin,
   signout,
   handleCredentialResponse,
   getUser
