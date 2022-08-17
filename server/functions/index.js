@@ -3,7 +3,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const puppeteer = require("puppeteer");
-const { ref, set } = require("firebase/database");
 const { isCurrentPuzzleSaved, setupGameBoard } = require("./puzzleUtils");
 
 admin.initializeApp();
@@ -27,7 +26,8 @@ async function fetchCurrentPuzzle() {
 function saveNewPuzzle(puzzle) {
   const { grid, clueDictionary } = setupGameBoard(puzzle);
   console.log("Saving puzzle to Firebase database");
-  set(ref(db, "puzzles/" + puzzle.dow), {
+  const puzzleRef = db.ref(`puzzles/${puzzle.dow}`);
+  puzzleRef.set({
     ...puzzle,
     gameGrid: grid,
     clueDictionary: clueDictionary,

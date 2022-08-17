@@ -10,7 +10,8 @@
       "**.log",
       ".eslintrc.js",
       ".gitignore",
-      "package-lock.json"
+      "package-lock.json",
+      "README.md"
     ]
   },
   "emulators": {

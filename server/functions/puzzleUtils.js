@@ -159,5 +159,5 @@ module.exports = {
   getPreviousDOW,
   isCurrentPuzzleSaved,
   setupGameBoard,
-  isGameCurrent
+  isGameCurrent,
 };

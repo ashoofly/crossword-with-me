@@ -6,11 +6,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import {jwtVerify, createRemoteJWKSet} from 'jose';
-import url from "url";
 import admin from "firebase-admin";
-
-//These need to be replaced with admin SDK
-import { getDatabase, ref, set, get, update } from "firebase/database";
 
 
 const firebaseAppConfig = getFirebaseConfig();
@@ -20,6 +16,100 @@ const auth = admin.auth(app);
 console.log("Initialized Firebase authentication");
 const db = admin.database(app); 
 console.log("Initialized Firebase realtime database");
+
+let dbCollections = {
+  players: {},
+  games: {},
+  puzzles: {}
+}
+
+function getDbObjectPromise(collectionType, id, forcePull) {
+  let force = forcePull ? true : false;
+  return new Promise((resolve, reject) => {
+    getDbObjectById(collectionType, id, force, successResponse => {
+      resolve(successResponse);
+    }, errorResponse => {
+      reject(errorResponse);
+    });
+  });
+}
+
+function getDbObjectById(collectionType, id, forcePull, successCallback, errorCallback) {
+  console.log(`Looking for ${collectionType}/${id}...`);
+  let objectCollection = dbCollections[collectionType];
+  if (!forcePull) {
+    if (objectCollection[id]) {
+      console.log(`${collectionType}/${id} found in server cache`);
+      successCallback(objectCollection[id]);
+    } else {
+      console.log(`${collectionType}/${id} not found in server cache. Adding db listener.`);
+      addDbListener(collectionType, id, successCallback, errorCallback);
+    }
+  } else {
+    console.log(`Force pulling from db: ${collectionType}/${id}.`);
+    const objectRef = db.ref(`${collectionType}/${id}`);
+
+    objectRef.once('value', (snapshot) => {
+      if (snapshot.exists()) {
+        successCallback(snapshot.val());
+      } else {
+        successCallback(null);
+      }
+    }, (error) => {
+      console.log(error);
+      errorCallback(error);
+    }); 
+  }
+}
+
+function addDbListener(collectionType, id, successCallback, errorCallback) {
+  const objectCollection = dbCollections[collectionType];
+  const objectRef = db.ref(`${collectionType}/${id}`);
+  objectRef.on('value', (snapshot) => {
+    // if this is first request, we are waiting for callback to return from db
+    if (!objectCollection[id]) {
+      if (snapshot.exists()) {
+        successCallback(snapshot.val());
+      } else {
+        successCallback(null);
+      }
+    } 
+    if (snapshot.exists()) {
+      objectCollection[id] = snapshot.val();
+    }
+  }, (error) => {
+    console.log(error);
+    errorCallback(error);
+  }); 
+}
+
+function getDbCollectionPromise(collectionType) {
+  return new Promise((resolve, reject) => {
+    getDbCollection(collectionType, successResponse => {
+      resolve(successResponse);
+    }, errorResponse => {
+      reject(errorResponse);
+    });
+  });
+}
+
+function getDbCollection(collectionType, successCallback, errorCallback) {
+  console.log(`Looking for ${collectionType}...`);
+
+  const collectionRef = db.ref(`${collectionType}`);
+
+  collectionRef.on('value', (snapshot) => {
+    if (snapshot.exists()) {
+      successCallback(snapshot.val());
+      dbCollections[collectionType] = snapshot.val();
+    } else {
+      successCallback(null);
+    }
+  }, (error) => {
+    console.log(error);
+    errorCallback(error);
+  }); 
+}
 
 const io = new Server(3001, {
   cors: {
@@ -66,12 +156,12 @@ io.on("connection", async(socket) => {
 
   socket.on("get-friend-request-name", async(gameId) => {
     console.log(`Received get-friend-request-name with ${gameId}`);
-    const game = await getGameById(gameId);
+    const game = await getDbObjectPromise("games", gameId);
     if (game) {
       if (game.players) {
         let ownerId = game.players[0].playerId;
         if (ownerId) {
-          let ownerInfo = await getPlayer(ownerId);
+          let ownerInfo = await getDbObjectPromise("players", ownerId);
           if (ownerInfo) { 
             console.log(`Sending display-friend-request event back to client`);
             socket.emit("display-friend-request", ownerInfo.displayName);
@@ -96,7 +186,8 @@ io.on("connection", async(socket) => {
       let index = players.findIndex(player => player.playerId === playerId);
       if (index !== -1) {
         console.log(`Updating ${playerId} status for ${gameId} to ${online ? "online" : "offline"}`)
-        update(ref(db, `games/${gameId}/players/${index}`), {
+        const playerRef = db.ref(`games/${gameId}/players/${index}`);
+        playerRef.update({
           online: online
         });
       } else {
@@ -117,7 +208,7 @@ io.on("connection", async(socket) => {
   });
 
   async function sendGame(game, playerId, source) {
-    let player = await getPlayer(playerId);
+    let player = await getDbObjectPromise("players", playerId);
     game['source'] = source;
     let gameId = game.gameId;
     console.log("Sending game " + gameId);
@@ -153,7 +244,7 @@ io.on("connection", async(socket) => {
 
   socket.on('get-game-by-id', async (gameId, playerId) => {
     console.log(`Received get-game-by-id request with ${gameId} and ${playerId}`);
-    const game = await getGameById(gameId);
+    const game = await getDbObjectPromise("games", gameId);
     if (game) {
       if (game.players) {
         let ownerId = game.players[0].playerId;
@@ -161,7 +252,7 @@ io.on("connection", async(socket) => {
           sendGame(game, playerId, "get-game-by-id");
 
         } else {
-          let player = await getPlayer(playerId);
+          let player = await getDbObjectPromise("players", playerId);
           let teamGames = await addPlayerToGame(player, game);
           socket.emit("load-team-games", teamGames);
           sendGame(game, playerId, "get-game-by-id");
@@ -175,7 +266,7 @@ io.on("connection", async(socket) => {
 
   socket.on('get-team-games', async(playerId) => {
     console.log("Received get-team-games event")
-    let player = await getPlayer(playerId);
+    let player = await getDbObjectPromise("players", playerId);
     if (player) {
       let playerGames = player.games;
       if (playerGames) {
@@ -293,7 +384,8 @@ async function addPlayerToGame(player, game) {
       owner: false,
       color: defaultPlayerColors[numCurrentPlayers]
     });
-    await update(ref(db, 'games/' + gameId), {
+    const gameRef = db.ref(`games/${gameId}`);
+    gameRef.update({
       players: players
     }); 
   }
@@ -310,7 +402,7 @@ async function addPlayerToGame(player, game) {
   if (!teamGames.find(game => game.gameId === gameId)) {
     // get game owner for front-end to display
     let ownerId = game.players[0].playerId;
-    let owner = await getPlayer(ownerId);
+    let owner = await getDbObjectPromise("players", ownerId);
 
     teamGames.push({
       gameId: gameId,
@@ -325,7 +417,8 @@ async function addPlayerToGame(player, game) {
     playerGames.team = teamGames;
 
     console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
-    await update(ref(db, 'players/' + player.id), {
+    const playerRef = db.ref(`players/${player.id}`);
+    playerRef.update({
       games: playerGames
     });
   }
@@ -335,7 +428,7 @@ async function addPlayerToGame(player, game) {
 async function addUserToGame(firebaseClientToken, gameId) {
   let user = await verifyFirebaseClientToken(firebaseClientToken);
   let player = await findOrCreatePlayer(user);
-  let game = await getGameById(gameId);
+  let game = await getDbObjectPromise("games", gameId);
   addPlayerToGame(player, game);
 }
 
@@ -387,22 +480,24 @@ async function createNewPlayer(user) {
   console.log(user);
   if (!user) return;
   let playerId = user.uid;
-  await set(ref(db, 'players/' + playerId), {
+  const playerRef = db.ref(`players/${playerId}`);
+  playerRef.set({
     id: playerId,
     displayName: user.displayName,
     email: user.email,
     photoURL: user.photoURL
   });
-  return (await get(ref(db, 'players/' + playerId))).val();
+  return await getDbObjectPromise("players", playerId, true);
 }
 
 async function createNewGame(dow, playerId) {
   let gameId = uuidv4();
-  let puzzle = await getPuzzle(dow);
-  let player = await getPlayer(playerId);
+  let puzzle = await getDbObjectPromise("puzzles", dow);
+  let player = await getDbObjectPromise("players", playerId);
   console.log(`Creating game ${gameId} for ${playerId} with ${dow} puzzle...`)
   let numSquares = puzzle.size.rows * puzzle.size.cols;
-  await set(ref(db, 'games/' + gameId), {
+  const gameRef = db.ref(`games/${gameId}`);
+  gameRef.set({
     gameId: gameId,
     savedToDB: true,
     autocheck: false,
@@ -439,13 +534,13 @@ async function createNewGame(dow, playerId) {
     numRows: puzzle.size.rows,
     numCols: puzzle.size.cols
   });
-  return (await get(ref(db, 'games/' + gameId))).val();
+  return await getDbObjectPromise("games", gameId, true);
 }
 
 
 async function getDefaultGame(playerId) {
   console.log("Getting default game...");
-  let player = await getPlayer(playerId);
+  let player = await getDbObjectPromise("players", playerId);
   if (player) {
     let dow;
     if (isCurrentPuzzleSaved(db)) {
@@ -457,21 +552,9 @@ async function getDefaultGame(playerId) {
   }
 }
 
-async function getPuzzle(dow) {
-  console.log(`Loading puzzle for ${dow}...`);
-  const snapshot = await get(ref(db, 'puzzles/' + dow));
-  if (snapshot.exists()) {
-    return snapshot.val();
-  } else {
-    console.log("Error loading puzzle: no puzzle available");
-    return null;
-  }
-}
-
 async function getPuzzleDates() {
-  const snapshot = await get(ref(db, 'puzzles'));
-  if (snapshot.exists()) {
-    let puzzles = snapshot.val();
+  let puzzles = await getDbCollectionPromise("puzzles");
+  if (puzzles) {
     let dates = {};
     for (const dow in puzzles) {
       dates[dow] = puzzles[dow].date;
@@ -484,21 +567,11 @@ async function getPuzzleDates() {
   }
 }
 
-async function getGameById(gameId) {
-  console.log("Looking for game " + gameId);
-  const snapshot = await get(ref(db, 'games/' + gameId));
-  if (snapshot.exists()) {
-    return snapshot.val();
-  } else {
-    return null;
-  }
-} 
-
 async function getGamePlayers(gameId) {
   console.log("Looking for players for game " + gameId);
-  const snapshot = await get(ref(db, `games/${gameId}/players`));
-  if (snapshot.exists()) {
-    return snapshot.val();
+  let game = await getDbObjectPromise("games", gameId);
+  if (game.players) {
+    return game.players;
   } else {
     return null;
   }
@@ -506,28 +579,17 @@ async function getGamePlayers(gameId) {
 
 async function getPlayerTeamGames(playerId) {
   console.log(`Looking for player ${playerId} team games`);
-  const snapshot = await get(ref(db, `players/${playerId}/games/team`));
-  if (snapshot.exists()) {
-    return snapshot.val();
+  let player = await getDbObjectPromise("players", playerId);
+  if (player.games && player.games.team) {
+    return player.games.team;
   } else {
     return null;
   }
 } 
 
-async function getPlayer(playerId) {  
-  if (!playerId) return;
-  console.log("Looking for player " + playerId); 
-  const snapshot = await get(ref(db, 'players/' + playerId));
-  if (snapshot.exists()) {
-    return snapshot.val();
-  } else {
-    return null;
-  }
-}
-
 async function getGameIfCurrent(gameId, dow) {
-  let currentPuzzle = await getPuzzle(dow);
-  let game = await getGameById(gameId);
+  let currentPuzzle = await getDbObjectPromise("puzzles", dow);
+  let game = await getDbObjectPromise("games", gameId);
   if (game) {
     if (game.date === currentPuzzle.date) {
       return game;
@@ -555,7 +617,8 @@ async function createGameAndUpdatePlayer(player, dow) {
   playerGames.owner = ownerGames;
 
   console.log(`Adding game ${newGame.gameId} to owner game list for ${playerId}.`);
-  await update(ref(db, 'players/' + playerId), {
+  const playerRef = db.ref(`players/${playerId}`);
+  playerRef.update({
     games: playerGames
   });
   return newGame;
@@ -567,7 +630,7 @@ async function createGameAndUpdatePlayer(player, dow) {
 async function findOrCreateGame(dow, playerId) {
   if (playerId) {
     // find player game
-    let player = await getPlayer(playerId);
+    let player = await getDbObjectPromise("players", playerId);
     if (player) {
       let playerGames = player.games;
       if (playerGames && playerGames['owner'] && playerGames['owner'][dow]) {
@@ -593,18 +656,9 @@ async function findOrCreateGame(dow, playerId) {
   }
 } 
 
-// async function updatePhotoIfNeeded(user, player) {
-//   if (user.photoURL !== player.photoURL) {
-//     console.log("Updating photoURL for " + player.displayName);
-//     await update(ref(db, `players/${player.playerId}`), {
-//       photoURL: user.photoURL
-//     });
-//   }
-// }
-
 async function findOrCreatePlayer(user) {
   if (user === null) return;
-  const player = await getPlayer(user.uid);
+  const player = await getDbObjectPromise("players", user.uid);
   if (player) {
     console.log("Found player!");
     // await updatePhotoIfNeeded(user, player);
@@ -616,46 +670,21 @@ async function findOrCreatePlayer(user) {
 }
 
 async function updateGameBoard(gameId, board) {
-  update(ref(db, 'games/' + gameId), {
+  const gameRef = db.ref(`games/${gameId}`);
+  gameRef.update({
     board: board
   });
 }
 
 async function updatePlayerTeamGames(playerId) {
-  const snapshot = await get(ref(db,`players/${playerId}/games/team`));
-  if (snapshot.exists()) {
-    let teamGames = snapshot.val();
+  const teamGames = await getPlayerTeamGames(playerId);
+  if (teamGames) {
     let updatedTeamGames = teamGames.filter(game => game !== null);
-    update(ref(db, `players/${playerId}/games`), {
+    const playerGamesRef = db.ref(`players/${playerId}/games`);
+    playerGamesRef.update({
       team: updatedTeamGames
     });
   } 
 }
-
-//updatePlayerTeamGames("RJuKVBvMmeOipdaxDXYKQA9mHZY2");
-// function addPlayer(gameId, playerId) {
-//   const playersListRef = ref(db, 'games/' + gameId, 'players')
-//   const newPlayerRef = push(playersListRef);
-//   set(newPlayerRef, playerId);
-// }
-
-// function addGame(gameId, playerId) {
-//   const gamesListRef = ref(db, 'players/' + playerId, 'games')
-//   const newGameRef = push(gamesListRef);
-//   set(newGameRef, gameId);
-// }
-
-// function getAllGames(playerId) {
-//   get(ref(db, 'players/' + playerId, 'games')).then(snapshot => {
-//     if (snapshot.exists()) {
-//       return snapshot.val();
-//     } else {
-//       console.log("No data available");
-//     }
-//   }).catch(error => {
-//     console.log(error);
-//   });
-// }
-
 
 
