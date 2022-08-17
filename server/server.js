@@ -27,6 +27,7 @@ function getDbObjectPromise(collectionType, id, forcePull) {
   let force = forcePull ? true : false;
   return new Promise((resolve, reject) => {
     getDbObjectById(collectionType, id, force, successResponse => {
+      console.log(`Returning promise for ${collectionType}/${id}`)
       resolve(successResponse);
     }, errorResponse => {
       reject(errorResponse);
@@ -66,17 +67,15 @@ function addDbListener(collectionType, id, successCallback, errorCallback) {
   const objectCollection = dbCollections[collectionType];
   const objectRef = db.ref(`${collectionType}/${id}`);
   objectRef.on('value', (snapshot) => {
-    // if this is first request, we are waiting for callback to return from db
-    if (!objectCollection[id]) {
-      if (snapshot.exists()) {
-        successCallback(snapshot.val());
-      } else {
-        successCallback(null);
-      }
-    } 
     if (snapshot.exists()) {
+      console.log(`Sending success callback for ${collectionType}/${id}`)
+      successCallback(snapshot.val());
       objectCollection[id] = snapshot.val();
+    } else {
+      console.log(`Could not find ${collectionType}/${id} in db. Sending callback of null.`)
+      successCallback(null);
     }
+
   }, (error) => {
     console.log(error);
     errorCallback(error);
@@ -86,6 +85,7 @@ function addDbListener(collectionType, id, successCallback, errorCallback) {
 function getDbCollectionPromise(collectionType) {
   return new Promise((resolve, reject) => {
     getDbCollection(collectionType, successResponse => {
+      console.log(`Returning promise for ${collectionType}`)
       resolve(successResponse);
     }, errorResponse => {
       reject(errorResponse);
@@ -100,9 +100,11 @@ function getDbCollection(collectionType, successCallback, errorCallback) {
 
   collectionRef.on('value', (snapshot) => {
     if (snapshot.exists()) {
+      console.log(`Sending success call back for ${collectionType}`);
       successCallback(snapshot.val());
       dbCollections[collectionType] = snapshot.val();
     } else {
+      console.log(`Found no ${collectionType}. Sending callback value of null`);
       successCallback(null);
     }
   }, (error) => {
@@ -540,16 +542,21 @@ async function createNewGame(dow, playerId) {
 
 async function getDefaultGame(playerId) {
   console.log("Getting default game...");
-  let player = await getDbObjectPromise("players", playerId);
-  if (player) {
-    let dow;
-    if (isCurrentPuzzleSaved(db)) {
-      dow = getCurrentDOW();
-    } else {
-      dow = getPreviousDOW();
+  try {
+    let player = await getDbObjectPromise("players", playerId);
+    if (player) {
+      let dow;
+      if (await isCurrentPuzzleSaved(db)) {
+        dow = getCurrentDOW();
+      } else {
+        dow = getPreviousDOW();
+      }
+      return await findOrCreateGame(dow, playerId);
     }
-    return await findOrCreateGame(dow, playerId);
+  } catch (error) {
+    console.log(error);
   }
+
 }
 
 async function getPuzzleDates() {

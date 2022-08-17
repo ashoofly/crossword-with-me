@@ -1,7 +1,6 @@
 /* eslint-disable object-curly-spacing */
 /* eslint-disable valid-jsdoc */
 /* eslint-disable require-jsdoc */
-const {ref, get} = require("firebase/database");
 
 const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -16,32 +15,65 @@ function getPreviousDOW() {
   return weekdays[yesterday.getDay()];
 }
 
-function isGameCurrent(gameId) {
-  // const today = new Date((new Date()).toDateString());
-  // return today.getTime() === (new Date(dateString)).getTime();
-}
-
 async function isCurrentPuzzleSaved(db) {
+  console.log("[puzzleUtils] Checking if current puzzle is saved");
   const currentDate = new Date();
   const currentDOW = weekdays[currentDate.getDay()];
   console.log(`Looking for current ${currentDOW} puzzle`);
 
-  const snapshot = await get(ref(db, "puzzles/" + currentDOW));
-  if (snapshot.exists()) {
-    const fetchedPuzzle = snapshot.val();
-    const fetchedPuzzleDate = new Date(Date.parse(fetchedPuzzle.date));
-    if (currentDate.toDateString() === fetchedPuzzleDate.toDateString()) {
-      console.log(`${currentDate.toDateString()} puzzle already downloaded.`);
-      return true;
+  try {
+    const puzzles = await getDbCollectionPromise(db, "puzzles");
+    if (puzzles) {
+      const fetchedPuzzle = puzzles[currentDOW];
+      if (fetchedPuzzle) {
+        const fetchedPuzzleDate = new Date(Date.parse(fetchedPuzzle.date));
+        if (currentDate.toDateString() === fetchedPuzzleDate.toDateString()) {
+          console.log(`${currentDate.toDateString()} puzzle already downloaded.`);
+          return true;
+        } else {
+          console.log(`Saved ${currentDOW} puzzle is for ${fetchedPuzzleDate.toDateString()}. ` +
+                      `New puzzle for ${currentDOW} needed.`);
+          return false;
+        }
+      } else {
+        console.log(`No ${currentDOW} puzzle available`);
+        return false;
+      }
     } else {
-      console.log(`Saved ${currentDOW} puzzle is for ${fetchedPuzzleDate.toDateString()}. ` +
-                  `New puzzle for ${currentDOW} needed.`);
+      console.log("No puzzles found at all");
       return false;
     }
-  } else {
-    console.log(`No ${currentDOW} puzzle available`);
+  } catch (error) {
+    console.log(error);
     return false;
   }
+}
+
+function getDbCollectionPromise(db, collectionType) {
+  return new Promise((resolve, reject) => {
+    getDbCollection(db, collectionType, (successResponse) => {
+      resolve(successResponse);
+    }, (errorResponse) => {
+      reject(errorResponse);
+    });
+  });
+}
+
+function getDbCollection(db, collectionType, successCallback, errorCallback) {
+  console.log(`[puzzleUtiils] Looking for ${collectionType}...`);
+
+  const collectionRef = db.ref(`${collectionType}`);
+
+  collectionRef.on("value", (snapshot) => {
+    if (snapshot.exists()) {
+      successCallback(snapshot.val());
+    } else {
+      successCallback(null);
+    }
+  }, (error) => {
+    console.log(error);
+    errorCallback(error);
+  });
 }
 
 
@@ -159,5 +191,4 @@ module.exports = {
   getPreviousDOW,
   isCurrentPuzzleSaved,
   setupGameBoard,
-  isGameCurrent,
 };
