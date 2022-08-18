@@ -27,8 +27,24 @@
 
 @media (min-width: 600px) {
   .App {
-    width: 600px;
-    margin: auto;
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+    height: 100vh;
+    /* width: 600px;
+    margin: auto; */
+  }
+
+  .widescreen-left-section {
+    width: 45%;
+    
+  }
+
+  .widescreen-right-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 45%;
   }
 
   .container {

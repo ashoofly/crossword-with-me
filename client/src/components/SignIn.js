@@ -1,43 +1,11 @@
-import React from "react";
-import Button from '@mui/material/Button';
-
+import { useEffect, useState, Fragment } from "react";
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
+import { handleCredentialResponse } from '../auth';
+import cryptoRandomString from 'crypto-random-string';
+import { getFirebaseConfig } from '../firebase-config';
 import '../styles/common.css';
 import '../styles/App.css';
-import { getFirebaseConfig } from '../firebase-config';
-import { initializeApp } from "firebase/app";
-import { initializeAuth } from '../auth';
-import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { io } from 'socket.io-client';
-import { useLocation, useSearchParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  changeInput,
-  loadGame,
-  removeCheck,
-  boardSaved,
-  loadSquareState,
-  loadWordState,
-  loadBoardState,
-  toggleAutocheck,
-  resetGame
-} from '../redux/slices/gameSlice';
-import {
-  initializePlayerView,
-  toggleRebus,
-  toggleOrientation
-} from '../redux/slices/povSlice';
-import { signin, handleCredentialResponse } from '../auth';
-import { useNavigate } from 'react-router-dom';
-import cryptoRandomString from 'crypto-random-string';
-
-// http://localhost:3000/crossword-with-friends/join-game?gameId=ec06077c-1312-4c5b-af21-f9c7090a0a57
-
-// A custom hook that builds on useLocation to parse
-// the query string for you.
-// function useQuery() {
-//   const url = useLocation();
-//   return React.useMemo(() => new URLSearchParams(url.search), [url]);
-// }
 
 export default function JoinGame(props) {
   const {
@@ -46,35 +14,48 @@ export default function JoinGame(props) {
   } = props;
   
   const [searchParams, setSearchParams] = useSearchParams();
-  console.log("JoinGame Auth:");
-  console.log(auth);
   let gameId = searchParams.get('gameId');
   let token = searchParams.get('token');
   if (token) {
     handleCredentialResponse(token, auth, socket, gameId);
   }
+
   const navigate = useNavigate();
   const [user, initialized] = useAuthenticatedUser(auth);
-  const firebaseAppConfig = getFirebaseConfig();
+  const [friendName, setFriendName] = useState(null);
+  const [gameNotFound, setGameNotFound] = useState(false);
 
-  const [friendName, setFriendName] = React.useState(null);
-  const [gameNotFound, setGameNotFound] = React.useState(false);
+  useEffect(() => {
+    if (socket === null) return;
 
-  function createNonce() {
-    let randomStr = cryptoRandomString({length: 32});
-    let url = window.location;
-    return btoa(`${url}---${randomStr}`);
-  }
+    function handleDisplayFriendRequest(friendName) {
+      setFriendName(friendName);
+    }
+    function handleGameNotFound() {
+      setGameNotFound(true);
+    }
+    socket.on('display-friend-request', handleDisplayFriendRequest);
+    socket.on('game-not-found', handleGameNotFound);
 
-  React.useEffect(() => {
+    return function cleanup() {
+      socket.off('display-friend-request', handleDisplayFriendRequest);
+      socket.off('game-not-found', handleGameNotFound);      
+    }
+
+  }, [socket])
+
+  useEffect(() => {
     if (!initialized || user) return;
     /* global google */
     google.accounts.id.initialize({
-      client_id: firebaseAppConfig.googleClientId,
-      // callback: res => handleCredentialResponse(res, auth),
+      client_id: getFirebaseConfig().googleClientId,
       ux_mode: "redirect",
       login_uri: "http://localhost:3002/auth",
-      nonce: createNonce()
+      nonce: () => {
+        let randomStr = cryptoRandomString({length: 32});
+        let url = window.location;
+        return btoa(`${url}---${randomStr}`);
+      }
     });
 
     google.accounts.id.renderButton(
@@ -83,44 +64,23 @@ export default function JoinGame(props) {
     );
     }, [user, initialized]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (socket === null || !initialized || !gameId) return;
 
     if (!user) {
       socket.emit("get-friend-request-name", gameId);
-
-      socket.on('display-friend-request', friendName => {
-        setFriendName(friendName);
-      });
-  
-      socket.on('game-not-found', () => {
-        setGameNotFound(true);
-      });
     }
 
+    if (user && gameId) {
+      setSearchParams([]);
+      navigate(`/crossword-with-friends?gameId=${gameId}`);
+    }
 
   }, [socket, initialized, user, gameId]);
 
-  // React.useEffect(() => {
-  //   if (token) {
-  //     handleCredentialResponse(token, auth);
-  //   }
-  // }, [token, auth]);
-
-
-  React.useEffect(() => {
-    if (socket === null) return;
-    if (user && gameId) {
-      setSearchParams([]);
-      console.log("NAVIGATING TO APP COMPONENT");
-      navigate(`/crossword-with-friends?gameId=${gameId}`);
-    }
-  }, [socket, user, gameId]);
-
-
 
   return (
-    <React.Fragment>
+    <Fragment>
       {initialized && !token && !user && !gameNotFound && <div className="join-game">
         <h1>Please sign in to {gameId ? `join ${friendName}'s game:` : `play Crossword with Friends!`}</h1>
         <div id="signInDiv"></div>
@@ -138,7 +98,7 @@ export default function JoinGame(props) {
         <h1>Successfully signed in!</h1>
       </div>
       }
-    </React.Fragment>
+    </Fragment>
   )
 
 }

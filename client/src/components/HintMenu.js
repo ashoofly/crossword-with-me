@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState, memo, Fragment } from 'react';
 import lifebuoy from '../images/life-buoy.svg';
 import friend from '../images/add-friend.svg';
 import Menu from '@mui/material/Menu';
@@ -22,7 +22,7 @@ import {
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 
-export default React.memo((props) => {
+export default memo((props) => {
   const { 
     socket,
     auth,
@@ -35,12 +35,12 @@ export default React.memo((props) => {
   const focus = useSelector(state => state.pov.focused.square);
   const focusedWord = useSelector(state => state.pov.focused.word);
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [showDetailedMenu, setShowDetailedMenu] = React.useState(false);
-  const [menuItems, setMenuItems] = React.useState([]);
-  const [openToast, setOpenToast] = React.useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [showDetailedMenu, setShowDetailedMenu] = useState(false);
+  const [menuItems, setMenuItems] = useState([]);
+  const [openToast, setOpenToast] = useState(false);
   const open = Boolean(anchorEl);
-  React.useEffect(showMenu, [user, gameId, showDetailedMenu, autocheck, focus]);
+  useEffect(showMenu, [user, gameId, showDetailedMenu, autocheck, focus]);
 
   function copyUrlToClipboard() {
     handleClose();
@@ -213,7 +213,7 @@ export default React.memo((props) => {
   }
 
   return (
-    <React.Fragment>
+    <Fragment>
       <div className="icon-round-bg">
         <img onClick={handleClick} className="hint-icon" src={lifebuoy} alt="check_puzzle" />
       </div>
@@ -246,6 +246,6 @@ export default React.memo((props) => {
           Link copied to clipboard!
         </Alert>
       </Snackbar>
-    </React.Fragment>
+    </Fragment>
   )
 });

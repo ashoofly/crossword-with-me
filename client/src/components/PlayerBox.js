@@ -1,8 +1,7 @@
-import React from 'react';
+import { useState, useEffect, memo, Fragment } from 'react';
 import '../styles/common.css';
 import '../styles/Navbar.css';
 import Avatar from '@mui/material/Avatar';
-import PersonIcon from '@mui/icons-material/Person';
 import Badge from '@mui/material/Badge';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -10,9 +9,8 @@ import { signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useSelector } from "react-redux";
 import Tooltip from '@mui/material/Tooltip';
-import { deepOrange } from '@mui/material/colors';
 
-export default React.memo((props) => {
+export default memo((props) => {
   // console.log("Render Account component");
   const {
     auth,
@@ -20,12 +18,12 @@ export default React.memo((props) => {
     gameId
   } = props;
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
-  // const [meIcon, setMeIcon] = React.useState(null);
-  const [meIconClasses, setMeIconClasses] = React.useState("avatar-bg");
-  const [friendIcons, setFriendIcons] = React.useState(null);
-  // const [signinText, setSigninText] = React.useState(null);
+  // const [meIcon, setMeIcon] = useState(null);
+  const [meIconClasses, setMeIconClasses] = useState("avatar-bg");
+  const [friendIcons, setFriendIcons] = useState(null);
+  // const [signinText, setSigninText] = useState(null);
 
   const players = useSelector(state => state.game.players);
 
@@ -38,7 +36,7 @@ export default React.memo((props) => {
     setAnchorEl(null);
   }
 
-  // React.useEffect(() => {
+  // useEffect(() => {
   //   if (!user) return;
   //   // if (user.photoURL) {
   //   setMeIcon(
@@ -65,7 +63,7 @@ export default React.memo((props) => {
   //   setSigninText("Sign out");
   // }, [user]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!initialized || !user || !players) return;
     let me = players.find(player => player.playerId === user.uid);
     setMeIconClasses(`avatar-bg ${me.color}-border`);
@@ -83,7 +81,7 @@ export default React.memo((props) => {
       });
       setFriendIcons(friendIcons);
     }
-  }, [user, players]);
+  }, [user, initialized, players]);
 
   function handleSignout() {
     socket.emit('leave-game', user.uid, gameId);
@@ -92,9 +90,8 @@ export default React.memo((props) => {
   // function handleSignin() {
   //   signin(auth);
   // }
-  console.log(user);
   return (
-    <React.Fragment>
+    <Fragment>
       <div className="player-box">
         {friendIcons}
         {user && <Badge color="success" overlap="circular" badgeContent="">
@@ -136,7 +133,7 @@ export default React.memo((props) => {
         </div>
         <MenuItem onClick={handleSignout}>Sign out</MenuItem>
       </Menu>
-    </React.Fragment>
+    </Fragment>
   )
 });
 

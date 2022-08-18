@@ -27,7 +27,6 @@ function getDbObjectPromise(collectionType, id, forcePull) {
   let force = forcePull ? true : false;
   return new Promise((resolve, reject) => {
     getDbObjectById(collectionType, id, force, successResponse => {
-      console.log(`Returning promise for ${collectionType}/${id}`)
       resolve(successResponse);
     }, errorResponse => {
       reject(errorResponse);
@@ -36,14 +35,11 @@ function getDbObjectPromise(collectionType, id, forcePull) {
 }
 
 function getDbObjectById(collectionType, id, forcePull, successCallback, errorCallback) {
-  console.log(`Looking for ${collectionType}/${id}...`);
   let objectCollection = dbCollections[collectionType];
   if (!forcePull) {
     if (objectCollection[id]) {
-      console.log(`${collectionType}/${id} found in server cache`);
       successCallback(objectCollection[id]);
     } else {
-      console.log(`${collectionType}/${id} not found in server cache. Adding db listener.`);
       addDbListener(collectionType, id, successCallback, errorCallback);
     }
   } else {
@@ -68,11 +64,9 @@ function addDbListener(collectionType, id, successCallback, errorCallback) {
   const objectRef = db.ref(`${collectionType}/${id}`);
   objectRef.on('value', (snapshot) => {
     if (snapshot.exists()) {
-      console.log(`Sending success callback for ${collectionType}/${id}`)
       successCallback(snapshot.val());
       objectCollection[id] = snapshot.val();
     } else {
-      console.log(`Could not find ${collectionType}/${id} in db. Sending callback of null.`)
       successCallback(null);
     }
 
@@ -85,7 +79,6 @@ function addDbListener(collectionType, id, successCallback, errorCallback) {
 function getDbCollectionPromise(collectionType) {
   return new Promise((resolve, reject) => {
     getDbCollection(collectionType, successResponse => {
-      console.log(`Returning promise for ${collectionType}`)
       resolve(successResponse);
     }, errorResponse => {
       reject(errorResponse);
@@ -94,23 +87,33 @@ function getDbCollectionPromise(collectionType) {
 }
 
 function getDbCollection(collectionType, successCallback, errorCallback) {
-  console.log(`Looking for ${collectionType}...`);
-
   const collectionRef = db.ref(`${collectionType}`);
 
   collectionRef.on('value', (snapshot) => {
     if (snapshot.exists()) {
-      console.log(`Sending success call back for ${collectionType}`);
       successCallback(snapshot.val());
       dbCollections[collectionType] = snapshot.val();
     } else {
-      console.log(`Found no ${collectionType}. Sending callback value of null`);
       successCallback(null);
     }
   }, (error) => {
     console.log(error);
     errorCallback(error);
   }); 
+}
+
+async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
+  let players = await getGamePlayers(gameId);
+  if (players) {
+    let index = players.findIndex(player => player.playerId === playerId);
+    if (index !== -1) {
+      console.log(`Updating ${playerId} status for ${gameId} to ${online ? "online" : "offline"}`)
+      const playerRef = db.ref(`games/${gameId}/players/${index}`);
+      playerRef.update({
+        online: online
+      });
+    }
+  } 
 }
 
 const io = new Server(3001, {
@@ -127,35 +130,28 @@ io.of('/').adapter.on("join-room", (room, id) => {
 io.of("/").adapter.on("leave-room", (room, id) => {
   console.log(`Socket ${id} has left room ${room}`);
 });
-io.on("connection", async(socket) => {
 
+io.on("connection", async(socket) => {
   socket.on("save-board", async (gameId, board) => {
-    console.log("Received save-board event...");
+    console.log(`Received save-board event for ${gameId}...`);
     updateGameBoard(gameId, board);
   });
-  // socket.on("get-player", async(user) => {
-
-  //   const player = await findOrCreatePlayer(user); 
-  //   socket.join(player.id);
-  //   io.to(player.id).emit('load-player', player);
-  // });
   socket.on("get-puzzle-dates", async () => {
     console.log("Received get-puzzle-dates event...")
     const puzzleDates = await getPuzzleDates(); 
+    console.log("Sending load-puzzle-dates event");
     socket.emit('load-puzzle-dates', puzzleDates); 
   });
   socket.on("get-game-by-dow", async(dow, playerId) => {
-    console.log("Received get-game-by-dow event")
-    console.log(`Getting ${dow} game for player ${playerId}`);
+    console.log(`Received get-game-by-dow event from ${playerId} for ${dow} game`);
     const game = await findOrCreateGame(dow, playerId);
     sendGame(game, playerId, "get-game-by-dow");
   });
   socket.on("get-default-game", async(playerId) => {
-    console.log("Received get-default-game event");
+    console.log(`Received get-default-game event from ${playerId}`);
     const game = await getDefaultGame(playerId);
     sendGame(game, playerId, "get-default-game");
   });
-
   socket.on("get-friend-request-name", async(gameId) => {
     console.log(`Received get-friend-request-name with ${gameId}`);
     const game = await getDbObjectPromise("games", gameId);
@@ -170,43 +166,78 @@ io.on("connection", async(socket) => {
           } 
         }
       } else {
+        console.log("Sending game-not-found");
         socket.emit("game-not-found");
       }
     } else { 
+      console.log("Sending game-not-found");
       socket.emit("game-not-found");
     }
   });
-
   socket.on('send-player-cursor-change', (playerId, gameId, currentFocus) => {
     console.log(`Sending load-player-cursor-change event to room ${gameId}`);
-    io.to(gameId).emit("load-player-cursor-change", playerId, gameId, currentFocus);
+    io.to(gameId).emit("load-player-cursor-change", socket.id, playerId, gameId, currentFocus);
   });
-
-  async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
-    let players = await getGamePlayers(gameId);
-    if (players) {
-      let index = players.findIndex(player => player.playerId === playerId);
-      if (index !== -1) {
-        console.log(`Updating ${playerId} status for ${gameId} to ${online ? "online" : "offline"}`)
-        const playerRef = db.ref(`games/${gameId}/players/${index}`);
-        playerRef.update({
-          online: online
-        });
-      } else {
-        console.log(`Could not find player ${playerId} in game ${gameId} so could not update the online status.`);
-      }
-
-    } else {
-      console.log(`Could not find players for game ${gameId}`);
-    }
-  }
-
   socket.on('leave-game', async(playerId, gameId) => {
     console.log(`Received leave-game event from ${playerId} for game ${gameId}`);
     socket.leave(gameId);
     console.log(`Sending player-offline event to room ${gameId}`);
     io.to(gameId).emit('player-offline', playerId, gameId);
     updateGameOnlineStatusForPlayer(gameId, playerId, false); 
+  });
+  socket.on('send-changes', state => {
+    console.log(`Received send-changes event from client for game ${state.gameId}`)
+    io.to(state.gameId).emit("receive-changes", state);
+  });
+  socket.on('get-game-by-id', async (gameId, playerId) => {
+    console.log(`Received get-game-by-id request for game ${gameId} from player ${playerId}`);
+    const game = await getDbObjectPromise("games", gameId);
+    if (game) {
+      if (game.players) {
+        let ownerId = game.players[0].playerId;
+        if (playerId === ownerId) {
+          sendGame(game, playerId, "get-game-by-id");
+
+        } else {
+          let player = await getDbObjectPromise("players", playerId);
+          let teamGames = await addPlayerToGame(player, game);
+          console.log("Sending load-team-games event back to client");
+          socket.emit("load-team-games", teamGames);
+          sendGame(game, playerId, "get-game-by-id");
+        }
+      } else {
+        // anonymous game
+        console.log("Sending game-not-found event")
+        socket.emit("game-not-found");
+      }
+    }
+  });
+  socket.on('get-team-games', async(playerId) => {
+    console.log("Received get-team-games event")
+    let player = await getDbObjectPromise("players", playerId);
+    if (player) {
+      let playerGames = player.games;
+      if (playerGames) {
+        let teamGames = playerGames['team'];
+        console.log("Sending load-team-games event")
+        socket.emit('load-team-games', teamGames);
+      } else {
+        console.log(`No team games found for player ${playerId}`);
+      }
+    } else {
+      console.log(`Could not find player ${playerId}`);
+    }
+  });
+  socket.on('user-signed-in', (idToken, gameId) => {
+    console.log(`Received user-signed-in event with gameId: ${gameId}`);
+    if (gameId) {
+      // add user to game if not already added
+      addUserToGame(idToken, gameId);
+
+    } else {
+      // add player to db if not already added
+      addPlayerToDB(idToken);
+    }
   });
 
   async function sendGame(game, playerId, source) {
@@ -230,58 +261,13 @@ io.on("connection", async(socket) => {
     io.to(gameId).emit('player-online', playerId, gameId, player.displayName);
     updateGameOnlineStatusForPlayer(gameId, playerId, true);
 
-    // attach game listeners
-    socket.on('send-changes', squareState => {
-      io.to(gameId).emit("receive-changes", squareState);
-    });
-
-
-
+    // add listeners
     socket.on('disconnect', () => {
       console.log(`Send disconnect event to room ${gameId}`);
       io.to(gameId).emit("player-offline", playerId, gameId);
       updateGameOnlineStatusForPlayer(gameId, playerId, false);
     });
   }
-
-  socket.on('get-game-by-id', async (gameId, playerId) => {
-    console.log(`Received get-game-by-id request with ${gameId} and ${playerId}`);
-    const game = await getDbObjectPromise("games", gameId);
-    if (game) {
-      if (game.players) {
-        let ownerId = game.players[0].playerId;
-        if (playerId === ownerId) {
-          sendGame(game, playerId, "get-game-by-id");
-
-        } else {
-          let player = await getDbObjectPromise("players", playerId);
-          let teamGames = await addPlayerToGame(player, game);
-          socket.emit("load-team-games", teamGames);
-          sendGame(game, playerId, "get-game-by-id");
-        }
-      } else {
-        // anonymous game
-        socket.emit("game-not-found");
-      }
-    }
-  });
-
-  socket.on('get-team-games', async(playerId) => {
-    console.log("Received get-team-games event")
-    let player = await getDbObjectPromise("players", playerId);
-    if (player) {
-      let playerGames = player.games;
-      if (playerGames) {
-        let teamGames = playerGames['team'];
-        socket.emit('load-team-games', teamGames);
-      } else {
-        console.log(`No team games found for player ${playerId}`);
-      }
-    } else {
-      console.log(`Could not find player ${playerId}`);
-    }
-
-  });
 
   console.log(`Connected to ${socket.id}`);
   const sockets = await io.fetchSockets();
@@ -292,19 +278,6 @@ io.on("connection", async(socket) => {
     const sockets = await io.fetchSockets();
     console.log(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
   });
-
-  socket.on('user-signed-in', (idToken, gameId) => {
-    console.log(`Received user-signed-in event with gameId: ${gameId}`);
-    if (gameId) {
-      // add user to game if not already added
-      addUserToGame(idToken, gameId);
-
-    } else {
-      // add player to db if not already added
-      addPlayerToDB(idToken);
-    }
-  });
-
 });
 
 function checkCSRFToken(req, res) {
@@ -348,17 +321,6 @@ async function verifyFirebaseClientToken(idToken) {
     console.log(error);
   };
 }
-
-// const playerColors = [
-//   "#278BD2", // "blue",
-//   "#D33782", // "magenta",
-//   "#6C71C4", // "violet",
-//   "#859900", // "green",
-//   "#DC3130", // "red",
-//   "#2BA198", // "cyan",
-//   "#CB4B16", // "orange",
-//   "#B58900"  // "yellow
-// ];
 
 const defaultPlayerColors = [
   "blue",
@@ -575,7 +537,6 @@ async function getPuzzleDates() {
 }
 
 async function getGamePlayers(gameId) {
-  console.log("Looking for players for game " + gameId);
   let game = await getDbObjectPromise("games", gameId);
   if (game.players) {
     return game.players;
@@ -585,7 +546,6 @@ async function getGamePlayers(gameId) {
 } 
 
 async function getPlayerTeamGames(playerId) {
-  console.log(`Looking for player ${playerId} team games`);
   let player = await getDbObjectPromise("players", playerId);
   if (player.games && player.games.team) {
     return player.games.team;
@@ -642,7 +602,6 @@ async function findOrCreateGame(dow, playerId) {
       let playerGames = player.games;
       if (playerGames && playerGames['owner'] && playerGames['owner'][dow]) {
         let gameId = playerGames['owner'][dow];
-        console.log(`Checking to make sure game ${gameId} is current...`)
         let currentGame = await getGameIfCurrent(gameId, dow);
         if (currentGame) {
           return currentGame; 
@@ -681,17 +640,6 @@ async function updateGameBoard(gameId, board) {
   gameRef.update({
     board: board
   });
-}
-
-async function updatePlayerTeamGames(playerId) {
-  const teamGames = await getPlayerTeamGames(playerId);
-  if (teamGames) {
-    let updatedTeamGames = teamGames.filter(game => game !== null);
-    const playerGamesRef = db.ref(`players/${playerId}/games`);
-    playerGamesRef.update({
-      team: updatedTeamGames
-    });
-  } 
 }
 
 

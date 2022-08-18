@@ -19,7 +19,7 @@ async function isCurrentPuzzleSaved(db) {
   console.log("[puzzleUtils] Checking if current puzzle is saved");
   const currentDate = new Date();
   const currentDOW = weekdays[currentDate.getDay()];
-  console.log(`Looking for current ${currentDOW} puzzle`);
+  console.log(`[puzzleUtils] Looking for current ${currentDOW} puzzle`);
 
   try {
     const puzzles = await getDbCollectionPromise(db, "puzzles");
@@ -28,19 +28,19 @@ async function isCurrentPuzzleSaved(db) {
       if (fetchedPuzzle) {
         const fetchedPuzzleDate = new Date(Date.parse(fetchedPuzzle.date));
         if (currentDate.toDateString() === fetchedPuzzleDate.toDateString()) {
-          console.log(`${currentDate.toDateString()} puzzle already downloaded.`);
+          console.log(`[puzzleUtils] ${currentDate.toDateString()} puzzle already downloaded.`);
           return true;
         } else {
-          console.log(`Saved ${currentDOW} puzzle is for ${fetchedPuzzleDate.toDateString()}. ` +
+          console.log(`[puzzleUtils] Saved ${currentDOW} puzzle is for ${fetchedPuzzleDate.toDateString()}. ` +
                       `New puzzle for ${currentDOW} needed.`);
           return false;
         }
       } else {
-        console.log(`No ${currentDOW} puzzle available`);
+        console.log(`[puzzleUtils] No ${currentDOW} puzzle available`);
         return false;
       }
     } else {
-      console.log("No puzzles found at all");
+      console.log("[puzzleUtils] No puzzles found at all");
       return false;
     }
   } catch (error) {
@@ -60,8 +60,6 @@ function getDbCollectionPromise(db, collectionType) {
 }
 
 function getDbCollection(db, collectionType, successCallback, errorCallback) {
-  console.log(`[puzzleUtiils] Looking for ${collectionType}...`);
-
   const collectionRef = db.ref(`${collectionType}`);
 
   collectionRef.on("value", (snapshot) => {

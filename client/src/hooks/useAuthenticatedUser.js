@@ -1,11 +1,11 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
 export default function useAuthenticatedUser(auth) {
-  const [ user, setUser ] = React.useState(auth.currentUser);
-  const [initialized, setInitialized ] = React.useState(false);
+  const [ user, setUser ] = useState(auth.currentUser);
+  const [initialized, setInitialized ] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (auth) {
       onAuthStateChanged(auth, (returnedUser) => {
         if (!initialized) {

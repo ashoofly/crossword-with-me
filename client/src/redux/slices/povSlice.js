@@ -37,9 +37,9 @@ export const povSlice = createSlice({
         pencilActive: false,
         zoomActive: false,
         focused: {
-          // orientation: "across",
-          // word: focusedWord,
-          // square: action.payload.focus,
+          orientation: "across",
+          word: focusedWord,
+          square: action.payload.focus,
         },
         numRows: action.payload.numRows,
         numCols: action.payload.numCols,

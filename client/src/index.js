@@ -22,7 +22,12 @@ import { initializeAuth } from './auth';
  * Initialize Socket.io
  */
 const socket = io("http://localhost:3001");
-
+socket.on('connect', () => {
+  console.log(`Socket ${socket.id} connected.`)
+});
+socket.on('disconnect', (reason) => {
+  console.log(`Socket disconnected: ${reason}`);
+});
 /**
  * Initialize Firebase app
  */

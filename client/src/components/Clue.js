@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState, memo } from "react";
 import prev from "../images/prev.svg";
 import next from "../images/next.svg";
 import '../styles/common.css';
@@ -6,7 +6,7 @@ import "../styles/Clue.css";
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleOrientation } from '../redux/slices/povSlice';
 
-export default React.memo((props) => {
+export default memo((props) => {
   // console.log("Render clue component");
   const { 
     jumpToPreviousWord,
@@ -20,8 +20,8 @@ export default React.memo((props) => {
 
   const currentFocus = useSelector(state => state.pov.focused);
 
-  const [ clueText, setClueText ] = React.useState({__html: ''});
-  React.useEffect(displayClue, [currentFocus, gameGrid, clueDictionary]);
+  const [ clueText, setClueText ] = useState({__html: ''});
+  useEffect(displayClue, [currentFocus, gameGrid, clueDictionary]);
 
   function displayClue() {
     if (currentFocus && currentFocus.orientation && currentFocus.word) {

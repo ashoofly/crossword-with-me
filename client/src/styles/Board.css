@@ -19,6 +19,8 @@
 
 @media (min-width: 600px) {
   .Board {
-    grid-template-rows: repeat(var(--numRows), calc(600px/var(--numRows)));
+    grid-template-columns: repeat(var(--numCols), calc(100%/var(--numCols)));
+    grid-template-rows: repeat(var(--numRows), calc(100%/var(--numRows)));
+    height: 100vh;
   }
 }

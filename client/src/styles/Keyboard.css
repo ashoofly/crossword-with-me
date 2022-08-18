@@ -65,6 +65,13 @@
   background-color: #576E75;
   transform: scale(1.25);
 	transition: 0.1s;
+  z-index: 1;
+}
+
+.Keyboard .MuiButton-root.key-pressed {
+  background-color: #576E75;
+  transform: scale(1.25);
+  z-index: 1;
 }
 
 .Keyboard .MuiButton-root.Mui-disabled {

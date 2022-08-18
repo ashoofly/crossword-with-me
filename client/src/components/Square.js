@@ -1,21 +1,23 @@
-import React from "react";
+import { useEffect, useState, memo } from "react";
 import '../styles/common.css';
 import "../styles/Square.css";
 import { useSelector, useDispatch } from 'react-redux';
-import { markVerified, markPartial, markIncorrect, changeSent } from '../redux/slices/gameSlice';
+import { markVerified, markPartial, markIncorrect } from '../redux/slices/gameSlice';
 import { setFocusedSquare, toggleOrientation } from '../redux/slices/povSlice';
 import { oneLine } from 'common-tags';
+import Logger from '../utils/logger';
 
-export default React.memo((props) => {
+export default memo((props) => {
   const {
     id,
     user,
     squareRef,
+    gameId,
     // handleRerender,
     socket,
   } = props;
 
-  // console.log(`Rendering square component ${id}`);
+  // logger.log(`Rendering square component ${id}`);
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });
@@ -24,30 +26,30 @@ export default React.memo((props) => {
   const activeLetterColors = useSelector(state => state.game.board[id].activeLetterColors);
   const rebusActive = useSelector(state => { return state.pov.rebusActive });
   const zoomActive = useSelector(state => { return state.pov.zoomActive });
-  const isActiveWord = useSelector(state => { return state.pov.board[id].isActiveWord });
-  const isActiveSquare = useSelector(state => { return state.pov.board[id].isActiveSquare });
+  const focused = useSelector(state => state.pov.focused);
   const textColor = useSelector(state => state.game.board[id].color);
   const players = useSelector(state => state.game.players);
   const playerColor = players.find(player => player.playerId === user.uid).color;
   const dispatch = useDispatch();
+  const logger = new Logger("Square");
 
-  let [squareText, setSquareText] = React.useState('');
-  let [highlightClasses, setHighlightClasses] = React.useState('');
-  let [textColorClass, setTextColorClass] = React.useState('');
-  let [multipleFocus, setMultipleFocus] = React.useState(false);
-  let [customStyle, setCustomStyle] = React.useState(null);
+  let [squareText, setSquareText] = useState('');
+  let [highlightClasses, setHighlightClasses] = useState('');
+  let [textColorClass, setTextColorClass] = useState('');
+  let [multipleFocus, setMultipleFocus] = useState(false);
+  let [customStyle, setCustomStyle] = useState(null);
 
 
 
-  React.useEffect(displaySquare, [squareGameState, squareGrid]);
-  React.useEffect(checkAnswer, [autocheck, squareGameState, squareGrid]);
+  useEffect(displaySquare, [squareGameState, squareGrid]);
+  useEffect(checkAnswer, [autocheck, squareGameState, squareGrid]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setTextColorClass( textColor ? `${textColor}-text` : '');
     
   }, [textColor]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!activeWordColors || !activeLetterColors) return;
     if (activeLetterColors.includes(playerColor)) {
       setHighlightClasses(`${playerColor}-focus-square`);
@@ -67,25 +69,21 @@ export default React.memo((props) => {
         let rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
         allColors.push(rgbArray);
       }
-      console.log(allColors);
 
       const minR = Math.min(...allColors.map(rgbVal => rgbVal[0]));
       const minG = Math.min(...allColors.map(rgbVal => rgbVal[1]));
       const minB = Math.min(...allColors.map(rgbVal => rgbVal[2]));
       const minRGB = [minR, minG, minB];
-      console.log(minRGB);
 
       const maxR = Math.max(...allColors.map(rgbVal => rgbVal[0]));
       const maxG = Math.max(...allColors.map(rgbVal => rgbVal[1]));
       const maxB = Math.max(...allColors.map(rgbVal => rgbVal[2]));
       const maxRGB = [maxR, maxG, maxB];
-      console.log(maxRGB);
 
       let midRGB = [];
       minRGB.forEach((minColorComp, index) => {
         midRGB.push((minColorComp + maxRGB[index])/2);
       })
-      console.log(midRGB);
       setCustomStyle({backgroundColor: `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`});
 //rgb(204, 192.5, 183.5)
     } else {
@@ -117,15 +115,15 @@ export default React.memo((props) => {
   }
 
   function handleMouseDown() {
-    if (isActiveSquare) {
+    if (focused.square === id) {
       dispatch(toggleOrientation());
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (socket === null) return;
     if (!squareGameState.initial && squareGameState.source === socket.id) {
-      socket.emit("send-changes", {...squareGameState, scope: "square"});
+      socket.emit("send-changes", {...squareGameState, gameId: gameId, scope: "square"});
     }
   }, [socket, squareGameState]);  
 
@@ -153,10 +151,10 @@ export default React.memo((props) => {
   }
 
   function log() {
-    console.log(squareGameState);
+    logger.log(squareGameState);
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (zoomActive) {
       // handleRerender();
     }
@@ -175,7 +173,7 @@ export default React.memo((props) => {
                   ${squareGameState.reveal ? "revealed-overlay" : ""}
                   ${highlightClasses}
                   ${zoomActive ? "zoomed" : ""}
-                  ${rebusActive && isActiveSquare ? "rebus-square" : ""}
+                  ${rebusActive && (focused.square === id) ? "rebus-square" : ""}
                   `}
       onClick={log}>
 

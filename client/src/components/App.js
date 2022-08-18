@@ -1,4 +1,7 @@
-import React from "react";
+import { useState, useEffect, createRef, Fragment } from "react";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
@@ -8,9 +11,6 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import '../styles/common.css';
 import '../styles/App.css';
-import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   changeInput,
   loadGame,
@@ -31,7 +31,7 @@ import {
   toggleOrientation,
   setTeamGames
 } from '../redux/slices/povSlice';
-
+import Logger from '../utils/logger';
 
 function App(props) {
   const { 
@@ -39,54 +39,66 @@ function App(props) {
     auth
   } = props;
 
-  // console.log("Render App component");
+  // logger.log("Render App component");
   const [searchParams, setSearchParams] = useSearchParams();
-  const [gameId, setGameId] = React.useState(searchParams.get('gameId'));
-  const [openToast, setOpenToast] = React.useState(false);
-  const [toastMessage, setToastMessage] = React.useState(null);
-  const [myColor, setMyColor] = React.useState(null);
+  const [gameId, setGameId] = useState(searchParams.get('gameId'));
+  const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [myColor, setMyColor] = useState(null);
+  const [gameNotFound, setGameNotFound] = useState(false);
+  const [user, initialized] = useAuthenticatedUser(auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
   const game = useSelector(state => state.game);
   const players = useSelector(state => state.game.players);
-  /**
-   * React component states
-   */
-  const [gameNotFound, setGameNotFound] = React.useState(false);
-  const [user, initialized] = useAuthenticatedUser(auth);
+  const logger = new Logger("App");
 
-  React.useEffect(() => {
-    if (!user) return;
-    let me = players.find(player => player.playerId === user.uid);
-    if (me) {
-      setMyColor(me.color);
+  /**
+   * Handle direct request for specific game, or get default game if no game ID specified
+   */
+    useEffect(() => {
+    if (socket === null || !initialized) return;
+
+    const requestedGameId = searchParams.get('gameId');
+    if (!requestedGameId) {
+      if (user) {
+        logger.log(`Getting default game with ${user.uid}`);
+        socket.emit("get-default-game", user.uid);
+      }
+
+    } else if (requestedGameId !== game.gameId) {
+      logger.log(`Comparing requested game id ${requestedGameId} with current game id ${game.gameId}`)
+      // compare requestedGameId to currently loaded game
+      if (user) {
+        logger.log(`get-game-by-id with ${user.uid}`)
+        socket.emit('get-game-by-id', requestedGameId, user.uid);
+      } else {
+        navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
+      }
+    } else if (requestedGameId === game.gameId) {
+      logger.log(`Requested game id ${requestedGameId} is same as current game id ${game.gameId}. Will not request game from server again.`)
     }
-  }, [user, players]);
+
+  }, [socket, user, initialized, searchParams]);
 
   /**
    * Respond to socket events loading games
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user || socket === null) return;
 
-    console.log(`Adding all listeners... to ${socket.id}`);
-
-    socket.on("load-team-games", returnedGames => {
+    function handleLoadTeamGame(returnedGames) {
       if (returnedGames && returnedGames.length > 0) {
         dispatch(setTeamGames({teamGames: returnedGames}));
       }
-    });
+    }
 
-    console.log(`Get team games with ${user.uid}`)
-    socket.emit("get-team-games", user.uid);
-
-    socket.on('load-game', (game, socketId) => {
-      console.log(`[Client] Loaded game ${game.gameId} from ${socketId}`);
-      console.log("Setting game id to " + game.gameId);
+    function handleLoadGame(game) {
+      logger.log(`[Client] Loaded game ${game.gameId}`);
+      logger.log("Setting game id to " + game.gameId);
       setGameId(game.gameId);
       setGameNotFound(false);
-      console.log(game);
+      logger.log(JSON.stringify(game, null, 4)); 
       dispatch(loadGame({ ...game, loaded: true }));
 
       let defaultFocus = game.clueDictionary.across[1].index;
@@ -96,70 +108,87 @@ function App(props) {
         gameGrid: game.gameGrid,
         focus: defaultFocus
       }));
-      setSearchParams({gameId: game.gameId});
-    });
+      setSearchParams({gameId: game.gameId});      
+    }
 
-
-
-    socket.on('game-not-found', () => {
+    function handleGameNotFound() {
       setGameNotFound(true);
-    });
+    }
 
+    logger.log(`Adding listeners to ${socket.id}: load-team-games, load-game, game-not-found`);
+    socket.on("load-team-games", handleLoadTeamGame);
+    socket.on('load-game', handleLoadGame);
+    socket.on('game-not-found', handleGameNotFound);
+
+    logger.log(`Get team games with ${user.uid}`)
+    socket.emit("get-team-games", user.uid);
+
+
+    return function cleanup() { 
+      logger.log(`Removing listeners from ${socket.id}: load-team-games, load-game, game-not-found`);
+      socket.off("load-team-games", handleLoadTeamGame);
+      socket.off('load-game', handleLoadGame);
+      socket.off('game-not-found', handleGameNotFound);
+    }
   
   }, [socket, user]);
 
-  React.useEffect(() => {    
+  /**
+   * Respond to events of friends entering or leaving game
+   */
+  useEffect(() => {    
     if (!user || socket === null || !gameId) return;
 
-    socket.on("player-online", (playerId, serverGameId, displayName) => {
-      console.log(`Player ${playerId} signed into game ${serverGameId}!`);
+    function handlePlayerOnline(playerId, serverGameId, displayName) {
+      logger.log(`Player ${playerId} signed into game ${serverGameId}!`);
       dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
       if (user && (playerId !== user.uid) && (serverGameId === gameId)) {
-        console.log("Setting toast message");
+        logger.log("Setting toast message");
         let firstName = displayName.split(' ')[0];
         setToastMessage(`${firstName} has entered the game!`);
         setOpenToast(true);
       } else {
-        console.log(`Not setting toast message`);
-        console.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
-      }
-    })
+        logger.log(`Not setting toast message`);
+        logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
+      }      
+    }
 
-    socket.on("player-offline", (playerId, serverGameId) => {
-      console.log(`Player ${playerId} signed out of game ${serverGameId}`);
+    function handlePlayerOffline(playerId, serverGameId) {
+      logger.log(`Player ${playerId} signed out of game ${serverGameId}`);
       dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
-    })
+    }
 
-    socket.on("load-player-cursor-change", (playerId, serverGameId, currentFocus) => {
-      console.log(`Received load-player-cursor-change from ${playerId}`);
-      dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
-    })
+    function handleLoadPlayerCursorChange(socketId, playerId, serverGameId, currentFocus) {
+      if (socketId !== socket.id) {
+        logger.log(`Received load-player-cursor-change from ${playerId}`);
+        dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
+      }
+    }
+
+    logger.log(`Adding listeners to ${socket.id}: player-online, player-offline, load-player-cursor-change`);
+    socket.on("player-online", handlePlayerOnline);
+    socket.on("player-offline", handlePlayerOffline);
+    socket.on("load-player-cursor-change", handleLoadPlayerCursorChange);
+
+    return function cleanup() {
+      logger.log(`Removing listeners to ${socket.id}: player-online, player-offline, load-player-cursor-change`);
+      socket.off("player-online", handlePlayerOnline);
+      socket.off("player-offline", handlePlayerOffline);
+      socket.off("load-player-cursor-change", handleLoadPlayerCursorChange);
+    }
+
   }, [gameId, socket, user]);
 
   /**
-   * Handle direct request for specific game, or get default game if no game ID specified
+   * Set player game color
    */
-  React.useEffect(() => {
-    if (socket === null || !initialized) return;
-
-    let requestedGameId = searchParams.get('gameId');
-    if (!requestedGameId) {
-      if (user) {
-        console.log(`Getting default game with ${user.uid}`);
-        socket.emit("get-default-game", user.uid);
-      }
-
-    } else if (requestedGameId !== game.gameId) {
-      if (user) {
-        console.log(`get-game-by-id with ${user.uid}`)
-        socket.emit('get-game-by-id', requestedGameId, user.uid);
-      } else {
-        navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
-      }
-    } 
-
-  }, [socket, user, initialized, searchParams]);
-
+   useEffect(() => {
+    if (!user) return;
+    let me = players.find(player => player.playerId === user.uid);
+    if (me) {
+      setMyColor(me.color);
+    }
+  }, [user, players]);
 
   /**
    * Redux game state
@@ -185,40 +214,42 @@ function App(props) {
    const focusedWord = useSelector(state => state.pov.focused.word);
    const defaultFocus = useSelector(state => state.pov.defaultFocus);
  
-   const [squareRefs] = React.useState(Array(numRows * numCols).fill(0).map(() => {
-    return React.createRef();
+   const [squareRefs] = useState(Array(numRows * numCols).fill(0).map(() => {
+    return createRef();
   }));
-  const [deleteMode, setDeleteMode] = React.useState(false);
-  const [overwriteMode, setOverwriteMode] = React.useState(false);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [overwriteMode, setOverwriteMode] = useState(false);
 
   /**
    * Receive updates on game from other sources (different players or browser clients)
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (socket === null) return;
     const receiveMsgHandler = (message) => {
-      console.log("Received external change, updating Redux state.");
-      if (message.scope === "square") {
-        dispatch(loadSquareState(message));
-
-      } else if (message.scope === "word") {
-        dispatch(loadWordState(message));
-
-      } else if (message.scope === "board") {
-        dispatch(loadBoardState(message));
-
-      } else if (message.scope === "game") {
-        if (message.type === "toggleAutocheck") {
-          dispatch(toggleAutocheck({source: "external"}));
-
-        } else if (message.type === "resetGame") {
-          dispatch(resetGame({source: "external"}));
-
+      if (message.gameId === game.gameId) {
+        logger.log(`Received external change for ${message.gameId}, updating Redux state.`);
+        if (message.scope === "square") {
+          dispatch(loadSquareState(message));
+  
+        } else if (message.scope === "word") {
+          dispatch(loadWordState(message));
+  
+        } else if (message.scope === "board") {
+          dispatch(loadBoardState(message));
+  
+        } else if (message.scope === "game") {
+          if (message.type === "toggleAutocheck") {
+            dispatch(toggleAutocheck({source: "external"}));
+  
+          } else if (message.type === "resetGame") {
+            dispatch(resetGame({source: "external"}));
+  
+          } else {
+            logger.log(`Unknown message received for game scope: ${message}`);
+          }
         } else {
-          console.log(`Unknown message received for game scope: ${message}`);
+          logger.log(`Message with unknown scope received: ${message}`);
         }
-      } else {
-        console.log(`Message with unknown scope received: ${message}`);
       }
     }
     socket.on("receive-changes", receiveMsgHandler);
@@ -227,30 +258,30 @@ function App(props) {
       socket.off("receive-changes", receiveMsgHandler)
     }
 
-  }, [socket]);
+  }, [socket, game]);
 
   /**
    * Send state updates through socket to other clients
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (!mostRecentAction || mostRecentAction.initial || socket === null) return;
     if (mostRecentAction.source === socket.id) {
       if (mostRecentAction.scope === "word" || mostRecentAction.scope === "puzzle") {
-        socket.emit("send-changes", { state: mostRecentAction.state, scope: mostRecentAction.scope});
+        socket.emit("send-changes", { gameId: game.gameId, state: mostRecentAction.state, scope: mostRecentAction.scope});
       } else if (mostRecentAction.scope === "game") {
-        socket.emit("send-changes", { type: mostRecentAction.type, scope: mostRecentAction.scope});
+        socket.emit("send-changes", { gameId: game.gameId, type: mostRecentAction.type, scope: mostRecentAction.scope});
       } else {
-        console.log(`Unrecognizable action: ${mostRecentAction}`);
+        logger.log(`Unrecognizable action: ${mostRecentAction}`);
       }
     }
 
-  }, [mostRecentAction, socket]);
+  }, [mostRecentAction, socket, game]);
 
 
   /**
    * Saves board to DB on current player changes
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (socket === null) return;
     if (!savedToDB) {
       socket.emit("save-board", gameId, board.map(square => ({
@@ -264,7 +295,7 @@ function App(props) {
   /**
    * Advances cursor after user input
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (advanceCursor > 0)
       goToNextSquareAfterInput();
   }, [advanceCursor])
@@ -305,6 +336,13 @@ function App(props) {
       setDeleteMode(false);
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
+        var virtualKey = document.getElementById(e.key);
+        logger.log(virtualKey);
+        virtualKey.classList.add("key-pressed");
+        window.setTimeout(function() {
+          virtualKey.classList.remove("key-pressed");
+        }, 300);
+        
         if (rebusActive) {
           dispatch(removeCheck({id: focusedSquare }));
           let currentInput = board[focusedSquare].input;
@@ -531,30 +569,41 @@ function App(props) {
   return (
     <div className="container" onKeyDown={handleKeyDown}>
       {initialized && !user && <SignIn auth={auth} socket={socket} />}
-      {user && <React.Fragment>
+      {user && <Fragment>
         {gameId && gameNotFound && <h1>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
         {!gameNotFound && <div className="App">
-          <Navbar
-            socket={socket}
-            auth={auth}
-            gameId={gameId}
-            jumpToSquare={jumpToSquare}
-          />
-          {loaded && <React.Fragment>
-            <Board
-              user={user}
-              socket={socket}
-              gameId={gameId}
-              squareRefs={squareRefs}
-            />
-            <Clue
-              jumpToNextWord={jumpToNextWord}
-              jumpToPreviousWord={jumpToPreviousWord}
-            />
-            <Keyboard
-              jumpToSquare={jumpToSquare}
-              handleKeyDown={handleKeyDown}
-            />
+          {loaded && <Fragment>
+            <div className="widescreen-left-section">
+
+              <Board
+                user={user}
+                socket={socket}
+                gameId={gameId}
+                squareRefs={squareRefs}
+              />
+            </div>
+            <div className="widescreen-right-section">
+              <div className="widescreen-right-header">
+              <Navbar
+                socket={socket}
+                auth={auth}
+                gameId={gameId}
+                jumpToSquare={jumpToSquare}
+              />
+
+              </div>
+              <Clue
+                jumpToNextWord={jumpToNextWord}
+                jumpToPreviousWord={jumpToPreviousWord}
+              />  
+              <div>
+
+              <Keyboard
+                jumpToSquare={jumpToSquare}
+                handleKeyDown={handleKeyDown}
+              />
+              </div>
+            </div>
             <Snackbar
                 open={openToast}
                 onClose={() => setOpenToast(false)}
@@ -568,10 +617,10 @@ function App(props) {
                 {toastMessage}
               </Alert>
               </Snackbar>
-            </React.Fragment>
-          }
+            </Fragment>
+          } 
         </div>}
-      </React.Fragment>
+      </Fragment>
       }
     </div>
   );

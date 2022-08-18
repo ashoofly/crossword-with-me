@@ -1,11 +1,11 @@
-import React from "react";
+import { memo } from "react";
 import Dialog from '@mui/material/Dialog';
 import '../styles/common.css';
 import '../styles/InfoPage.css';
 import { useSelector } from 'react-redux';
 
 
-export default React.memo((props) => {
+export default memo((props) => {
   // console.log("Render info page");
   const { open, handleClose } = props;
   const game = useSelector(state => {

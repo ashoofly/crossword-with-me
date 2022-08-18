@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect, Fragment, memo } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import '../styles/common.css';
@@ -6,14 +6,11 @@ import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  setTeamGames
-} from '../redux/slices/povSlice';
-export default React.memo((props) => {
+
+export default memo((props) => {
   const { 
     socket,
     auth, 
-    gameId
   } = props;
   // console.log("Render game menu");
   const dispatch = useDispatch();
@@ -26,12 +23,12 @@ export default React.memo((props) => {
   const teamGames = useSelector(state => state.pov.teamGames);
 
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [menuContent, setMenuContent] = React.useState(null);
-  const [menuItems, setMenuItems] = React.useState([]);
-  const [puzzleDates, setPuzzleDates] = React.useState(null);
-  const [heading, setHeading] = React.useState({__html: "Loading..."});
-  const [selectedTeamGameId, setSelectedTeamGameId] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuContent, setMenuContent] = useState(null);
+  const [menuItems, setMenuItems] = useState([]);
+  const [puzzleDates, setPuzzleDates] = useState(null);
+  const [heading, setHeading] = useState({__html: "Loading..."});
+  const [selectedTeamGameId, setSelectedTeamGameId] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (e) => {
     setAnchorEl(e.currentTarget);
@@ -43,7 +40,7 @@ export default React.memo((props) => {
   /**
    * Load puzzle dates
    */
-   React.useEffect(() => {
+   useEffect(() => {
     if (socket === null) return;
     socket.emit('get-puzzle-dates');
 
@@ -52,7 +49,7 @@ export default React.memo((props) => {
     });
   }, [socket]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (puzzleDates) {
       let menuItemContent = [];
       weekdays.forEach(dow => {
@@ -67,7 +64,7 @@ export default React.memo((props) => {
     }
   }, [puzzleDates]);
 
-  // React.useEffect(() => {
+  // useEffect(() => {
   //   console.log(`gameMenu Game id: ${gameId}`);
   //   if (socket === null) return;
   //   if (!gameId) {
@@ -81,7 +78,7 @@ export default React.memo((props) => {
   // }, [socket, user, gameId]);
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (game.loaded) {
       if (game.players[0].playerId === user.uid) {
         updateHeading();
@@ -204,7 +201,7 @@ export default React.memo((props) => {
     setSelectedTeamGameId(null);
     const dow = weekdays[index];
     if (user) {
-      console.log(`[${socket.id}] Looking for game from ` + user.uid);
+      console.log(`[${socket.id}] Looking for player ${user.uid}'s ${dow} game`);
       socket.emit('get-game-by-dow', dow, user.uid);
     } 
   }
@@ -215,7 +212,7 @@ export default React.memo((props) => {
     setHeading({__html: `<span class="heading-dow">My ${game.dow}</span> <span class="heading-date">${month} ${date.getDate()}</span>`});
   }
   return (
-    <React.Fragment>
+    <Fragment>
       <div className="gameMenu-title" onClick={handleClick}>
         <div dangerouslySetInnerHTML={heading}></div>
       </div>
@@ -235,6 +232,6 @@ export default React.memo((props) => {
       >
         {menuItems}
       </Menu>
-    </React.Fragment>
+    </Fragment>
   )
 });

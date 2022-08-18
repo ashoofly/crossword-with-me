@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 import '../styles/common.css';
 import "../styles/Keyboard.css";
 import Button from '@mui/material/Button';
@@ -8,7 +8,7 @@ import {
   toggleRebus
 } from '../redux/slices/povSlice';
 
-export default React.memo((props) => {
+export default memo((props) => {
   // console.log("Render keyboard");
 
   const { 

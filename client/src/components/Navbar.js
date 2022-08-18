@@ -1,4 +1,4 @@
-import React from "react";
+import { memo, useState, Fragment } from "react";
 import info from '../images/info.svg';
 import pencil from '../images/pencil.svg';
 import zoomIn from '../images/zoom-in.svg';
@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
 
 
-export default React.memo((props) => {
+export default memo((props) => {
   // console.log("Render navbar");
   const { 
     socket,
@@ -23,7 +23,7 @@ export default React.memo((props) => {
     gameId
   } = props;
 
-  const [ open, setOpen ] = React.useState(false);
+  const [ open, setOpen ] = useState(false);
   const dispatch = useDispatch();
   const pov = useSelector(state => {
     return state.pov
@@ -56,9 +56,13 @@ export default React.memo((props) => {
   }
 
   return (
-    <React.Fragment>
+    <Fragment>
       <div className="title-bar">
-        <div></div>
+        <GameMenu 
+          socket={socket}
+          auth={auth}
+          gameId={gameId}
+        />
         <h1>Crossword with Friends</h1>
         <PlayerBox 
           auth={auth}
@@ -68,11 +72,7 @@ export default React.memo((props) => {
       </div>
       <div className="navbar">
 
-        <GameMenu 
-          socket={socket}
-          auth={auth}
-          gameId={gameId}
-        />
+
         {/* <h1>Crossword with Friends</h1> */}
         {/* TODO: display only for desktop. */}
         <Button 
@@ -102,7 +102,7 @@ export default React.memo((props) => {
           handleClose={handleClose}
         />
       </div>
-    </React.Fragment>
+    </Fragment>
 
   )
 });

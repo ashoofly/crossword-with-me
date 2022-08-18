@@ -21,3 +21,8 @@
 .arrow-container {
   padding: 15px 20px;
 }
+@media (min-width: 600px) {
+  .clue {
+    height: 35vh;
+  }
+}
