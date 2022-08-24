@@ -49,6 +49,31 @@ async function isCurrentPuzzleSaved(db) {
   }
 }
 
+function getDbObjectPromise(db, collectionType, id) {
+  return new Promise((resolve, reject) => {
+    getDbObjectById(db, collectionType, id, (successResponse) => {
+      resolve(successResponse);
+    }, (errorResponse) => {
+      reject(errorResponse);
+    });
+  });
+}
+
+function getDbObjectById(db, collectionType, id, successCallback, errorCallback) {
+  const objectRef = db.ref(`${collectionType}/${id}`);
+
+  objectRef.once("value", (snapshot) => {
+    if (snapshot.exists()) {
+      successCallback(snapshot.val());
+    } else {
+      successCallback(null);
+    }
+  }, (error) => {
+    console.log(error);
+    errorCallback(error);
+  });
+}
+
 function getDbCollectionPromise(db, collectionType) {
   return new Promise((resolve, reject) => {
     getDbCollection(db, collectionType, (successResponse) => {
@@ -147,11 +172,13 @@ function createGrid(puzzle, clueDictionary) {
   const numCols = puzzle.size.cols;
   const grid = puzzle.grid;
   const gridNums = puzzle.gridnums;
+  const circles = puzzle.circles;
   const initialSquareProps = Array(numRows * numCols);
   grid.forEach((value, index) => {
     initialSquareProps[index] = {
       id: index,
       gridNum: gridNums[index],
+      circle: circles ? (circles[index] === 1 ? true : false) : false,
       answer: value,
       isPlayable: (value !== ".") ? true : false,
       acrossStart: (value !== "." && (index % numCols === 0 || grid[index - 1] === ".")) ? true : false,
@@ -182,6 +209,21 @@ function setupGameBoard(puzzle) {
   return { grid, clueDictionary };
 }
 
+function saveNewPuzzle(db, puzzle) {
+  const { grid, clueDictionary } = setupGameBoard(puzzle);
+  console.log("Saving puzzle to Firebase database");
+  const puzzleRef = db.ref(`puzzles/${puzzle.dow}`);
+  puzzleRef.set({
+    ...puzzle,
+    gameGrid: grid,
+    clueDictionary: clueDictionary,
+  });
+}
+
+async function resetGameboard(db, dow) {
+  const puzzle = await getDbObjectPromise(db, "puzzles", dow);
+  saveNewPuzzle(db, puzzle);
+}
 
 module.exports = {
   weekdays,
@@ -189,4 +231,5 @@ module.exports = {
   getPreviousDOW,
   isCurrentPuzzleSaved,
   setupGameBoard,
+  resetGameboard
 };

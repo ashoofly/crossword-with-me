@@ -1,6 +1,5 @@
 import { memo } from "react";
 import Dialog from '@mui/material/Dialog';
-import '../styles/common.css';
 import '../styles/InfoPage.css';
 import { useSelector } from 'react-redux';
 

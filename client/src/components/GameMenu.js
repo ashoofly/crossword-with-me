@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment, memo } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';

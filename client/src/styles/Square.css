@@ -9,6 +9,8 @@
   min-height: 28px; 
 }
 
+
+
 .zoomed {
   min-width: 38px;
   min-height: 40px;
@@ -56,6 +58,15 @@
 .block {
   background-color: rgb(87,110,117);
   border: none;
+}
+
+.circle {
+  border: 1px solid rgb(87,110,117);
+  border-radius: 50%;
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .wrong-answer-overlay {

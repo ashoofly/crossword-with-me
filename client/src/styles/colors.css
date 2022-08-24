@@ -1,7 +1,4 @@
 :root {
-  --numRows: auto-fill;
-  --numCols: auto-fill;
-  --opacity: 0.5;
   --my-game-color: rgb(38,139,210);
   --yellow: rgb(181,137,22);
   --orange: rgb(203,75,22);
@@ -27,24 +24,4 @@
   --green-focus-word: rgb(193, 200, 154);
   --cyan-focus-square: rgb(165, 219, 214);
   --cyan-focus-word: rgb(190, 215, 212);
-
-  --blue-red-overlap: rgb(204,193,207);
-  --blue-green-overlap: rgb(190,201,186);
-  --red-green-overlap: rgb(206,192,175); 
-  --overlap: rgb(206,192,175); 
-  /* rgb(179, 169, 182); */
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body, html {
-  margin: 0;
-  padding: 0;
-  background-color: rgb(0,44,54)
-}
-
-body {
-  font-family: 'Roboto', sans-serif;
 }

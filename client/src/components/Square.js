@@ -1,5 +1,4 @@
 import { useEffect, useState, memo } from "react";
-import '../styles/common.css';
 import "../styles/Square.css";
 import { useSelector, useDispatch } from 'react-redux';
 import { markVerified, markPartial, markIncorrect } from '../redux/slices/gameSlice';
@@ -17,7 +16,7 @@ export default memo((props) => {
     socket,
   } = props;
 
-  // logger.log(`Rendering square component ${id}`);
+  //console.log(`Rendering square component ${id}`);
 
   const squareGrid = useSelector(state => { return state.game.gameGrid[id] });
   const squareGameState = useSelector(state => { return state.game.board[id] });
@@ -101,8 +100,10 @@ export default memo((props) => {
 
 
   function displaySquare() {
-    if (!squareGrid.isPlayable) return;
-    if (squareGameState.reveal) {
+    if (!squareGrid.isPlayable) {
+      setSquareText('');
+    }
+    else if (squareGameState.reveal) {
       setSquareText(squareGrid.answer);
     } else {
       setSquareText(squareGameState.input);
@@ -159,6 +160,7 @@ export default memo((props) => {
       // handleRerender();
     }
   }, [zoomActive]);
+//                   ${squareGrid.circle ? "circle" : ""}
 
   return (
     <div
@@ -176,6 +178,8 @@ export default memo((props) => {
                   ${rebusActive && (focused.square === id) ? "rebus-square" : ""}
                   `}
       onClick={log}>
+
+      {squareGrid.circle && <div className="circle"></div>}
 
       {squareGameState.incorrect && !squareGameState.reveal && <div className="wrong-answer-overlay"></div>}
 

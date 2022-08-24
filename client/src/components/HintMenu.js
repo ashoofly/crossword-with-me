@@ -5,7 +5,6 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import '../styles/common.css';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import {

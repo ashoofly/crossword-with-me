@@ -1,6 +1,7 @@
 import { useEffect, memo } from "react";
 import Square from "./Square";
-import '../styles/common.css';
+import '../styles/colors.css';
+// import "../styles/App.css";
 import "../styles/Board.css";
 import { useDispatch, useSelector } from 'react-redux';
 import {

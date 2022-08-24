@@ -4,8 +4,7 @@ import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { handleCredentialResponse } from '../auth';
 import cryptoRandomString from 'crypto-random-string';
 import { getFirebaseConfig } from '../firebase-config';
-import '../styles/common.css';
-import '../styles/App.css';
+import '../styles/SignIn.css';
 
 export default function JoinGame(props) {
   const {

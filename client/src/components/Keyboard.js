@@ -1,5 +1,5 @@
 import { memo } from "react";
-import '../styles/common.css';
+// import "../styles/App.css";
 import "../styles/Keyboard.css";
 import Button from '@mui/material/Button';
 import backspace from '../images/backspace-outline.png';

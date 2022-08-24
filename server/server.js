@@ -1,6 +1,6 @@
 import { getFirebaseConfig } from './firebase-config.js';
 import { Server } from "socket.io";
-import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW } from "./functions/puzzleUtils.js";
+import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW, resetGameboard } from "./functions/puzzleUtils.js";
 import { v4 as uuidv4 } from 'uuid';
 import express from 'express'; 
 import bodyParser from 'body-parser';
@@ -16,7 +16,7 @@ const auth = admin.auth(app);
 console.log("Initialized Firebase authentication");
 const db = admin.database(app); 
 console.log("Initialized Firebase realtime database");
-
+//resetGameboard(db, "Tuesday");
 let dbCollections = {
   players: {},
   games: {},
@@ -355,38 +355,41 @@ async function addPlayerToGame(player, game) {
   }
 
   // update player object
-  let playerGames = player.games;
-  if (!playerGames) {
-    playerGames = {owner: {}, team: []};
-  } 
-  let teamGames = playerGames['team'];
-  if (!teamGames) { 
-    teamGames = [];
+  let gameOwner = players[0].playerId;
+  if (gameOwner !== player.id) {
+    let playerGames = player.games;
+    if (!playerGames) {
+      playerGames = {owner: {}, team: []};
+    } 
+    let teamGames = playerGames['team'];
+    if (!teamGames) { 
+      teamGames = [];
+    }
+    if (!teamGames.find(game => game.gameId === gameId)) {
+      // get game owner for front-end to display
+      let ownerId = game.players[0].playerId;
+      let owner = await getDbObjectPromise("players", ownerId);
+  
+      teamGames.push({
+        gameId: gameId,
+        friend: {
+          displayName: owner.displayName,
+          playerId: owner.id
+        },
+        dow: game.dow,
+        date: game.date
+      });
+  
+      playerGames.team = teamGames;
+  
+      console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
+      const playerRef = db.ref(`players/${player.id}`);
+      playerRef.update({
+        games: playerGames
+      });
+    }
   }
-  if (!teamGames.find(game => game.gameId === gameId)) {
-    // get game owner for front-end to display
-    let ownerId = game.players[0].playerId;
-    let owner = await getDbObjectPromise("players", ownerId);
-
-    teamGames.push({
-      gameId: gameId,
-      friend: {
-        displayName: owner.displayName,
-        playerId: owner.id
-      },
-      dow: game.dow,
-      date: game.date
-    });
-
-    playerGames.team = teamGames;
-
-    console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
-    const playerRef = db.ref(`players/${player.id}`);
-    playerRef.update({
-      games: playerGames
-    });
-  }
-  return await getPlayerTeamGames(player.playerId);
+  return await getPlayerTeamGames(player.id);
 }
 
 async function addUserToGame(firebaseClientToken, gameId) {

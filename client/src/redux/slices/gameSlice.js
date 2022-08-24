@@ -24,6 +24,7 @@ const defaultState = {
     "answer": "A",
     "downStart": true,
     "gridNum": 1,
+    "circle": false,
     "id": 0,
     "isPlayable": true
   })),
@@ -172,6 +173,8 @@ export const gameSlice = createSlice({
         ...action.payload,
         board: action.payload.board.map(square => ({
           ...square,
+          activeWordColors: [],
+          activeLetterColors: [],
           source: "db"
         }))
       }

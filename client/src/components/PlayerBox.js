@@ -1,5 +1,5 @@
 import { useState, useEffect, memo, Fragment } from 'react';
-import '../styles/common.css';
+import '../styles/colors.css';
 import '../styles/Navbar.css';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
@@ -15,7 +15,7 @@ export default memo((props) => {
   const {
     auth,
     socket,
-    gameId
+    gameId,
   } = props;
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -55,7 +55,7 @@ export default memo((props) => {
     //       <Tooltip title={`${user.displayName} (me)`}>
     //         <Avatar className="avatar-bg" onClick={handleClick}>
     //           {user.displayName.charAt(0)}
-    //         </Avatar>
+    //         </Avatar>  
     //       </Tooltip>
     //     </Badge>
     //   );
@@ -66,6 +66,8 @@ export default memo((props) => {
   useEffect(() => {
     if (!initialized || !user || !players) return;
     let me = players.find(player => player.playerId === user.uid);
+    console.log(user.uid);
+    console.log(players);
     setMeIconClasses(`avatar-bg ${me.color}-border`);
     let friends = players.filter(player => player.playerId !== user.uid);
     if (friends.length > 0) {
@@ -81,7 +83,7 @@ export default memo((props) => {
       });
       setFriendIcons(friendIcons);
     }
-  }, [user, initialized, players]);
+  }, [user, initialized, players, gameId]);
 
   function handleSignout() {
     socket.emit('leave-game', user.uid, gameId);

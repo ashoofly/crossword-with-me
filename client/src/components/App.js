@@ -2,14 +2,15 @@ import { useState, useEffect, createRef, Fragment } from "react";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import Navbar from './Navbar';
+import { useMediaQuery } from 'react-responsive'
+import TitleBar from './TitleBar';
+import NavBar from './NavBar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
 import SignIn from './SignIn';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import '../styles/common.css';
 import '../styles/App.css';
 import {
   changeInput,
@@ -39,6 +40,88 @@ function App(props) {
     auth
   } = props;
 
+  const isWidescreen = useMediaQuery({ query: '(min-width: 1000px)' });
+  // const [windowSize, setWindowSize] = useState(getWindowSize());
+
+  const numCols = useSelector(state => state.game.numCols);
+  const numRows = useSelector(state => state.game.numRows);
+  const loadedGameId = useSelector(state => state.game.gameId);
+  const [boardPadding, setBoardPadding] = useState(2);
+
+
+  // if (isWidescreen) {
+  //   //  --squareSideLength: min(calc(var(--boardWidth)/var(--numCols)), calc(var(--boardHeight)/var(--numRows)));
+  //   console.log(innerHeight*0.90);
+  //   console.log(innerWidth*0.55);
+  //   let widescreenBoardWidth = Math.max(innerHeight*0.9, innerWidth* 0.55);
+  //   let widescreenRightWidth = innerWidth - widescreenBoardWidth;
+  //   console.log(widescreenBoardWidth)
+  //   document.documentElement.style.setProperty("--widescreen-left-width", `${widescreenBoardWidth}px`);
+  //   document.documentElement.style.setProperty("--widescreen-right-width", `${widescreenRightWidth}px`);
+
+  //   //document.documentElement.style.setProperty("--numRows", numRows);
+  // }
+
+
+
+
+
+  useEffect(() => {
+    function setAppLayout() {
+      const { width, height } = window.visualViewport;
+
+
+
+      const maxBoardHeightSmallScreen = height * 0.53;
+      const barHeight = isWidescreen ? (height * 0.1) : (height * 0.08);
+      const keyboardHeight = isWidescreen ? (height * 0.35) : (height * 0.23);
+      const keyboardRowMargin = 2;
+      const keyboardMargins = 2 + 3 + 10;
+      const keyboardButtonMinHeight = (keyboardHeight - keyboardMargins) / 3;
+      document.documentElement.style.setProperty("--app-height", `${height}px`);
+      document.documentElement.style.setProperty("--app-width", `${width}px`);
+      document.documentElement.style.setProperty("--max-board-height", `${maxBoardHeightSmallScreen}px`);
+      document.documentElement.style.setProperty("--board-padding", `${boardPadding}px`);
+      document.documentElement.style.setProperty("--bar-height", `${barHeight}px`);
+      document.documentElement.style.setProperty("--keyboard-height", `${keyboardHeight}px`);
+      document.documentElement.style.setProperty("--keyboard-row-margin", `${keyboardRowMargin}px`); 
+      document.documentElement.style.setProperty("--keyboard-button-min-height", `${keyboardButtonMinHeight}px`);
+
+      if (isWidescreen) {
+        const middleSectionHeight = height - (barHeight + keyboardHeight);
+        document.documentElement.style.setProperty("--middle-section-height", `${middleSectionHeight}px`);
+      }
+
+    }
+
+    setAppLayout();
+    window.addEventListener('resize', setAppLayout);
+
+    return () => {
+      window.removeEventListener('resize', setAppLayout);
+    };
+  }, []);
+
+  useEffect(() => {
+    function setBoardLayout() {
+      const squareSideLength = isWidescreen ? 
+          (((window.visualViewport.height * 0.9) - (2 * boardPadding)) / numRows) 
+              : 
+          ((window.visualViewport.width - (2 * boardPadding)) / numCols);
+      document.documentElement.style.setProperty("--square-side-length", `${squareSideLength}px`);
+    }
+
+    setBoardLayout();
+    window.addEventListener('resize', setBoardLayout);
+
+    return () => {
+      window.removeEventListener('resize', setBoardLayout);
+    };
+  }, [loadedGameId]);
+
+
+
+
   // logger.log("Render App component");
   const [searchParams, setSearchParams] = useSearchParams();
   const [gameId, setGameId] = useState(searchParams.get('gameId'));
@@ -53,6 +136,15 @@ function App(props) {
   const players = useSelector(state => state.game.players);
   const logger = new Logger("App");
 
+  const isDesktop = useMediaQuery({
+    query: '(min-width: 1224px)'
+  })
+  const isBigScreen = useMediaQuery({ query: '(min-width: 1824px)' })
+  const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
+  const isPortrait = useMediaQuery({ query: '(orientation: portrait)' })
+  const isRetina = useMediaQuery({ query: '(min-resolution: 2dppx)' })
+
+  const isTabletLandscape = useMediaQuery({ query: '(min-width: 1000px) and (max-width: 1224px)' });
   /**
    * Handle direct request for specific game, or get default game if no game ID specified
    */
@@ -195,8 +287,8 @@ function App(props) {
    */
    const loaded = useSelector(state => state.game.loaded);
    const savedToDB = useSelector(state => state.game.savedToDB);
-   const numCols = useSelector(state => state.game.numCols);
-   const numRows = useSelector(state => state.game.numRows);
+  //  const numCols = useSelector(state => state.game.numCols);
+  //  const numRows = useSelector(state => state.game.numRows);
    const board = useSelector(state => state.game.board);
    const gameGrid = useSelector(state => state.game.gameGrid);
    const clueDictionary = useSelector(state => state.game.clueDictionary);
@@ -290,7 +382,7 @@ function App(props) {
       })));
       dispatch(boardSaved());
     }
-  }, [savedToDB]);
+  }, [savedToDB, board]);
 
   /**
    * Advances cursor after user input
@@ -573,37 +665,36 @@ function App(props) {
         {gameId && gameNotFound && <h1>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
         {!gameNotFound && <div className="App">
           {loaded && <Fragment>
-            <div className="widescreen-left-section">
-
-              <Board
-                user={user}
-                socket={socket}
-                gameId={gameId}
-                squareRefs={squareRefs}
-              />
-            </div>
-            <div className="widescreen-right-section">
-              <div className="widescreen-right-header">
-              <Navbar
-                socket={socket}
-                auth={auth}
-                gameId={gameId}
-                jumpToSquare={jumpToSquare}
-              />
-
-              </div>
-              <Clue
-                jumpToNextWord={jumpToNextWord}
-                jumpToPreviousWord={jumpToPreviousWord}
-              />  
-              <div>
-
-              <Keyboard
-                jumpToSquare={jumpToSquare}
-                handleKeyDown={handleKeyDown}
-              />
-              </div>
-            </div>
+            <TitleBar 
+              socket={socket}
+              auth={auth}
+              gameId={gameId}
+              isWidescreen={isWidescreen}
+              jumpToSquare={jumpToSquare}
+            />
+            <NavBar
+              socket={socket}
+              auth={auth}
+              gameId={gameId}
+              jumpToSquare={jumpToSquare}
+              isWidescreen={isWidescreen}
+            />
+            <Board
+              user={user}
+              socket={socket}
+              gameId={gameId}
+              squareRefs={squareRefs}
+            />
+            <Clue
+              jumpToNextWord={jumpToNextWord}
+              jumpToPreviousWord={jumpToPreviousWord}
+              isWidescreen={isWidescreen}
+              isDesktop={isDesktop} 
+            />  
+            <Keyboard
+              jumpToSquare={jumpToSquare}
+              handleKeyDown={handleKeyDown}
+            />
             <Snackbar
                 open={openToast}
                 onClose={() => setOpenToast(false)}
