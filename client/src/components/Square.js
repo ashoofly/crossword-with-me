@@ -84,7 +84,7 @@ export default memo((props) => {
         midRGB.push((minColorComp + maxRGB[index])/2);
       })
       setCustomStyle({backgroundColor: `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`});
-//rgb(204, 192.5, 183.5)
+
     } else {
       let color = activeWordColors[0];
       if (color) {
@@ -120,13 +120,6 @@ export default memo((props) => {
       dispatch(toggleOrientation());
     }
   }
-
-  useEffect(() => {
-    if (socket === null) return;
-    if (!squareGameState.initial && squareGameState.source === socket.id) {
-      socket.emit("send-changes", {...squareGameState, gameId: gameId, scope: "square"});
-    }
-  }, [socket, squareGameState]);  
 
   function checkAnswer() {
     if (autocheck || squareGameState.check) {
@@ -173,6 +166,7 @@ export default memo((props) => {
       className={oneLine`square
                   ${!squareGrid.isPlayable ? "block" : ""}
                   ${squareGameState.reveal ? "revealed-overlay" : ""}
+                  ${squareGameState.verified ? "verified-overlay" : ""}
                   ${highlightClasses}
                   ${zoomActive ? "zoomed" : ""}
                   ${rebusActive && (focused.square === id) ? "rebus-square" : ""}
@@ -187,12 +181,12 @@ export default memo((props) => {
 
       <div className="square-gridnum">{squareGrid.gridNum !== 0 && squareGrid.gridNum}</div>
 
-      {squareGrid.isPlayable && squareGameState.reveal && <div className="revealed-marker"></div>}
+      {squareGrid.isPlayable && (squareGameState.reveal || squareGameState.verified) && <div className="revealed-marker"></div>}
 
       <div className={oneLine`square-value
                       ${textColorClass}
                       ${squareGameState.penciled ? "penciled-color" : ""}
-                      ${squareGameState.verified ? "verified-color" : ""}
+                      ${squareGameState.reveal ? "revealed-color" : ""}
                       `}>
         {squareText}
       </div>

@@ -1,23 +1,26 @@
 .square {
   border: 0.1px solid rgb(87,110,117);
-  background-color: #EEE8D5;
+  background-color: rgb(238, 232, 213);
   display: grid;
   padding-bottom: 5px;
   overflow: hidden;
   position: relative;
   font-size: 14px;
   min-height: 28px; 
+  text-align: center;
 }
 
 
 
-.zoomed {
+/* .zoomed {
   min-width: 38px;
   min-height: 40px;
-}
+} */
 
 @media (max-width: 599px) {
   .square {
+    font-size: 100%;
+
   }
 }
 
@@ -91,14 +94,21 @@
   left: -1px;
 }
 
-.verified-color {
-  color:rgb(42,161,152);
+.revealed-color {
+  color: rgb(0,44,54);
+}
+
+.verified-overlay {
+  background: linear-gradient(to top right, rgb(238, 232, 213) 85%,rgb(4, 141, 25) 10%) top right/40px 40px no-repeat; 
+  overflow: hidden;
 }
 
 .revealed-overlay {
-  background: linear-gradient(to top right, rgb(60, 85, 92) 85%,rgb(211,54,130) 10%) top right/40px 40px no-repeat; 
+  background: linear-gradient(to top right, rgb(238, 232, 213) 85%,rgb(211,54,130) 10%) top right/40px 40px no-repeat; 
   overflow: hidden;
 }
+
+
 
 .revealed-marker {
   background: #FDF6E3;

@@ -47,10 +47,10 @@ const defaultState = {
   advanceCursor: 0,
   mostRecentAction: {
     initial: true,
+    gameId: 0,
     scope: "word",
-    state: [],
-    type: "",
-    socketId: "12345"
+    state: {},
+    type: "exampleAction"
   },
   players: [{
     displayName: "Fred Rogers",
@@ -174,33 +174,26 @@ export const gameSlice = createSlice({
         board: action.payload.board.map(square => ({
           ...square,
           activeWordColors: [],
-          activeLetterColors: [],
-          source: "db"
+          activeLetterColors: []
         }))
       }
     },
     'loadSquareState': (state, action) => {
       state.board[action.payload.index] = {
         ...action.payload,
-        source: "external"
       }
-    },
-    'changeSent': (state, action) => {
-      state.board[action.payload.index].source = null;
     },
     'loadWordState': (state, action) => {
       let word = action.payload.state;
       word.forEach( square => {
         state.board[square.index] = {
           ...square,
-          source: "external"
         };
       });
     },
     'loadBoardState': (state, action) => {
       state.board = action.payload.state.map(square => ({
-          ...square,
-          source: "external"
+          ...square
         })
       );
     },
@@ -222,41 +215,55 @@ export const gameSlice = createSlice({
       }));
       if (action.payload.source !== "external") {
         state.savedToDB = false;
+        state.mostRecentAction = {
+          scope: "game",
+          gameId: state.gameId,
+          type: "resetGame"
+        };
       }
-      state.mostRecentAction = {
-        scope: "game",
-        type: "resetGame", 
-        source: action.payload.source
-      };
     },
     'toggleAutocheck': (state, action) => {
       state.autocheck = !state.autocheck;
       if (action.payload.source !== "external") {
         state.savedToDB = false;
+        state.mostRecentAction = {
+          scope: "game",
+          type: "toggleAutocheck"
+        };
       }
-      state.mostRecentAction = {
-        scope: "game",
-        type: "toggleAutocheck",
-        source: action.payload.source
-      };
     },
     'changeInput': (state, action) => {
       state.board[action.payload.id].initial = false;
-      state.board[action.payload.id].source = action.payload.source;
       state.board[action.payload.id].input = action.payload.value;
       state.board[action.payload.id].penciled = action.payload.penciled;
       state.board[action.payload.id].color = action.payload.color;
-      if (action.payload.advanceCursor) {
-        state.advanceCursor = state.advanceCursor + 1;
+
+      if (action.payload.source !== "external") {
+        if (action.payload.advanceCursor) {
+          state.advanceCursor = state.advanceCursor + 1;
+        }
+        state.savedToDB = false;
+        state.mostRecentAction = {
+          gameId: state.gameId,
+          scope: "square",
+          type: "changeInput",
+          state: action.payload
+        };
       }
-      state.savedToDB = false;
     },
     'requestCheckSquare': (state, action) => {
       if (state.board[action.payload.id].input !== '') {
         state.board[action.payload.id].check = true;
-        state.board[action.payload.id].source = action.payload.source;
-        state.savedToDB = false;
       }
+      if (action.payload.source !== "external") {
+        state.savedToDB = false;
+        state.mostRecentAction = {
+          scope: "square",
+          type: "requestCheckSquare",
+          index: action.payload.id,
+        };
+      }
+
     },
     'requestCheckWord': (state, action) => {
       action.payload.word.forEach(index => {
@@ -266,8 +273,7 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "word",
-        state: action.payload.word,
-        source: action.payload.source
+        state: action.payload.word
       };
       state.savedToDB = false;
     },
@@ -282,8 +288,7 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "board",
-        state: state.board,
-        source: action.payload.source
+        state: state.board
       }
       state.savedToDB = false;
     },
@@ -297,8 +302,15 @@ export const gameSlice = createSlice({
         state.board[action.payload.id].reveal = true
         state.board[action.payload.id].verified = true
       }
-      state.board[action.payload.id].source = action.payload.source;
       state.savedToDB = false;
+
+      if (action.payload.source !== "external") {
+        state.mostRecentAction = {
+          scope: "square",
+          type: "requestRevealSquare"
+          index: action.payload.id,
+        };
+      }
     },
     'requestRevealWord': (state, action) => {
       action.payload.word.forEach(i => {
@@ -315,8 +327,7 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "word",
-        state: action.payload.word,
-        source: action.payload.source
+        state: action.payload.word
       };
       state.savedToDB = false;
     },
@@ -335,8 +346,7 @@ export const gameSlice = createSlice({
       });
       state.mostRecentAction = {
         scope: "board",
-        state: state.board,
-        source: action.payload.source
+        state: state.board
       };
       state.savedToDB = false;
     },
@@ -347,17 +357,14 @@ export const gameSlice = createSlice({
       state.savedToDB = false;
     },
     'markVerified': (state, action) => {
-      state.board[action.payload.id].source = action.payload.source;
       state.board[action.payload.id].verified = true
       state.savedToDB = false;
     },
     'markIncorrect': (state, action) => {
-      state.board[action.payload.id].source = action.payload.source;
       state.board[action.payload.id].incorrect = true
       state.savedToDB = false;
     },
     'markPartial': (state, action) => {
-      state.board[action.payload.id].source = action.payload.source;
       state.board[action.payload.id].partial = true
       state.savedToDB = false;
     }
@@ -372,7 +379,6 @@ export const {
   loadSquareState,
   loadWordState,
   loadBoardState,
-  changeSent,
   resetGame,
   toggleAutocheck,
   changeInput,

@@ -11,8 +11,7 @@ export default memo((props) => {
   const { 
     jumpToPreviousWord,
     jumpToNextWord,
-    isWidescreen,
-    isDesktop
+    isWidescreen
   } = props
 
   const dispatch = useDispatch();

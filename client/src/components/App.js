@@ -46,32 +46,24 @@ function App(props) {
   const numCols = useSelector(state => state.game.numCols);
   const numRows = useSelector(state => state.game.numRows);
   const loadedGameId = useSelector(state => state.game.gameId);
-  const [boardPadding, setBoardPadding] = useState(2);
-
-
-  // if (isWidescreen) {
-  //   //  --squareSideLength: min(calc(var(--boardWidth)/var(--numCols)), calc(var(--boardHeight)/var(--numRows)));
-  //   console.log(innerHeight*0.90);
-  //   console.log(innerWidth*0.55);
-  //   let widescreenBoardWidth = Math.max(innerHeight*0.9, innerWidth* 0.55);
-  //   let widescreenRightWidth = innerWidth - widescreenBoardWidth;
-  //   console.log(widescreenBoardWidth)
-  //   document.documentElement.style.setProperty("--widescreen-left-width", `${widescreenBoardWidth}px`);
-  //   document.documentElement.style.setProperty("--widescreen-right-width", `${widescreenRightWidth}px`);
-
-  //   //document.documentElement.style.setProperty("--numRows", numRows);
-  // }
-
-
-
-
+  const [boardPadding] = useState(2);
+  const zoomActive = useSelector(state => state.pov.zoomActive);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [requestedGameId, setRequestedGameId] = useState(searchParams.get('gameId'));
+  const [openToast, setOpenToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [myColor, setMyColor] = useState(null);
+  const [gameNotFound, setGameNotFound] = useState(false);
+  const [user, initialized] = useAuthenticatedUser(auth);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const game = useSelector(state => state.game);
+  const players = useSelector(state => state.game.players);
+  const logger = new Logger("App");
 
   useEffect(() => {
     function setAppLayout() {
       const { width, height } = window.visualViewport;
-
-
-
       const maxBoardHeightSmallScreen = height * 0.53;
       const barHeight = isWidescreen ? (height * 0.1) : (height * 0.08);
       const keyboardHeight = isWidescreen ? (height * 0.35) : (height * 0.23);
@@ -91,7 +83,6 @@ function App(props) {
         const middleSectionHeight = height - (barHeight + keyboardHeight);
         document.documentElement.style.setProperty("--middle-section-height", `${middleSectionHeight}px`);
       }
-
     }
 
     setAppLayout();
@@ -102,15 +93,15 @@ function App(props) {
     };
   }, []);
 
-  useEffect(() => {
-    function setBoardLayout() {
-      const squareSideLength = isWidescreen ? 
-          (((window.visualViewport.height * 0.9) - (2 * boardPadding)) / numRows) 
-              : 
-          ((window.visualViewport.width - (2 * boardPadding)) / numCols);
-      document.documentElement.style.setProperty("--square-side-length", `${squareSideLength}px`);
-    }
+  function setBoardLayout(zoomActive) {
+    const squareSideLength = isWidescreen ? 
+        (((window.visualViewport.height * 0.9) - (2 * boardPadding)) / (zoomActive ? 10 : numRows)) 
+            : 
+        ((window.visualViewport.width - (2 * boardPadding)) / (zoomActive ? 10 : numCols));
+    document.documentElement.style.setProperty("--square-side-length", `${squareSideLength}px`);
+  }
 
+  useEffect(() => {
     setBoardLayout();
     window.addEventListener('resize', setBoardLayout);
 
@@ -119,57 +110,40 @@ function App(props) {
     };
   }, [loadedGameId]);
 
+  useEffect(() => {
+    setBoardLayout(zoomActive);
+  }, [zoomActive]);
+
 
 
 
   // logger.log("Render App component");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [gameId, setGameId] = useState(searchParams.get('gameId'));
-  const [openToast, setOpenToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-  const [myColor, setMyColor] = useState(null);
-  const [gameNotFound, setGameNotFound] = useState(false);
-  const [user, initialized] = useAuthenticatedUser(auth);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const game = useSelector(state => state.game);
-  const players = useSelector(state => state.game.players);
-  const logger = new Logger("App");
 
-  const isDesktop = useMediaQuery({
-    query: '(min-width: 1224px)'
-  })
-  const isBigScreen = useMediaQuery({ query: '(min-width: 1824px)' })
-  const isTabletOrMobile = useMediaQuery({ query: '(max-width: 1224px)' })
-  const isPortrait = useMediaQuery({ query: '(orientation: portrait)' })
-  const isRetina = useMediaQuery({ query: '(min-resolution: 2dppx)' })
 
-  const isTabletLandscape = useMediaQuery({ query: '(min-width: 1000px) and (max-width: 1224px)' });
+
   /**
    * Handle direct request for specific game, or get default game if no game ID specified
    */
     useEffect(() => {
-    if (socket === null || !initialized) return;
+      if (socket === null || !initialized) return;
 
-    const requestedGameId = searchParams.get('gameId');
-    if (!requestedGameId) {
-      if (user) {
-        logger.log(`Getting default game with ${user.uid}`);
-        socket.emit("get-default-game", user.uid);
-      }
+      const requestedGameId = searchParams.get('gameId');
+      if (!requestedGameId) {
+        if (user) {
+          logger.log(`Getting default game with ${user.uid}`);
+          socket.emit("get-default-game", user.uid);
+        }
 
-    } else if (requestedGameId !== game.gameId) {
-      logger.log(`Comparing requested game id ${requestedGameId} with current game id ${game.gameId}`)
-      // compare requestedGameId to currently loaded game
-      if (user) {
-        logger.log(`get-game-by-id with ${user.uid}`)
-        socket.emit('get-game-by-id', requestedGameId, user.uid);
-      } else {
-        navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
+      } else if (requestedGameId !== loadedGameId) {
+        if (user) {
+          logger.log(`get-game-by-id with ${user.uid}`)
+          socket.emit('get-game-by-id', requestedGameId, user.uid);
+        } else {
+          navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
+        }
+      } else if (requestedGameId === loadedGameId) {
+        logger.log(`Requested game id ${requestedGameId} is same as currently loaded game id ${loadedGameId}. Will not request game from server again.`)
       }
-    } else if (requestedGameId === game.gameId) {
-      logger.log(`Requested game id ${requestedGameId} is same as current game id ${game.gameId}. Will not request game from server again.`)
-    }
 
   }, [socket, user, initialized, searchParams]);
 
@@ -186,12 +160,11 @@ function App(props) {
     }
 
     function handleLoadGame(game) {
-      logger.log(`[Client] Loaded game ${game.gameId}`);
+      dispatch(loadGame({ ...game, loaded: true }));
+      logger.log(`[Client] Received game ${game.gameId} from server. Loading..`);
       logger.log("Setting game id to " + game.gameId);
-      setGameId(game.gameId);
       setGameNotFound(false);
       logger.log(JSON.stringify(game, null, 4)); 
-      dispatch(loadGame({ ...game, loaded: true }));
 
       let defaultFocus = game.clueDictionary.across[1].index;
       dispatch(initializePlayerView({
@@ -200,6 +173,7 @@ function App(props) {
         gameGrid: game.gameGrid,
         focus: defaultFocus
       }));
+
       setSearchParams({gameId: game.gameId});      
     }
 
@@ -229,19 +203,19 @@ function App(props) {
    * Respond to events of friends entering or leaving game
    */
   useEffect(() => {    
-    if (!user || socket === null || !gameId) return;
+    if (!user || socket === null || !loadedGameId) return;
 
     function handlePlayerOnline(playerId, serverGameId, displayName) {
       logger.log(`Player ${playerId} signed into game ${serverGameId}!`);
       dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
-      if (user && (playerId !== user.uid) && (serverGameId === gameId)) {
+      if (user && (playerId !== user.uid) && (serverGameId === loadedGameId)) {
         logger.log("Setting toast message");
         let firstName = displayName.split(' ')[0];
         setToastMessage(`${firstName} has entered the game!`);
         setOpenToast(true);
       } else {
         logger.log(`Not setting toast message`);
-        logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${gameId} Game player signed in: ${serverGameId}`)
+        logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${loadedGameId} Game player signed in: ${serverGameId}`)
       }      
     }
 
@@ -269,7 +243,7 @@ function App(props) {
       socket.off("load-player-cursor-change", handleLoadPlayerCursorChange);
     }
 
-  }, [gameId, socket, user]);
+  }, [loadedGameId, socket, user]);
 
   /**
    * Set player game color
@@ -298,7 +272,7 @@ function App(props) {
    /**
     * Redux player p.o.v. state
     */
-   const zoomActive = useSelector(state => state.pov.zoomActive);
+  //  const zoomActive = useSelector(state => state.pov.zoomActive);
    const rebusActive = useSelector(state => state.pov.rebusActive);
    const pencilActive = useSelector(state => state.pov.pencilActive);
    const orientation = useSelector(state => state.pov.focused.orientation);
@@ -318,31 +292,36 @@ function App(props) {
   useEffect(() => {
     if (socket === null) return;
     const receiveMsgHandler = (message) => {
-      if (message.gameId === game.gameId) {
-        logger.log(`Received external change for ${message.gameId}, updating Redux state.`);
-        if (message.scope === "square") {
-          dispatch(loadSquareState(message));
-  
-        } else if (message.scope === "word") {
-          dispatch(loadWordState(message));
-  
-        } else if (message.scope === "board") {
-          dispatch(loadBoardState(message));
-  
-        } else if (message.scope === "game") {
-          if (message.type === "toggleAutocheck") {
-            dispatch(toggleAutocheck({source: "external"}));
-  
-          } else if (message.type === "resetGame") {
-            dispatch(resetGame({source: "external"}));
-  
-          } else {
-            logger.log(`Unknown message received for game scope: ${message}`);
-          }
-        } else {
-          logger.log(`Message with unknown scope received: ${message}`);
+      if (message.source === socket.id) return;
+      if (message.gameId !== game.gameId) return;
+
+      logger.log(`[${socket.id}] Received external change for ${message.gameId} from other client ${message.source}, updating Redux state.`);
+
+      if (message.scope === "square") {
+        if (message.type === "changeInput") {
+          dispatch(changeInput({...message.state, source: "external"}))
         }
+
+      } else if (message.scope === "word") {
+        dispatch(loadWordState(message));
+
+      } else if (message.scope === "board") {
+        dispatch(loadBoardState(message));
+
+      } else if (message.scope === "game") {
+        if (message.type === "toggleAutocheck") {
+          dispatch(toggleAutocheck({source: "external"}));
+
+        } else if (message.type === "resetGame") {
+          dispatch(resetGame({source: "external"}));
+
+        } else {
+          logger.log(`Unknown message received for game scope: ${message}`);
+        }
+      } else {
+        logger.log(`Message with unknown scope received: ${message}`);
       }
+      
     }
     socket.on("receive-changes", receiveMsgHandler);
 
@@ -357,15 +336,13 @@ function App(props) {
    */
   useEffect(() => {
     if (!mostRecentAction || mostRecentAction.initial || socket === null) return;
-    if (mostRecentAction.source === socket.id) {
-      if (mostRecentAction.scope === "word" || mostRecentAction.scope === "puzzle") {
-        socket.emit("send-changes", { gameId: game.gameId, state: mostRecentAction.state, scope: mostRecentAction.scope});
-      } else if (mostRecentAction.scope === "game") {
-        socket.emit("send-changes", { gameId: game.gameId, type: mostRecentAction.type, scope: mostRecentAction.scope});
-      } else {
-        logger.log(`Unrecognizable action: ${mostRecentAction}`);
-      }
-    }
+    socket.emit("send-changes", { 
+      source: socket.id, 
+      gameId: mostRecentAction.gameId, 
+      scope: mostRecentAction.scope, 
+      type: mostRecentAction.type, 
+      state: mostRecentAction.state
+    });
 
   }, [mostRecentAction, socket, game]);
 
@@ -376,10 +353,7 @@ function App(props) {
   useEffect(() => {
     if (socket === null) return;
     if (!savedToDB) {
-      socket.emit("save-board", gameId, board.map(square => ({
-        ...square,
-        source: null
-      })));
+      socket.emit("save-board", loadedGameId, board);
       dispatch(boardSaved());
     }
   }, [savedToDB, board]);
@@ -662,34 +636,33 @@ function App(props) {
     <div className="container" onKeyDown={handleKeyDown}>
       {initialized && !user && <SignIn auth={auth} socket={socket} />}
       {user && <Fragment>
-        {gameId && gameNotFound && <h1>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
+        {requestedGameId && gameNotFound && <h1>Game {requestedGameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
         {!gameNotFound && <div className="App">
           {loaded && <Fragment>
             <TitleBar 
               socket={socket}
               auth={auth}
-              gameId={gameId}
+              gameId={loadedGameId}
               isWidescreen={isWidescreen}
               jumpToSquare={jumpToSquare}
             />
             <NavBar
               socket={socket}
               auth={auth}
-              gameId={gameId}
+              gameId={loadedGameId}
               jumpToSquare={jumpToSquare}
               isWidescreen={isWidescreen}
             />
             <Board
               user={user}
               socket={socket}
-              gameId={gameId}
+              gameId={loadedGameId}
               squareRefs={squareRefs}
             />
             <Clue
               jumpToNextWord={jumpToNextWord}
               jumpToPreviousWord={jumpToPreviousWord}
               isWidescreen={isWidescreen}
-              isDesktop={isDesktop} 
             />  
             <Keyboard
               jumpToSquare={jumpToSquare}

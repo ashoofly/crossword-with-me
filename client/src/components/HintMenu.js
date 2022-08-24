@@ -55,12 +55,12 @@ export default memo((props) => {
 
   function checkActiveWord() {
     handleClose();
-    dispatch(requestCheckWord({ word: focusedWord }));
+    dispatch(requestCheckWord({ word: focusedWord, source: socket.id }));
   }
 
   function checkPuzzle() {
     handleClose();
-    dispatch(requestCheckPuzzle());
+    dispatch(requestCheckPuzzle({source: socket.id}));
   }
 
   function revealSquare() {

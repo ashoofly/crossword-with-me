@@ -145,12 +145,12 @@ io.on("connection", async(socket) => {
   socket.on("get-game-by-dow", async(dow, playerId) => {
     console.log(`Received get-game-by-dow event from ${playerId} for ${dow} game`);
     const game = await findOrCreateGame(dow, playerId);
-    sendGame(game, playerId, "get-game-by-dow");
+    sendGame(game, playerId);
   });
   socket.on("get-default-game", async(playerId) => {
     console.log(`Received get-default-game event from ${playerId}`);
     const game = await getDefaultGame(playerId);
-    sendGame(game, playerId, "get-default-game");
+    sendGame(game, playerId);
   });
   socket.on("get-friend-request-name", async(gameId) => {
     console.log(`Received get-friend-request-name with ${gameId}`);
@@ -186,7 +186,8 @@ io.on("connection", async(socket) => {
     updateGameOnlineStatusForPlayer(gameId, playerId, false); 
   });
   socket.on('send-changes', state => {
-    console.log(`Received send-changes event from client for game ${state.gameId}`)
+    console.log(`Received send-changes event from client ${socket.id} for game ${state.gameId}`);
+    console.log(state);
     io.to(state.gameId).emit("receive-changes", state);
   });
   socket.on('get-game-by-id', async (gameId, playerId) => {
@@ -196,14 +197,14 @@ io.on("connection", async(socket) => {
       if (game.players) {
         let ownerId = game.players[0].playerId;
         if (playerId === ownerId) {
-          sendGame(game, playerId, "get-game-by-id");
+          sendGame(game, playerId);
 
         } else {
           let player = await getDbObjectPromise("players", playerId);
           let teamGames = await addPlayerToGame(player, game);
           console.log("Sending load-team-games event back to client");
           socket.emit("load-team-games", teamGames);
-          sendGame(game, playerId, "get-game-by-id");
+          sendGame(game, playerId);
         }
       } else {
         // anonymous game
@@ -240,9 +241,8 @@ io.on("connection", async(socket) => {
     }
   });
 
-  async function sendGame(game, playerId, source) {
+  async function sendGame(game, playerId) {
     let player = await getDbObjectPromise("players", playerId);
-    game['source'] = source;
     let gameId = game.gameId;
     console.log("Sending game " + gameId);
     socket.emit("load-game", game, socket.id);
