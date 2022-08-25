@@ -1,7 +1,18 @@
 const logOnly = [
+  "Auth",
+  "Index",
   "App",
   "Board",
-  "Square"
+  "Clue",
+  "GameMenu",
+  "HintMenu",
+  "InfoPage",
+  "Keyboard",
+  "Navbar",
+  "PlayerBox",
+  "SignIn",
+  "Square",
+  "TitleBar"
 ]
 
 export default class Logger {

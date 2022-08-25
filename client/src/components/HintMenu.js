@@ -19,20 +19,23 @@ import {
 } from '../redux/slices/gameSlice';
 // import { signin } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
+import Logger from '../utils/logger';
 
 
 export default memo((props) => {
   const { 
     socket,
-    auth,
-    gameId
+    auth
   } = props;
   // console.log("Render hintmenu");
+  const logger = new Logger("HintMenu");
+
   const dispatch = useDispatch();
   const [user, initialized] = useAuthenticatedUser(auth);
   const autocheck = useSelector(state => state.game.autocheck);
   const focus = useSelector(state => state.pov.focused.square);
   const focusedWord = useSelector(state => state.pov.focused.word);
+  const gameId = useSelector(state => state.game.gameId);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [showDetailedMenu, setShowDetailedMenu] = useState(false);
@@ -50,43 +53,43 @@ export default memo((props) => {
 
   function checkActiveSquare() {
     handleClose();
-    dispatch(requestCheckSquare({ id: focus, source: socket.id }));
+    dispatch(requestCheckSquare({ gameId: gameId, id: focus }));
   };
 
   function checkActiveWord() {
     handleClose();
-    dispatch(requestCheckWord({ word: focusedWord, source: socket.id }));
+    dispatch(requestCheckWord({ gameId: gameId, word: focusedWord }));
   }
 
   function checkPuzzle() {
     handleClose();
-    dispatch(requestCheckPuzzle({source: socket.id}));
+    dispatch(requestCheckPuzzle({gameId: gameId}));
   }
 
   function revealSquare() {
     handleClose();
-    dispatch(requestRevealSquare({ source: socket.id, id: focus }));
+    dispatch(requestRevealSquare({gameId: gameId, id: focus }));
   }
 
   function revealWord() {
     handleClose();
-    dispatch(requestRevealWord({ word: focusedWord }));
+    dispatch(requestRevealWord({gameId: gameId, word: focusedWord }));
   }
 
   function revealPuzzle() {
     handleClose();
-    dispatch(requestRevealPuzzle());
+    dispatch(requestRevealPuzzle({gameId: gameId}));
   }
 
   function clearPuzzle() {
     handleClose();
-    dispatch(resetGame({source: socket.id}));
+    dispatch(resetGame({gameId: gameId}));
 
   };
 
   function handleAutocheck() {
     handleClose();
-    dispatch(toggleAutocheck({source: socket.id}));
+    dispatch(toggleAutocheck({gameId: gameId}));
   }
 
   // function handleSignin() {

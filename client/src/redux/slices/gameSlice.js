@@ -100,7 +100,6 @@ export const gameSlice = createSlice({
             )
           }
         }
-
         state.players = state.players.map(player => {
           return action.payload.playerId === player.playerId ? 
             {...player, online: false}
@@ -114,7 +113,6 @@ export const gameSlice = createSlice({
         let playerColor = playerInfo.color;
         let playerFocus = playerInfo.currentFocus;
         
-
         // remove player's previous highlighted cursor
         if (playerFocus) {
           for (const index of playerFocus.word) {
@@ -167,210 +165,229 @@ export const gameSlice = createSlice({
             : player;
         })
       }
+      if (action.payload.source !== "external") {
+        state.savedToDB = false;
+      }
     },
     'loadGame': (state, action) => {
       return {
         ...action.payload,
-        board: action.payload.board.map(square => ({
-          ...square,
-          activeWordColors: [],
-          activeLetterColors: []
-        }))
+        board: action.payload.board
       }
-    },
-    'loadSquareState': (state, action) => {
-      state.board[action.payload.index] = {
-        ...action.payload,
-      }
-    },
-    'loadWordState': (state, action) => {
-      let word = action.payload.state;
-      word.forEach( square => {
-        state.board[square.index] = {
-          ...square,
-        };
-      });
-    },
-    'loadBoardState': (state, action) => {
-      state.board = action.payload.state.map(square => ({
-          ...square
-        })
-      );
     },
     'boardSaved': (state, action) => {
       state.savedToDB = true;
     },
     'resetGame': (state, action) => {
-      state.autocheck = false;
-      state.board = [...Array(state.numRows * state.numCols).keys()].map((num) => ({
-        initial: true,
-        index: num,
-        input: '',
-        reveal: false,
-        check: false,
-        verified: false,
-        incorrect: false,
-        partial: false,
-        penciled: false
-      }));
-      if (action.payload.source !== "external") {
-        state.savedToDB = false;
-        state.mostRecentAction = {
-          scope: "game",
-          gameId: state.gameId,
-          type: "resetGame"
-        };
+      if (action.payload.gameId === state.gameId) {
+        state.autocheck = false;
+        state.board = [...Array(state.numRows * state.numCols).keys()].map((num) => ({
+          initial: true,
+          index: num,
+          input: '',
+          reveal: false,
+          check: false,
+          verified: false,
+          incorrect: false,
+          partial: false,
+          penciled: false
+        }));
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: state.gameId,
+            type: "resetGame",
+            payload: action.payload
+          };
+        }
       }
     },
     'toggleAutocheck': (state, action) => {
-      state.autocheck = !state.autocheck;
-      if (action.payload.source !== "external") {
-        state.savedToDB = false;
-        state.mostRecentAction = {
-          scope: "game",
-          type: "toggleAutocheck"
-        };
+      if (action.payload.gameId === state.gameId) {
+        state.autocheck = !state.autocheck;
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: state.gameId,
+            type: "toggleAutocheck",
+            payload: action.payload
+          };
+        }
       }
     },
     'changeInput': (state, action) => {
-      state.board[action.payload.id].initial = false;
-      state.board[action.payload.id].input = action.payload.value;
-      state.board[action.payload.id].penciled = action.payload.penciled;
-      state.board[action.payload.id].color = action.payload.color;
+      if (action.payload.gameId === state.gameId) {
+        state.board[action.payload.id].initial = false;
+        state.board[action.payload.id].input = action.payload.value;
+        state.board[action.payload.id].penciled = action.payload.penciled;
+        state.board[action.payload.id].color = action.payload.color;
+        state.board[action.payload.id].check = false;
+        state.board[action.payload.id].incorrect = false;
+        state.board[action.payload.id].partial = false;
 
-      if (action.payload.source !== "external") {
-        if (action.payload.advanceCursor) {
-          state.advanceCursor = state.advanceCursor + 1;
+        if (action.payload.source !== "external") {
+          if (action.payload.advanceCursor) {
+            state.advanceCursor = state.advanceCursor + 1;
+          }
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: state.gameId,
+            type: "changeInput",
+            payload: action.payload
+          };
         }
-        state.savedToDB = false;
-        state.mostRecentAction = {
-          gameId: state.gameId,
-          scope: "square",
-          type: "changeInput",
-          state: action.payload
-        };
+      } else {
+        console.log(`Ignoring changeInput for ${action.payload.gameId} since state has different gameId: ${state.gameId}`);
       }
+
     },
     'requestCheckSquare': (state, action) => {
-      if (state.board[action.payload.id].input !== '') {
-        state.board[action.payload.id].check = true;
-      }
-      if (action.payload.source !== "external") {
-        state.savedToDB = false;
-        state.mostRecentAction = {
-          scope: "square",
-          type: "requestCheckSquare",
-          index: action.payload.id,
-        };
-      }
-
-    },
-    'requestCheckWord': (state, action) => {
-      action.payload.word.forEach(index => {
-        if (state.board[index].input !== '') {
+      if (action.payload.gameId === state.gameId) {
+        if (state.board[action.payload.id].input !== '') {
           state.board[action.payload.id].check = true;
         }
-      });
-      state.mostRecentAction = {
-        scope: "word",
-        state: action.payload.word
-      };
-      state.savedToDB = false;
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestCheckSquare",
+            payload: action.payload
+          };
+        }
+      } else {
+        console.log(`Ignoring requestCheckSquare for ${action.payload.gameId} since state has different gameId: ${state.gameId}`);
+      }
+    },
+    'requestCheckWord': (state, action) => {
+      if (action.payload.gameId === state.gameId) {
+        action.payload.word.forEach(index => {
+          if (state.board[index].input !== '') {
+            state.board[action.payload.id].check = true;
+          }
+        });
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestCheckWord",
+            payload: action.payload
+          };
+        }
+      }
     },
     'requestCheckPuzzle': (state, action) => {
-      state.board = state.board.map(square => {
-        return (square.input !== '') ? 
-          ({
-            ...square,
-            check: true,
-          }) 
-          : square
-      });
-      state.mostRecentAction = {
-        scope: "board",
-        state: state.board
+      if (action.payload.gameId === state.gameId) {
+        state.board = state.board.map(square => {
+          return (square.input !== '') ? 
+            ({
+              ...square,
+              check: true,
+            }) 
+            : square
+        });
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestCheckPuzzle",
+            payload: action.payload
+          };
+        }
       }
-      state.savedToDB = false;
     },
     'requestRevealSquare': (state, action) => {
-      if (state.board[action.payload.id].input === state.gameGrid[action.payload.id].answer) {
-        state.board[action.payload.id].check = true;
+      if (action.payload.gameId === state.gameId) {
+        if (state.board[action.payload.id].input === state.gameGrid[action.payload.id].answer) {
+          state.board[action.payload.id].check = true;
 
-      } else {
-        state.board[action.payload.id].incorrect = false
-        state.board[action.payload.id].partial = false
-        state.board[action.payload.id].reveal = true
-        state.board[action.payload.id].verified = true
-      }
-      state.savedToDB = false;
-
-      if (action.payload.source !== "external") {
-        state.mostRecentAction = {
-          scope: "square",
-          type: "requestRevealSquare"
-          index: action.payload.id,
-        };
+        } else {
+          state.board[action.payload.id].incorrect = false
+          state.board[action.payload.id].partial = false
+          state.board[action.payload.id].reveal = true
+          state.board[action.payload.id].verified = true
+        }
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestRevealSquare",
+            payload: action.payload,
+          };
+        }
       }
     },
     'requestRevealWord': (state, action) => {
-      action.payload.word.forEach(i => {
-        if (!state.board[i].reveal && !state.board[i].verified) {
-          if (state.board[i].input === state.gameGrid[i].answer) {
-            state.board[i].check = true;
-          } else {
-            state.board[i].incorrect = false;
-            state.board[i].partial = false;
-            state.board[i].reveal = true;
-            state.board[i].verified = true;
+      if (action.payload.gameId === state.gameId) {
+        action.payload.word.forEach(i => {
+          if (!state.board[i].reveal && !state.board[i].verified) {
+            if (state.board[i].input === state.gameGrid[i].answer) {
+              state.board[i].check = true;
+            } else {
+              state.board[i].incorrect = false;
+              state.board[i].partial = false;
+              state.board[i].reveal = true;
+              state.board[i].verified = true;
+            }
           }
+        });
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestRevealWord",
+            payload: action.payload
+          };
         }
-      });
-      state.mostRecentAction = {
-        scope: "word",
-        state: action.payload.word
-      };
-      state.savedToDB = false;
+      }
     },
     'requestRevealPuzzle': (state, action) => {
-      state.board.forEach((square, i) => {
-        if (state.gameGrid[i].isPlayable && !state.board[i].reveal && !state.board[i].verified) {
-          if (state.board[i].input === state.gameGrid[i].answer) {
-            state.board[i].check = true;
-          } else {
-            state.board[i].incorrect = false;
-            state.board[i].partial = false;
-            state.board[i].reveal = true;
-            state.board[i].verified = true;
+      if (action.payload.gameId === state.gameId) {
+        state.board.forEach((square, i) => {
+          if (state.gameGrid[i].isPlayable && !state.board[i].reveal && !state.board[i].verified) {
+            if (state.board[i].input === state.gameGrid[i].answer) {
+              state.board[i].check = true;
+            } else {
+              state.board[i].incorrect = false;
+              state.board[i].partial = false;
+              state.board[i].reveal = true;
+              state.board[i].verified = true;
+            }
           }
+        });
+        if (action.payload.source !== "external") {
+          state.savedToDB = false;
+          state.mostRecentAction = {
+            gameId: action.payload.gameId,
+            type: "requestRevealPuzzle",
+            payload: action.payload
+          };
         }
-      });
-      state.mostRecentAction = {
-        scope: "board",
-        state: state.board
-      };
-      state.savedToDB = false;
-    },
-    'removeCheck': (state, action) => {
-      state.board[action.payload.id].check = false
-      state.board[action.payload.id].incorrect = false
-      state.board[action.payload.id].partial = false
-      state.savedToDB = false;
+      }
     },
     'markVerified': (state, action) => {
-      state.board[action.payload.id].verified = true
-      state.savedToDB = false;
+      if (action.payload.gameId === state.gameId) {
+        state.board[action.payload.id].verified = true
+        state.savedToDB = false;
+      }
     },
     'markIncorrect': (state, action) => {
-      state.board[action.payload.id].incorrect = true
-      state.savedToDB = false;
+      if (action.payload.gameId === state.gameId) {
+        state.board[action.payload.id].incorrect = true
+        state.savedToDB = false;
+      }
     },
     'markPartial': (state, action) => {
-      state.board[action.payload.id].partial = true
-      state.savedToDB = false;
+      if (action.payload.gameId === state.gameId) {
+        state.board[action.payload.id].partial = true
+        state.savedToDB = false;
+      }
     }
   }
 })
 
+const { actions, reducer } = gameSlice
+
+export const gameSliceActions = actions;
 export const {
   loadGame,
   enteringPlayer,
@@ -388,7 +405,6 @@ export const {
   requestRevealSquare,
   requestRevealWord,
   requestRevealPuzzle,
-  removeCheck,
   markBlock,
   markVerified,
   markPartial,
@@ -396,5 +412,5 @@ export const {
   saveBoard,
   boardSaved,
   advanceCursor
-} = gameSlice.actions;
-export default gameSlice.reducer;
+} = actions;
+export default reducer;

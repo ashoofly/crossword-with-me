@@ -11,8 +11,6 @@ export default memo((props) => {
     id,
     user,
     squareRef,
-    gameId,
-    // handleRerender,
     socket,
   } = props;
 
@@ -31,6 +29,7 @@ export default memo((props) => {
   const playerColor = players.find(player => player.playerId === user.uid).color;
   const dispatch = useDispatch();
   const logger = new Logger("Square");
+  const gameId = useSelector(state => state.game.gameId);
 
   let [squareText, setSquareText] = useState('');
   let [highlightClasses, setHighlightClasses] = useState('');
@@ -50,10 +49,14 @@ export default memo((props) => {
 
   useEffect(() => {
     if (!activeWordColors || !activeLetterColors) return;
-    if (activeLetterColors.includes(playerColor)) {
-      setHighlightClasses(`${playerColor}-focus-square`);
-      setCustomStyle({});
-    }
+    if (activeWordColors.length === 0 && activeLetterColors.length === 0) {
+      setHighlightClasses('');
+
+    } 
+    // else if (activeLetterColors.includes(playerColor)) {
+    //   setHighlightClasses(`${playerColor}-focus-square`);
+    //   setCustomStyle({});
+    // }
     else if ((activeWordColors.length + activeLetterColors.length) > 1) {
       let allColors = [];
       for (const color of activeWordColors) {
@@ -85,7 +88,7 @@ export default memo((props) => {
       })
       setCustomStyle({backgroundColor: `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`});
 
-    } else {
+    } else if (activeWordColors.length === 1 || activeLetterColors.length === 1) {
       let color = activeWordColors[0];
       if (color) {
         setHighlightClasses(`${color}-focus-word`);
@@ -130,17 +133,17 @@ export default memo((props) => {
   function checkLetter() {
     if (!squareGrid.isPlayable || squareGameState.input === '') return;
     if (squareGameState.input === squareGrid.answer) {
-      dispatch(markVerified({source: socket.id, id: id }));
+      dispatch(markVerified({gameId, id}));
 
     } else if (squareGrid.answer.length > 1) {
       // rebus
       if (squareGameState.input.length >= 1 && squareGameState.input.charAt(0) === squareGrid.answer.charAt(0)) {
-        dispatch(markPartial({source: socket.id, id: id }));
+        dispatch(markPartial({gameId, id}));
       } else {
-        dispatch(markIncorrect({source: socket.id, id: id }));
+        dispatch(markIncorrect({gameId, id}));
       }
     } else {
-      dispatch(markIncorrect({source: socket.id, id: id }));
+      dispatch(markIncorrect({gameId, id}));
     }
   }
 

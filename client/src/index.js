@@ -17,29 +17,31 @@ import { getFirebaseConfig } from './firebase-config';
 import { initializeApp } from "firebase/app";
 import { onAuthStateChanged } from "firebase/auth";
 import { initializeAuth } from './auth';
+import Logger from './utils/logger';
 
+const logger = new Logger("Index");
 /**
  * Initialize Socket.io
  */
 const socket = io("http://localhost:3001");
 socket.on('connect', () => {
-  console.log(`Socket ${socket.id} connected.`)
+  logger.log(`Socket ${socket.id} connected.`)
 });
 socket.on('disconnect', (reason) => {
-  console.log(`Socket disconnected: ${reason}`);
+  logger.log(`Socket disconnected: ${reason}`);
 });
 /**
  * Initialize Firebase app
  */
 const firebaseAppConfig = getFirebaseConfig();
 const app = initializeApp(firebaseAppConfig);
-console.log("Initialized Firebase app");
+logger.log("Initialized Firebase app");
 
 /**
  * Initialize Firebase auth
  */
 const auth = initializeAuth(app);
-console.log("Initialized Firebase authentication");
+logger.log("Initialized Firebase authentication");
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

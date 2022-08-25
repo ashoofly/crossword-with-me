@@ -10,6 +10,7 @@ import Button from '@mui/material/Button';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
+import Logger from '../utils/logger';
 
 
 export default memo((props) => {
@@ -21,6 +22,7 @@ export default memo((props) => {
     gameId,
     isWidescreen
   } = props;
+  const logger = new Logger("Navbar");
 
   const [ open, setOpen ] = useState(false);
   const dispatch = useDispatch();

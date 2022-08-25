@@ -4,9 +4,11 @@ import {
   signOut, 
   GoogleAuthProvider 
 } from "firebase/auth";
+import Logger from "./utils/logger.js";
 
 let auth = null;
 let user = null;
+const logger = new Logger("Auth");
 
 function handleCredentialResponse(googleToken, auth, socket, gameId) {
     // Build Firebase credential with the Google ID token.
@@ -18,7 +20,7 @@ function handleCredentialResponse(googleToken, auth, socket, gameId) {
     // Send Firebase token to server so player can be 
     // added to database or relevant game if needed
     auth.currentUser.getIdToken(true).then(function(firebaseToken) {
-      console.log(`Sending user-signed-in event to server with ${gameId} and ${firebaseToken}`);
+      logger.log(`Send event: user-signed-in to ${gameId}`);
       socket.emit('user-signed-in', firebaseToken, gameId);
 
     }).catch(function(error) {

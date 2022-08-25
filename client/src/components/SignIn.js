@@ -5,13 +5,15 @@ import { handleCredentialResponse } from '../auth';
 import cryptoRandomString from 'crypto-random-string';
 import { getFirebaseConfig } from '../firebase-config';
 import '../styles/SignIn.css';
+import Logger from '../utils/logger';
 
 export default function JoinGame(props) {
   const {
     auth, 
     socket
   } = props;
-  
+  const logger = new Logger("SignIn");
+
   const [searchParams, setSearchParams] = useSearchParams();
   let gameId = searchParams.get('gameId');
   let token = searchParams.get('token');
@@ -44,17 +46,21 @@ export default function JoinGame(props) {
   }, [socket])
 
   useEffect(() => {
+    function generateNonce() {
+      let randomStr = cryptoRandomString({length: 32});
+      let url = window.location;
+      logger.log(`Generated nonce: ${url}---${randomStr}`);
+      return btoa(`${url}---${randomStr}`);
+    }
+
+
     if (!initialized || user) return;
     /* global google */
     google.accounts.id.initialize({
       client_id: getFirebaseConfig().googleClientId,
       ux_mode: "redirect",
       login_uri: "http://localhost:3002/auth",
-      nonce: () => {
-        let randomStr = cryptoRandomString({length: 32});
-        let url = window.location;
-        return btoa(`${url}---${randomStr}`);
-      }
+      nonce: generateNonce()
     });
 
     google.accounts.id.renderButton(
@@ -67,6 +73,7 @@ export default function JoinGame(props) {
     if (socket === null || !initialized || !gameId) return;
 
     if (!user) {
+      logger.log(`Send event: get-friend-request-name`);
       socket.emit("get-friend-request-name", gameId);
     }
 

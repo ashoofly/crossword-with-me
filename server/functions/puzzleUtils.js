@@ -31,8 +31,8 @@ async function isCurrentPuzzleSaved(db) {
           console.log(`[puzzleUtils] ${currentDate.toDateString()} puzzle already downloaded.`);
           return true;
         } else {
-          console.log(`[puzzleUtils] Saved ${currentDOW} puzzle is for ${fetchedPuzzleDate.toDateString()}. ` +
-                      `New puzzle for ${currentDOW} needed.`);
+          console.log(`[puzzleUtils] Saved ${currentDOW} puzzle is for ` +
+                      `${fetchedPuzzleDate.toDateString()}. New puzzle for ${currentDOW} needed.`);
           return false;
         }
       } else {
@@ -87,7 +87,7 @@ function getDbCollectionPromise(db, collectionType) {
 function getDbCollection(db, collectionType, successCallback, errorCallback) {
   const collectionRef = db.ref(`${collectionType}`);
 
-  collectionRef.on("value", (snapshot) => {
+  collectionRef.once("value", (snapshot) => {
     if (snapshot.exists()) {
       successCallback(snapshot.val());
     } else {
@@ -225,11 +225,30 @@ async function resetGameboard(db, dow) {
   saveNewPuzzle(db, puzzle);
 }
 
+async function cleanupOldGames(db) {
+  const lastWeek = new Date();
+  lastWeek.setDate((new Date()).getDate()-7);
+  const games = await getDbCollectionPromise(db, "games");
+  if (games) {
+    for (const gameKey of Object.keys(games)) {
+      const game = games[gameKey];
+      const gameDate = new Date(Date.parse(game.date));
+      if (gameDate <= lastWeek) {
+        console.log(`Deleting game ${game.gameId}: ${gameDate}`);
+        db.ref(`games/${game.gameId}`).remove();
+      }
+    }
+  } else {
+    console.log("No old games to remove.");
+  }
+}
+
 module.exports = {
   weekdays,
   getCurrentDOW,
   getPreviousDOW,
   isCurrentPuzzleSaved,
   setupGameBoard,
-  resetGameboard
+  resetGameboard,
+  cleanupOldGames,
 };

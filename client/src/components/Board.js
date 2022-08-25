@@ -32,7 +32,7 @@ export default memo((props) => {
   useEffect(() => {
     if (socket === null || !gameId || Object.keys(focused).length === 0) return;
     dispatch(updatePlayerFocus({playerId: user.uid, gameId: gameId, currentFocus: focused}));
-    logger.log(`Sending send-player-cursor-change event through socket ${socket.id}`)
+    logger.log(`Send event: send-player-cursor-change - socket ${socket.id}`)
     socket.emit('send-player-cursor-change', user.uid, gameId, focused);
 
   }, [user, gameId, focused]);

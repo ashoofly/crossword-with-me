@@ -1,5 +1,6 @@
 import { memo } from "react";
 import PlayerBox from './PlayerBox';
+import Logger from '../utils/logger';
 
 export default memo((props) => {
   const {
@@ -7,6 +8,7 @@ export default memo((props) => {
     auth,
     gameId,
   } = props;
+  const logger = new Logger("TitleBar");
 
   return (
     <div className="title-bar">

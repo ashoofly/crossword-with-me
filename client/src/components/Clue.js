@@ -5,6 +5,7 @@ import next from "../images/next.svg";
 import "../styles/Clue.css";
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleOrientation } from '../redux/slices/povSlice';
+import Logger from '../utils/logger';
 
 export default memo((props) => {
   // console.log("Render clue component");
@@ -13,6 +14,7 @@ export default memo((props) => {
     jumpToNextWord,
     isWidescreen
   } = props
+  const logger = new Logger("Clue");
 
   const dispatch = useDispatch();
 
@@ -34,10 +36,11 @@ export default memo((props) => {
       } 
     }
   }
+  const isTouchDevice = 'ontouchstart' in window;
 
   return (
     <div className="clue-container">
-      {isWidescreen && <h4 className="clue-heading">{clueHeading}</h4>}
+      {isWidescreen && isTouchDevice && <h4 className="clue-heading">{clueHeading}</h4>}
       <div className="clue">
         <div className="arrow-container" onClick={jumpToPreviousWord}>
           <img className="arrows" src={prev} alt="prev_clue" />

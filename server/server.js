@@ -1,6 +1,6 @@
 import { getFirebaseConfig } from './firebase-config.js';
 import { Server } from "socket.io";
-import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW, resetGameboard } from "./functions/puzzleUtils.js";
+import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW, resetGameboard, cleanupOldGames } from "./functions/puzzleUtils.js";
 import { v4 as uuidv4 } from 'uuid';
 import express from 'express'; 
 import bodyParser from 'body-parser';
@@ -17,6 +17,7 @@ console.log("Initialized Firebase authentication");
 const db = admin.database(app); 
 console.log("Initialized Firebase realtime database");
 //resetGameboard(db, "Tuesday");
+//cleanupOldGames(db);
 let dbCollections = {
   players: {},
   games: {},
@@ -185,10 +186,10 @@ io.on("connection", async(socket) => {
     io.to(gameId).emit('player-offline', playerId, gameId);
     updateGameOnlineStatusForPlayer(gameId, playerId, false); 
   });
-  socket.on('send-changes', state => {
-    console.log(`Received send-changes event from client ${socket.id} for game ${state.gameId}`);
-    console.log(state);
-    io.to(state.gameId).emit("receive-changes", state);
+  socket.on('send-changes', action => {
+    console.log(`Received send-changes event from client ${socket.id} for game ${action.gameId}`);
+    console.log(action);
+    io.to(action.gameId).emit("receive-changes", action);
   });
   socket.on('get-game-by-id', async (gameId, playerId) => {
     console.log(`Received get-game-by-id request for game ${gameId} from player ${playerId}`);
@@ -405,13 +406,13 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(cookieParser());
 
 server.get('/', (req, res) => {
-  res.send('Yes?')
+  res.send('Yes?') 
 }) 
 
 server.post('/auth', async(req, res) => {
   console.log(req.body);
 
-  checkCSRFToken(req, res);
+  checkCSRFToken(req, res); 
 
   const idToken = req.body.credential;
   const payload = await verifyJWT(idToken);
@@ -419,6 +420,7 @@ server.post('/auth', async(req, res) => {
   // Get redirect url
   const nonce = payload.nonce;
   const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
+  console.log(decodedNonce);
   const redirectUrlRegex = /(http.+)---(.+)/;
   const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
 

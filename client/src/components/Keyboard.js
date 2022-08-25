@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   toggleRebus
 } from '../redux/slices/povSlice';
+import Logger from '../utils/logger';
 
 export default memo((props) => {
   // console.log("Render keyboard");
@@ -15,6 +16,7 @@ export default memo((props) => {
     jumpToSquare,
     handleKeyDown
   } = props;
+  const logger = new Logger("Keyboard");
 
   const dispatch = useDispatch();
   const pov = useSelector(state => {

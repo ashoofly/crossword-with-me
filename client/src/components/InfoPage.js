@@ -2,6 +2,7 @@ import { memo } from "react";
 import Dialog from '@mui/material/Dialog';
 import '../styles/InfoPage.css';
 import { useSelector } from 'react-redux';
+import Logger from '../utils/logger';
 
 
 export default memo((props) => {
@@ -10,6 +11,7 @@ export default memo((props) => {
   const game = useSelector(state => {
     return state.game
   });
+  const logger = new Logger("InfoPage");
 
 
   function getTitle() {

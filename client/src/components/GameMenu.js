@@ -5,6 +5,7 @@ import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import Logger from '../utils/logger';
 
 export default memo((props) => {
   const { 
@@ -16,6 +17,7 @@ export default memo((props) => {
   const game = useSelector(state => state.game);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const logger = new Logger("GameMenu");
 
   // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
@@ -41,6 +43,7 @@ export default memo((props) => {
    */
    useEffect(() => {
     if (socket === null) return;
+    logger.log(`Send event: get-puzzle-dates`);
     socket.emit('get-puzzle-dates');
 
     socket.once('load-puzzle-dates', puzzleDates => {
@@ -62,19 +65,6 @@ export default memo((props) => {
       setMenuContent(menuItemContent);
     }
   }, [puzzleDates]);
-
-  // useEffect(() => {
-  //   console.log(`gameMenu Game id: ${gameId}`);
-  //   if (socket === null) return;
-  //   if (!gameId) {
-  //     if (user) {
-  //       socket.emit("get-default-game", user.uid);
-  //     } else {
-  //       socket.emit("get-default-game");
-  //     }
-  //   }
-
-  // }, [socket, user, gameId]);
 
 
   useEffect(() => {
@@ -200,7 +190,7 @@ export default memo((props) => {
     setSelectedTeamGameId(null);
     const dow = weekdays[index];
     if (user) {
-      console.log(`[${socket.id}] Looking for player ${user.uid}'s ${dow} game`);
+      logger.log(`Send event: get-game-by-dow`);
       socket.emit('get-game-by-dow', dow, user.uid);
     } 
   }

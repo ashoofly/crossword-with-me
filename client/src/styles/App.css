@@ -29,7 +29,7 @@
 .Board {
   width: 100%;
   max-height: var(--max-board-height);
-  padding: var(--board-padding);
+  padding: 0 var(--board-padding);
 }
 
 .clue {
@@ -47,8 +47,8 @@
   min-height: var(--keyboard-button-min-height);
 }
 
-/* Overriden layout properties for landscape tablets and desktop */
-@media (min-width: 1000px) {
+/* Overriden layout properties for landscape tablets */
+@media (min-width: 1000px) and (hover: none) {
   :root {
     --widescreen-left-width: 50%;
     --widescreen-right-width: 50%;
@@ -105,7 +105,67 @@
   }
 }
 
+/* Overriden properties for desktop */
+@media (hover: hover) {
+  .container {
+    display: flex;
+    justify-content: center;
+  }
+  .App {
+    display: grid;
+    --barH: min(80px, var(--bar-height));
+    grid-template-rows: var(--barH) calc(var(--barH) + 50px) var(--barH) calc(100% - (3 * var(--barH) + 50px));
+    justify-content: initial;
+  }
 
+  .title-bar {
+    background-color: rgb(6,54,66);
+  }
+
+  .title-bar,
+  .navbar,
+  .clue-container,
+  .clue {
+    max-height: 80px;
+  }
+
+  .navbar {
+    background-color: rgb(0,44,54);
+  }
+
+  .navbar,
+  .clue-container,
+  .Board {
+    max-width: 1000px;
+    justify-self: center;
+  }
+
+  .clue-container {
+    width: var(--board-width);
+  }
+
+  .Board {
+    max-height: 100%;
+    justify-content: center;
+  }
+
+  .clue-container {
+    grid-row: 3 / 4;
+  }
+
+  .clue {
+    background-color: rgb(196, 212, 212);
+    color: #073642;
+    font-weight: bold;
+    font-size: min(18px, 2vh);
+
+  }
+
+  .arrows {
+    filter: invert(16%) sepia(11%) saturate(5493%) hue-rotate(153deg) brightness(93%) contrast(95%);
+  }
+
+}
 
 
 

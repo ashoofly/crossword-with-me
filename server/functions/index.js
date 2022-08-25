@@ -3,7 +3,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const puppeteer = require("puppeteer");
-const { isCurrentPuzzleSaved, setupGameBoard, getDbObjectPromise } = require("./puzzleUtils");
+const { isCurrentPuzzleSaved, setupGameBoard, cleanupOldGames } = require("./puzzleUtils");
 
 admin.initializeApp();
 const db = admin.database();
@@ -34,11 +34,6 @@ function saveNewPuzzle(puzzle) {
   });
 }
 
-async function resetGameboard(dow) {
-  const puzzle = await getDbObjectPromise(db, "puzzles", dow);
-  saveNewPuzzle(puzzle);
-}
-
 exports.fetchNewPuzzle = functions
     .runWith({
       memory: "512MB",
@@ -48,15 +43,6 @@ exports.fetchNewPuzzle = functions
       console.log("Fetching new puzzle");
       if (!(await isCurrentPuzzleSaved(db))) {
         saveNewPuzzle(await fetchCurrentPuzzle());
+        cleanupOldGames(db);
       }
     });
-
-exports.resetGameboard = functions
-    .runWith({
-      memory: "512MB",
-    })
-    .onRun(async (context, dow) => {
-      await resetGameboard(dow);
-    });
-
-

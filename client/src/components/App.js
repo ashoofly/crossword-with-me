@@ -12,20 +12,7 @@ import SignIn from './SignIn';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import '../styles/App.css';
-import {
-  changeInput,
-  loadGame,
-  enteringPlayer,
-  exitingPlayer,
-  updatePlayerFocus,
-  removeCheck,
-  boardSaved,
-  loadSquareState,
-  loadWordState,
-  loadBoardState,
-  toggleAutocheck,
-  resetGame
-} from '../redux/slices/gameSlice';
+import { gameSliceActions as gameActions } from '../redux/slices/gameSlice';
 import {
   initializePlayerView,
   toggleRebus,
@@ -41,6 +28,8 @@ function App(props) {
   } = props;
 
   const isWidescreen = useMediaQuery({ query: '(min-width: 1000px)' });
+  /* heuristic for isTablet */
+  const isTouchDevice = 'ontouchstart' in window;
   // const [windowSize, setWindowSize] = useState(getWindowSize());
 
   const numCols = useSelector(state => state.game.numCols);
@@ -49,7 +38,7 @@ function App(props) {
   const [boardPadding] = useState(2);
   const zoomActive = useSelector(state => state.pov.zoomActive);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [requestedGameId, setRequestedGameId] = useState(searchParams.get('gameId'));
+  const [requestedGameId] = useState(searchParams.get('gameId'));
   const [openToast, setOpenToast] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [myColor, setMyColor] = useState(null);
@@ -65,8 +54,8 @@ function App(props) {
     function setAppLayout() {
       const { width, height } = window.visualViewport;
       const maxBoardHeightSmallScreen = height * 0.53;
-      const barHeight = isWidescreen ? (height * 0.1) : (height * 0.08);
-      const keyboardHeight = isWidescreen ? (height * 0.35) : (height * 0.23);
+      const barHeight = (isWidescreen && isTouchDevice) ? (height * 0.1) : (height * 0.08);
+      const keyboardHeight = isWidescreen ? (height * 0.3) : (height * 0.23);
       const keyboardRowMargin = 2;
       const keyboardMargins = 2 + 3 + 10;
       const keyboardButtonMinHeight = (keyboardHeight - keyboardMargins) / 3;
@@ -93,12 +82,21 @@ function App(props) {
     };
   }, []);
 
-  function setBoardLayout(zoomActive) {
-    const squareSideLength = isWidescreen ? 
-        (((window.visualViewport.height * 0.9) - (2 * boardPadding)) / (zoomActive ? 10 : numRows)) 
-            : 
-        ((window.visualViewport.width - (2 * boardPadding)) / (zoomActive ? 10 : numCols));
+  function setBoardLayout() {
+    const height = window.visualViewport.height;
+    const barHeight = isWidescreen ? (height * 0.1) : (height * 0.08);
+
+    const squareSideLength = !isTouchDevice ?  
+      ((height - (3 * barHeight) - 20) / (zoomActive ? 10 : numRows)) 
+        : 
+        (isWidescreen ? 
+          (((window.visualViewport.height * 0.9) - (2 * boardPadding)) / (zoomActive ? 10 : numRows)) 
+              : 
+          ((window.visualViewport.width - (2 * boardPadding)) / (zoomActive ? 10 : numCols)));
+    const boardWidth = squareSideLength * numCols;
     document.documentElement.style.setProperty("--square-side-length", `${squareSideLength}px`);
+    document.documentElement.style.setProperty("--board-width", `${boardWidth}px`);
+
   }
 
   useEffect(() => {
@@ -111,7 +109,7 @@ function App(props) {
   }, [loadedGameId]);
 
   useEffect(() => {
-    setBoardLayout(zoomActive);
+    setBoardLayout();
   }, [zoomActive]);
 
 
@@ -130,20 +128,21 @@ function App(props) {
       const requestedGameId = searchParams.get('gameId');
       if (!requestedGameId) {
         if (user) {
-          logger.log(`Getting default game with ${user.uid}`);
+          logger.log(`Send event: get-default-game - user: ${user.uid}`);
           socket.emit("get-default-game", user.uid);
         }
 
       } else if (requestedGameId !== loadedGameId) {
         if (user) {
-          logger.log(`get-game-by-id with ${user.uid}`)
+          logger.log(`Send event: get-game-by-id with ${user.uid}`)
           socket.emit('get-game-by-id', requestedGameId, user.uid);
         } else {
           navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
         }
-      } else if (requestedGameId === loadedGameId) {
-        logger.log(`Requested game id ${requestedGameId} is same as currently loaded game id ${loadedGameId}. Will not request game from server again.`)
-      }
+      } 
+      // else if (requestedGameId === loadedGameId) {
+      //   logger.log(`Requested game id ${requestedGameId} is same as currently loaded game id ${loadedGameId}. Will not request game from server again.`)
+      // }
 
   }, [socket, user, initialized, searchParams]);
 
@@ -160,11 +159,10 @@ function App(props) {
     }
 
     function handleLoadGame(game) {
-      dispatch(loadGame({ ...game, loaded: true }));
-      logger.log(`[Client] Received game ${game.gameId} from server. Loading..`);
-      logger.log("Setting game id to " + game.gameId);
+      dispatch(gameActions.loadGame({ ...game, loaded: true }));
+      logger.log(`Received game ${game.gameId} from server. Loading..`);
       setGameNotFound(false);
-      logger.log(JSON.stringify(game, null, 4)); 
+      // logger.log(JSON.stringify(game, null, 4)); 
 
       let defaultFocus = game.clueDictionary.across[1].index;
       dispatch(initializePlayerView({
@@ -181,17 +179,15 @@ function App(props) {
       setGameNotFound(true);
     }
 
-    logger.log(`Adding listeners to ${socket.id}: load-team-games, load-game, game-not-found`);
     socket.on("load-team-games", handleLoadTeamGame);
     socket.on('load-game', handleLoadGame);
     socket.on('game-not-found', handleGameNotFound);
 
-    logger.log(`Get team games with ${user.uid}`)
+    logger.log(`Send event: get-team-games - user: ${user.uid}`)
     socket.emit("get-team-games", user.uid);
 
 
     return function cleanup() { 
-      logger.log(`Removing listeners from ${socket.id}: load-team-games, load-game, game-not-found`);
       socket.off("load-team-games", handleLoadTeamGame);
       socket.off('load-game', handleLoadGame);
       socket.off('game-not-found', handleGameNotFound);
@@ -206,38 +202,37 @@ function App(props) {
     if (!user || socket === null || !loadedGameId) return;
 
     function handlePlayerOnline(playerId, serverGameId, displayName) {
-      logger.log(`Player ${playerId} signed into game ${serverGameId}!`);
-      dispatch(enteringPlayer({playerId: playerId, gameId: serverGameId}));
+      logger.log(`Received player-online event: Player ${playerId} signed into game ${serverGameId}!`);
+      dispatch(gameActions.enteringPlayer({playerId: playerId, gameId: serverGameId}));
       if (user && (playerId !== user.uid) && (serverGameId === loadedGameId)) {
-        logger.log("Setting toast message");
+        // logger.log("Setting toast message");
         let firstName = displayName.split(' ')[0];
         setToastMessage(`${firstName} has entered the game!`);
         setOpenToast(true);
-      } else {
-        logger.log(`Not setting toast message`);
-        logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${loadedGameId} Game player signed in: ${serverGameId}`)
-      }      
+      } 
+      // else {
+      //   logger.log(`Not setting toast message`);
+      //   logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${loadedGameId} Game player signed in: ${serverGameId}`)
+      // }      
     }
 
     function handlePlayerOffline(playerId, serverGameId) {
       logger.log(`Player ${playerId} signed out of game ${serverGameId}`);
-      dispatch(exitingPlayer({playerId: playerId, gameId: serverGameId}));
+      dispatch(gameActions.exitingPlayer({playerId: playerId, gameId: serverGameId}));
     }
 
     function handleLoadPlayerCursorChange(socketId, playerId, serverGameId, currentFocus) {
       if (socketId !== socket.id) {
         logger.log(`Received load-player-cursor-change from ${playerId}`);
-        dispatch(updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus}));
+        dispatch(gameActions.updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus, source: "external"}));
       }
     }
 
-    logger.log(`Adding listeners to ${socket.id}: player-online, player-offline, load-player-cursor-change`);
     socket.on("player-online", handlePlayerOnline);
     socket.on("player-offline", handlePlayerOffline);
     socket.on("load-player-cursor-change", handleLoadPlayerCursorChange);
 
     return function cleanup() {
-      logger.log(`Removing listeners to ${socket.id}: player-online, player-offline, load-player-cursor-change`);
       socket.off("player-online", handlePlayerOnline);
       socket.off("player-offline", handlePlayerOffline);
       socket.off("load-player-cursor-change", handleLoadPlayerCursorChange);
@@ -290,38 +285,17 @@ function App(props) {
    * Receive updates on game from other sources (different players or browser clients)
    */
   useEffect(() => {
-    if (socket === null) return;
-    const receiveMsgHandler = (message) => {
-      if (message.source === socket.id) return;
-      if (message.gameId !== game.gameId) return;
+    if (socket === null || !game) return;
+    const receiveMsgHandler = (wrappedAction) => {
+      if (wrappedAction.source === socket.id) return;
+      if (wrappedAction.gameId !== game.gameId) return;
 
-      logger.log(`[${socket.id}] Received external change for ${message.gameId} from other client ${message.source}, updating Redux state.`);
-
-      if (message.scope === "square") {
-        if (message.type === "changeInput") {
-          dispatch(changeInput({...message.state, source: "external"}))
-        }
-
-      } else if (message.scope === "word") {
-        dispatch(loadWordState(message));
-
-      } else if (message.scope === "board") {
-        dispatch(loadBoardState(message));
-
-      } else if (message.scope === "game") {
-        if (message.type === "toggleAutocheck") {
-          dispatch(toggleAutocheck({source: "external"}));
-
-        } else if (message.type === "resetGame") {
-          dispatch(resetGame({source: "external"}));
-
-        } else {
-          logger.log(`Unknown message received for game scope: ${message}`);
-        }
-      } else {
-        logger.log(`Message with unknown scope received: ${message}`);
+      logger.log(`[${socket.id}] Received external change for ${wrappedAction.gameId} from other client ${wrappedAction.source}, updating Redux state.`);
+      try {
+        dispatch(gameActions[wrappedAction.type]({...wrappedAction.payload, source: "external"}));
+      } catch (error) {
+        console.log(error);
       }
-      
     }
     socket.on("receive-changes", receiveMsgHandler);
 
@@ -336,15 +310,15 @@ function App(props) {
    */
   useEffect(() => {
     if (!mostRecentAction || mostRecentAction.initial || socket === null) return;
+    logger.log(`Send event: send-changes for ${mostRecentAction.type}`);
     socket.emit("send-changes", { 
       source: socket.id, 
       gameId: mostRecentAction.gameId, 
-      scope: mostRecentAction.scope, 
       type: mostRecentAction.type, 
-      state: mostRecentAction.state
+      payload: mostRecentAction.payload
     });
 
-  }, [mostRecentAction, socket, game]);
+  }, [mostRecentAction]);
 
 
   /**
@@ -353,8 +327,9 @@ function App(props) {
   useEffect(() => {
     if (socket === null) return;
     if (!savedToDB) {
+      logger.log(`Send event: save-board`);
       socket.emit("save-board", loadedGameId, board);
-      dispatch(boardSaved());
+      dispatch(gameActions.boardSaved());
     }
   }, [savedToDB, board]);
 
@@ -394,35 +369,26 @@ function App(props) {
         // if user input already empty, backspace to previous letter
         currentIndex = backspace();
       }
-      dispatch(removeCheck({id: currentIndex }));
       if (!board[currentIndex].verified) {
-        dispatch(changeInput({ id: currentIndex, value: '', source: socket.id, color: null }));
+        dispatch(gameActions.changeInput({ gameId: loadedGameId, id: currentIndex, value: '', color: null }));
       }
     } else {
       setDeleteMode(false);
 
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
-        var virtualKey = document.getElementById(e.key);
-        logger.log(virtualKey);
-        virtualKey.classList.add("key-pressed");
-        window.setTimeout(function() {
-          virtualKey.classList.remove("key-pressed");
-        }, 300);
-        
         if (rebusActive) {
-          dispatch(removeCheck({id: focusedSquare }));
           let currentInput = board[focusedSquare].input;
           let newValue = currentInput + e.key.toUpperCase();
-          dispatch(changeInput({ color: myColor, id: focusedSquare, value: newValue, source: socket.id, penciled: pencilActive, advanceCursor: true }));
+          dispatch(gameActions.changeInput({ gameId: loadedGameId, color: myColor, id: focusedSquare, value: newValue, penciled: pencilActive, advanceCursor: true }));
+
         } else {
           // if letter already in square, go into 'overwrite' mode
           if (board[focusedSquare].input !== "") {
-            dispatch(removeCheck({id: focusedSquare }));
             setOverwriteMode(true);
           } else {
             if (overwriteMode) setOverwriteMode(false);
           }
-          dispatch(changeInput({ color: myColor, id: focusedSquare, value: e.key.toUpperCase(), source: socket.id, penciled: pencilActive, advanceCursor: true }));
+          dispatch(gameActions.changeInput({ gameId: loadedGameId, color: myColor, id: focusedSquare, value: e.key.toUpperCase(), penciled: pencilActive, advanceCursor: true }));
         }
       }
     }
@@ -664,10 +630,10 @@ function App(props) {
               jumpToPreviousWord={jumpToPreviousWord}
               isWidescreen={isWidescreen}
             />  
-            <Keyboard
+            {isTouchDevice && <Keyboard
               jumpToSquare={jumpToSquare}
               handleKeyDown={handleKeyDown}
-            />
+            />}
             <Snackbar
                 open={openToast}
                 onClose={() => setOpenToast(false)}
