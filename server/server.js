@@ -113,6 +113,33 @@ async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
       playerRef.update({
         online: online
       });
+
+      if (!online) {
+        // remove cursor from board
+        const player = players[index];
+        const playerFocus = player.currentFocus;
+        if (playerFocus) {
+          const game = await getGameById(gameId);
+          const board = game.board;
+          for (const index of playerFocus.word) {
+            if (board[index].activeWordColors) {
+              board[index].activeWordColors = board[index].activeWordColors.filter(
+                color => color !== player.color
+              )
+            }
+            if (board[index].activeLetterColors) {
+              board[index].activeLetterColors = board[index].activeLetterColors.filter(
+                color => color !== player.color
+              )
+            }
+          }
+          const gameRef = db.ref(`games/${gameId}`);
+          gameRef.update({
+            board: board
+          });
+        }
+      }
+
     }
   } 
 }
@@ -133,9 +160,9 @@ io.of("/").adapter.on("leave-room", (room, id) => {
 });
 
 io.on("connection", async(socket) => {
-  socket.on("save-board", async (gameId, board) => {
-    console.log(`Received save-board event for ${gameId}...`);
-    updateGameBoard(gameId, board);
+  socket.on("save-game", async (gameId, board, players) => {
+    console.log(`Received save-game event for ${gameId}...`);
+    updateGame(gameId, board, players);
   });
   socket.on("get-puzzle-dates", async () => {
     console.log("Received get-puzzle-dates event...")
@@ -234,7 +261,7 @@ io.on("connection", async(socket) => {
     console.log(`Received user-signed-in event with gameId: ${gameId}`);
     if (gameId) {
       // add user to game if not already added
-      addUserToGame(idToken, gameId);
+      addUserToGame(idToken, gameId, io);
 
     } else {
       // add player to db if not already added
@@ -259,7 +286,7 @@ io.on("connection", async(socket) => {
 
     // join current game room
     socket.join(gameId);
-    io.to(gameId).emit('player-online', playerId, gameId, player.displayName);
+    io.to(gameId).emit('player-online', playerId, player.displayName, gameId);
     updateGameOnlineStatusForPlayer(gameId, playerId, true);
 
     // add listeners
@@ -268,6 +295,69 @@ io.on("connection", async(socket) => {
       io.to(gameId).emit("player-offline", playerId, gameId);
       updateGameOnlineStatusForPlayer(gameId, playerId, false);
     });
+  }
+
+  async function addPlayerToGame(player, game) {
+    //update game object
+    let players = game.players;
+    let gameId = game.gameId;
+    if (players.find(p => p.playerId === player.id)) {
+      console.log(`Player ${player.id} already part of game ${gameId}.`);
+  
+    } else {
+      let numCurrentPlayers = players.length;
+      let addedPlayer = {
+        playerId: player.id,
+        photoURL: player.photoURL,
+        displayName: player.displayName,
+        owner: false,
+        color: defaultPlayerColors[numCurrentPlayers]
+      };
+      players.push(addedPlayer);
+      console.log('Sending player-added-to-game to game room');
+      io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
+      const gameRef = db.ref(`games/${gameId}`);
+      gameRef.update({
+        players: players
+      }); 
+    }
+  
+    // update player object
+    let gameOwner = players[0].playerId;
+    if (gameOwner !== player.id) {
+      let playerGames = player.games;
+      if (!playerGames) {
+        playerGames = {owner: {}, team: []};
+      } 
+      let teamGames = playerGames['team'];
+      if (!teamGames) { 
+        teamGames = [];
+      }
+      if (!teamGames.find(game => game.gameId === gameId)) {
+        // get game owner for front-end to display
+        let ownerId = game.players[0].playerId;
+        let owner = await getDbObjectPromise("players", ownerId);
+    
+        teamGames.push({
+          gameId: gameId,
+          friend: {
+            displayName: owner.displayName,
+            playerId: owner.id
+          },
+          dow: game.dow,
+          date: game.date
+        });
+    
+        playerGames.team = teamGames;
+    
+        console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
+        const playerRef = db.ref(`players/${player.id}`);
+        playerRef.update({
+          games: playerGames
+        });
+      }
+    }
+    return await getPlayerTeamGames(player.id);
   }
 
   console.log(`Connected to ${socket.id}`);
@@ -333,65 +423,7 @@ const defaultPlayerColors = [
   "orange",
   "yellow"
 ];
-async function addPlayerToGame(player, game) {
-  //update game object
-  let players = game.players;
-  let gameId = game.gameId;
-  if (players.find(p => p.playerId === player.id)) {
-    console.log(`Player ${player.id} already part of game ${gameId}.`);
 
-  } else {
-    let numCurrentPlayers = players.length;
-    players.push({
-      playerId: player.id,
-      photoURL: player.photoURL,
-      displayName: player.displayName,
-      owner: false,
-      color: defaultPlayerColors[numCurrentPlayers]
-    });
-    const gameRef = db.ref(`games/${gameId}`);
-    gameRef.update({
-      players: players
-    }); 
-  }
-
-  // update player object
-  let gameOwner = players[0].playerId;
-  if (gameOwner !== player.id) {
-    let playerGames = player.games;
-    if (!playerGames) {
-      playerGames = {owner: {}, team: []};
-    } 
-    let teamGames = playerGames['team'];
-    if (!teamGames) { 
-      teamGames = [];
-    }
-    if (!teamGames.find(game => game.gameId === gameId)) {
-      // get game owner for front-end to display
-      let ownerId = game.players[0].playerId;
-      let owner = await getDbObjectPromise("players", ownerId);
-  
-      teamGames.push({
-        gameId: gameId,
-        friend: {
-          displayName: owner.displayName,
-          playerId: owner.id
-        },
-        dow: game.dow,
-        date: game.date
-      });
-  
-      playerGames.team = teamGames;
-  
-      console.log(`Adding game ${gameId} to team game list for ${player.id}.`);
-      const playerRef = db.ref(`players/${player.id}`);
-      playerRef.update({
-        games: playerGames
-      });
-    }
-  }
-  return await getPlayerTeamGames(player.id);
-}
 
 async function addUserToGame(firebaseClientToken, gameId) {
   let user = await verifyFirebaseClientToken(firebaseClientToken);
@@ -559,6 +591,10 @@ async function getPlayerTeamGames(playerId) {
   }
 } 
 
+async function getGameById(gameId) {
+  return await getDbObjectPromise("games", gameId);
+}
+
 async function getGameIfCurrent(gameId, dow) {
   let currentPuzzle = await getDbObjectPromise("puzzles", dow);
   let game = await getDbObjectPromise("games", gameId);
@@ -640,10 +676,11 @@ async function findOrCreatePlayer(user) {
   }
 }
 
-async function updateGameBoard(gameId, board) {
+async function updateGame(gameId, board, players) {
   const gameRef = db.ref(`games/${gameId}`);
   gameRef.update({
-    board: board
+    board: board,
+    players: players
   });
 }
 

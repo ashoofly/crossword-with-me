@@ -73,13 +73,20 @@ export const gameSlice = createSlice({
   name: 'game',
   initialState: defaultState,
   reducers: {
+    'addPlayerToGame': (state, action) => {
+      if (action.payload.gameId === state.gameId) {
+        if (!state.players.find(player => player.playerId === action.payload.player.playerId)) {
+          state.players.push(action.payload.player);
+        }
+      }
+    },
     'enteringPlayer': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         state.players = state.players.map(player => {
           return action.payload.playerId === player.playerId ? 
             {...player, online: true}
             : player;
-        });
+        })
       }
 
     },
@@ -110,6 +117,7 @@ export const gameSlice = createSlice({
     'updatePlayerFocus': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         let playerInfo = state.players.find(player => player.playerId === action.payload.playerId);
+
         let playerColor = playerInfo.color;
         let playerFocus = playerInfo.currentFocus;
         
@@ -168,14 +176,13 @@ export const gameSlice = createSlice({
       if (action.payload.source !== "external") {
         state.savedToDB = false;
       }
+      
+
     },
     'loadGame': (state, action) => {
-      return {
-        ...action.payload,
-        board: action.payload.board
-      }
+      return action.payload;
     },
-    'boardSaved': (state, action) => {
+    'gameSaved': (state, action) => {
       state.savedToDB = true;
     },
     'resetGame': (state, action) => {
@@ -262,7 +269,7 @@ export const gameSlice = createSlice({
       if (action.payload.gameId === state.gameId) {
         action.payload.word.forEach(index => {
           if (state.board[index].input !== '') {
-            state.board[action.payload.id].check = true;
+            state.board[index].check = true;
           }
         });
         if (action.payload.source !== "external") {

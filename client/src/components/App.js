@@ -201,19 +201,19 @@ function App(props) {
   useEffect(() => {    
     if (!user || socket === null || !loadedGameId) return;
 
-    function handlePlayerOnline(playerId, serverGameId, displayName) {
+    function handlePlayerAddedToGame(player, gameId) {
+      logger.log(`Received player-added-to-game event: ${player.playerId} for ${gameId}`);
+      dispatch(gameActions.addPlayerToGame({player, gameId}));
+    }
+
+    function handlePlayerOnline(playerId, displayName, serverGameId) {
       logger.log(`Received player-online event: Player ${playerId} signed into game ${serverGameId}!`);
       dispatch(gameActions.enteringPlayer({playerId: playerId, gameId: serverGameId}));
       if (user && (playerId !== user.uid) && (serverGameId === loadedGameId)) {
-        // logger.log("Setting toast message");
         let firstName = displayName.split(' ')[0];
         setToastMessage(`${firstName} has entered the game!`);
         setOpenToast(true);
-      } 
-      // else {
-      //   logger.log(`Not setting toast message`);
-      //   logger.log(`Me: ${user.uid} Player signed in: ${playerId} My game:${loadedGameId} Game player signed in: ${serverGameId}`)
-      // }      
+      }  
     }
 
     function handlePlayerOffline(playerId, serverGameId) {
@@ -228,6 +228,7 @@ function App(props) {
       }
     }
 
+    socket.on("player-added-to-game", handlePlayerAddedToGame);
     socket.on("player-online", handlePlayerOnline);
     socket.on("player-offline", handlePlayerOffline);
     socket.on("load-player-cursor-change", handleLoadPlayerCursorChange);
@@ -327,11 +328,11 @@ function App(props) {
   useEffect(() => {
     if (socket === null) return;
     if (!savedToDB) {
-      logger.log(`Send event: save-board`);
-      socket.emit("save-board", loadedGameId, board);
-      dispatch(gameActions.boardSaved());
+      logger.log(`Send event: save-game`);
+      socket.emit("save-game", loadedGameId, board, players);
+      dispatch(gameActions.gameSaved());
     }
-  }, [savedToDB, board]);
+  }, [savedToDB, board, players]);
 
   /**
    * Advances cursor after user input

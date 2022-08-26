@@ -48,24 +48,61 @@ export default memo((props) => {
   }, [textColor]);
 
   useEffect(() => {
-    if (!activeWordColors || !activeLetterColors) return;
-    if (activeWordColors.length === 0 && activeLetterColors.length === 0) {
-      setHighlightClasses('');
+    setHighlightClasses('');
+    setCustomStyle({});
 
-    } 
-    // else if (activeLetterColors.includes(playerColor)) {
-    //   setHighlightClasses(`${playerColor}-focus-square`);
-    //   setCustomStyle({});
-    // }
-    else if ((activeWordColors.length + activeLetterColors.length) > 1) {
+    let currentActiveWordColors;
+    let currentActiveLetterColors;
+
+    if (activeWordColors) {
+      if (activeWordColors.length === 1) {
+        const className = `${activeWordColors[0]}-focus-word`;
+        const rgbValue = getComputedStyle(document.documentElement).getPropertyValue(`--${className}`);
+        if (squareGameState.reveal) {
+          setCustomStyle({background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
+          overflow:`hidden`});
+        } else if (squareGameState.verified) {
+          setCustomStyle({background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`,
+          overflow: `hidden`});
+        } else {
+          setHighlightClasses(className);
+          setCustomStyle({});
+        }
+
+      }
+      currentActiveWordColors = activeWordColors;
+    } else {
+      currentActiveWordColors = [];
+    }
+    if (activeLetterColors) {
+      if (activeLetterColors.length === 1) {
+        const className = `${activeLetterColors[0]}-focus-square`;
+        const rgbValue = getComputedStyle(document.documentElement).getPropertyValue(`--${className}`);
+        if (squareGameState.reveal) {
+          setCustomStyle({background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`,
+          overflow: `hidden`});
+        } else if (squareGameState.verified) {
+          setCustomStyle({background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
+          overflow: `hidden`});
+        } else {
+          setHighlightClasses(className);
+          setCustomStyle({});
+        }
+      }
+      currentActiveLetterColors = activeLetterColors;
+    } else {
+      currentActiveLetterColors = [];
+    }
+    
+    if ((currentActiveWordColors.length + currentActiveLetterColors.length) > 1) {
       let allColors = [];
-      for (const color of activeWordColors) {
+      for (const color of currentActiveWordColors) {
         let cssProperty = `--${color}-focus-word`
         let cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
         let rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
         allColors.push(rgbArray);
       } 
-      for (const color in activeLetterColors) {
+      for (const color of currentActiveLetterColors) {
         let cssProperty = `--${color}-focus-square`;
         let cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
         let rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
@@ -86,20 +123,21 @@ export default memo((props) => {
       minRGB.forEach((minColorComp, index) => {
         midRGB.push((minColorComp + maxRGB[index])/2);
       })
-      setCustomStyle({backgroundColor: `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`});
+      const combinedColors = `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`;
 
-    } else if (activeWordColors.length === 1 || activeLetterColors.length === 1) {
-      let color = activeWordColors[0];
-      if (color) {
-        setHighlightClasses(`${color}-focus-word`);
+      if (squareGameState.reveal) {
+        setCustomStyle({background: `linear-gradient(to top right, ${combinedColors} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
+        overflow: `hidden`});
+      } else if (squareGameState.verified) {
+        setCustomStyle({background: `linear-gradient(to top right, ${combinedColors} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
+        overflow: `hidden`});
       } else {
-        color = activeLetterColors[0];
-        setHighlightClasses(`${color}-focus-square`);
+        setCustomStyle({backgroundColor: combinedColors});
       }
-      setCustomStyle({});
+
     }
 
-  }, [activeWordColors, activeLetterColors]);
+  }, [activeWordColors, activeLetterColors, squareGameState.verified, squareGameState.reveal]);
 
 
   function displaySquare() {

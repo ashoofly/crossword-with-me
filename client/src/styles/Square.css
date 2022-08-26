@@ -32,7 +32,7 @@
 
 .square-gridnum {
   height: 9px;
-  font-size: 8px;
+  font-size: 0.85vh;
   display: flex;
   color: rgb(60, 85, 92);
 }
@@ -98,13 +98,17 @@
   color: rgb(0,44,54);
 }
 
+:root {
+  --current-square-bg-color: rgb(238, 232, 213);
+}
+
 .verified-overlay {
-  background: linear-gradient(to top right, rgb(238, 232, 213) 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat; 
+  background: linear-gradient(to top right, var(--current-square-bg-color) 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat; 
   overflow: hidden;
 }
 
 .revealed-overlay {
-  background: linear-gradient(to top right, rgb(238, 232, 213) 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat; 
+  background: linear-gradient(to top right, var(--current-square-bg-color) 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat; 
   overflow: hidden;
 }
 
