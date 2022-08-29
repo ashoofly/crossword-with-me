@@ -24,14 +24,20 @@ async function fetchCurrentPuzzle() {
 }
 
 function saveNewPuzzle(puzzle) {
-  const { grid, clueDictionary } = setupGameBoard(puzzle);
-  console.log("Saving puzzle to Firebase database");
-  const puzzleRef = db.ref(`puzzles/${puzzle.dow}`);
-  puzzleRef.set({
-    ...puzzle,
-    gameGrid: grid,
-    clueDictionary: clueDictionary,
-  });
+  try {
+    const { grid, clueDictionary } = setupGameBoard(puzzle);
+    console.log("Saving puzzle to Firebase database");
+    const puzzleRef = db.ref(`puzzles/${puzzle.dow}`);
+    puzzleRef.set({
+      ...puzzle,
+      gameGrid: grid,
+      clueDictionary: clueDictionary,
+    });
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
 }
 
 exports.fetchNewPuzzle = functions
@@ -42,7 +48,12 @@ exports.fetchNewPuzzle = functions
     .onRun(async (context) => {
       console.log("Fetching new puzzle");
       if (!(await isCurrentPuzzleSaved(db))) {
-        saveNewPuzzle(await fetchCurrentPuzzle());
-        cleanupOldGames(db);
+        const saved = saveNewPuzzle(await fetchCurrentPuzzle());
+        if (saved) {
+          console.log("Cleaning up old games..");
+          cleanupOldGames(db);
+        } else {
+          console.log("Error saving new puzzle, so not cleaning up old games.");
+        }
       }
     });

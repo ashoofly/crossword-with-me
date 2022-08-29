@@ -243,9 +243,7 @@ export const gameSlice = createSlice({
             payload: action.payload
           };
         }
-      } else {
-        console.log(`Ignoring changeInput for ${action.payload.gameId} since state has different gameId: ${state.gameId}`);
-      }
+      } 
 
     },
     'requestCheckSquare': (state, action) => {
@@ -261,9 +259,7 @@ export const gameSlice = createSlice({
             payload: action.payload
           };
         }
-      } else {
-        console.log(`Ignoring requestCheckSquare for ${action.payload.gameId} since state has different gameId: ${state.gameId}`);
-      }
+      } 
     },
     'requestCheckWord': (state, action) => {
       if (action.payload.gameId === state.gameId) {

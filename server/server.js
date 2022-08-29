@@ -16,6 +16,47 @@ const auth = admin.auth(app);
 console.log("Initialized Firebase authentication");
 const db = admin.database(app); 
 console.log("Initialized Firebase realtime database");
+
+const server = express();
+const port = 3002;
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(cookieParser());
+
+server.get('/', (req, res) => {
+  res.send('Yes?') 
+}) 
+
+server.post('/auth', async(req, res) => {
+  console.log(req.body);
+
+  checkCSRFToken(req, res); 
+
+  const idToken = req.body.credential;
+  const payload = await verifyJWT(idToken);
+
+  // Get redirect url
+  const nonce = payload.nonce;
+  const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
+  console.log(decodedNonce);
+  const redirectUrlRegex = /(http.+)---(.+)/;
+  const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
+
+  let returnedUrl = null;
+  if (redirectUrl.includes("?gameId=")) {
+    returnedUrl = `${redirectUrl}&token=${idToken}`;
+
+  } else {
+    returnedUrl = `${redirectUrl}?token=${idToken}`;
+  }
+  console.log(`Redirecting Google auth token back to front-end`);
+  res.redirect(returnedUrl);
+})
+
+server.listen(port, () => {
+  console.log(`Express server listening on port ${port}`)
+}) 
+
+
 //resetGameboard(db, "Tuesday");
 //cleanupOldGames(db);
 let dbCollections = {
@@ -327,18 +368,18 @@ io.on("connection", async(socket) => {
     if (gameOwner !== player.id) {
       let playerGames = player.games;
       if (!playerGames) {
-        playerGames = {owner: {}, team: []};
+        playerGames = {owner: {}, team: {}};
       } 
       let teamGames = playerGames['team'];
       if (!teamGames) { 
-        teamGames = [];
+        teamGames = {};
       }
-      if (!teamGames.find(game => game.gameId === gameId)) {
+      if (!teamGames[gameId]) {
         // get game owner for front-end to display
         let ownerId = game.players[0].playerId;
         let owner = await getDbObjectPromise("players", ownerId);
     
-        teamGames.push({
+        teamGames[gameId] = {
           gameId: gameId,
           friend: {
             displayName: owner.displayName,
@@ -346,7 +387,7 @@ io.on("connection", async(socket) => {
           },
           dow: game.dow,
           date: game.date
-        });
+        };
     
         playerGames.team = teamGames;
     
@@ -432,44 +473,6 @@ async function addUserToGame(firebaseClientToken, gameId) {
   addPlayerToGame(player, game);
 }
 
-const server = express();
-const port = 3002;
-server.use(bodyParser.urlencoded({ extended: true }));
-server.use(cookieParser());
-
-server.get('/', (req, res) => {
-  res.send('Yes?') 
-}) 
-
-server.post('/auth', async(req, res) => {
-  console.log(req.body);
-
-  checkCSRFToken(req, res); 
-
-  const idToken = req.body.credential;
-  const payload = await verifyJWT(idToken);
-
-  // Get redirect url
-  const nonce = payload.nonce;
-  const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
-  console.log(decodedNonce);
-  const redirectUrlRegex = /(http.+)---(.+)/;
-  const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
-
-  let returnedUrl = null;
-  if (redirectUrl.includes("?gameId=")) {
-    returnedUrl = `${redirectUrl}&token=${idToken}`;
-
-  } else {
-    returnedUrl = `${redirectUrl}?token=${idToken}`;
-  }
-  console.log(`Redirecting Google auth token back to front-end`);
-  res.redirect(returnedUrl);
-})
-
-server.listen(port, () => {
-  console.log(`Express server listening on port ${port}`)
-}) 
 
 async function addPlayerToDB(firebaseClientToken) {
   let user = await verifyFirebaseClientToken(firebaseClientToken);

@@ -1,3 +1,4 @@
+/* eslint-disable guard-for-in */
 /* eslint-disable object-curly-spacing */
 /* eslint-disable valid-jsdoc */
 /* eslint-disable require-jsdoc */
@@ -226,16 +227,47 @@ async function resetGameboard(db, dow) {
 }
 
 async function cleanupOldGames(db) {
-  const lastWeek = new Date();
-  lastWeek.setDate((new Date()).getDate()-7);
+  const now = new Date();
+  const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate()-7);
   const games = await getDbCollectionPromise(db, "games");
   if (games) {
     for (const gameKey of Object.keys(games)) {
       const game = games[gameKey];
       const gameDate = new Date(Date.parse(game.date));
-      if (gameDate <= lastWeek) {
+      if (gameDate.getTime() === lastWeek.getTime()) {
         console.log(`Deleting game ${game.gameId}: ${gameDate}`);
         db.ref(`games/${game.gameId}`).remove();
+
+        // remove from player objects too
+        const playersRef = db.ref("players");
+
+        // remove from owned games
+        const dow = game.dow;
+        playersRef.orderByChild(`games/owner/${dow}`).equalTo(game.gameId).once("value", (snapshot) => {
+          if (snapshot.exists()) {
+            const players = snapshot.val();
+            for (const playerId in players) {
+              console.log(`Removing players/${playerId}/games/owner/${dow} game: ${game.gameId}`);
+              db.ref(`players/${playerId}/games/owner/${dow}`).remove();
+            }
+          } else {
+            console.log(`No player owns ${game.gameId}`);
+          }
+        });
+
+        // remove from team games
+        playersRef.orderByChild(`games/team/${game.gameId}/gameId`).equalTo(game.gameId)
+            .once("value", (snapshot) => {
+              if (snapshot.exists()) {
+                const players = snapshot.val();
+                for (const playerId in players) {
+                  console.log(`Removing players/${playerId}/games/team/${game.gameId} game`);
+                  db.ref(`players/${playerId}/games/team/${game.gameId}`).remove();
+                }
+              } else {
+                console.log(`No team games with gameId ${game.gameId}`);
+              }
+            });
       }
     }
   } else {
