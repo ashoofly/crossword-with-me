@@ -66,7 +66,7 @@ export const povSlice = createSlice({
       }
     },
     'setTeamGames': (state, action) => {
-      state.teamGames = action.payload.teamGames;
+      state.teamGames = Object.values(action.payload.teamGames);
     },
     'highlightActiveWord': (state, action) => {
       state.board[action.payload.id].isActiveWord = true;

@@ -1,5 +1,9 @@
 {
   "name": "crossword-with-friends",
   "type": "module",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "scripts": {
+    "staging": "cd client && npm run build-staging && cd ../server && npm run staging",
+    "prod": "cd client && npm run build-prod && cd ../server && npm run prod"
+  }
 }

@@ -19,11 +19,14 @@ import { onAuthStateChanged } from "firebase/auth";
 import { initializeAuth } from './auth';
 import Logger from './utils/logger';
 
+console.log(process.env);
 const logger = new Logger("Index");
 /**
  * Initialize Socket.io
  */
-const socket = io("http://localhost:3001");
+const socket = process.env.NODE_ENV === "production" ? 
+  io() : io(`http://localhost:${process.env.REACT_APP_DEV_SERVER_PORT}`);
+
 socket.on('connect', () => {
   logger.log(`Socket ${socket.id} connected.`)
 });

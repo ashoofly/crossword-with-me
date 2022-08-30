@@ -153,7 +153,9 @@ function App(props) {
     if (!user || socket === null) return;
 
     function handleLoadTeamGame(returnedGames) {
-      if (returnedGames && returnedGames.length > 0) {
+      console.log('load team games');
+      console.log(returnedGames);
+      if (returnedGames) {
         dispatch(setTeamGames({teamGames: returnedGames}));
       }
     }
@@ -256,7 +258,7 @@ function App(props) {
    * Redux game state
    */
    const loaded = useSelector(state => state.game.loaded);
-   const savedToDB = useSelector(state => state.game.savedToDB);
+   const savedBoardToDB = useSelector(state => state.game.savedBoardToDB);
   //  const numCols = useSelector(state => state.game.numCols);
   //  const numRows = useSelector(state => state.game.numRows);
    const board = useSelector(state => state.game.board);
@@ -327,12 +329,12 @@ function App(props) {
    */
   useEffect(() => {
     if (socket === null) return;
-    if (!savedToDB) {
-      logger.log(`Send event: save-game`);
-      socket.emit("save-game", loadedGameId, board, players);
+    if (!savedBoardToDB) {
+      logger.log(`Send event: save-board`);
+      socket.emit("save-board", loadedGameId, board);
       dispatch(gameActions.gameSaved());
     }
-  }, [savedToDB, board, players]);
+  }, [savedBoardToDB, board, players]);
 
   /**
    * Advances cursor after user input

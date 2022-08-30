@@ -59,7 +59,7 @@ export default function JoinGame(props) {
     google.accounts.id.initialize({
       client_id: getFirebaseConfig().googleClientId,
       ux_mode: "redirect",
-      login_uri: "http://localhost:3002/auth",
+      login_uri: process.env.REACT_APP_AUTH_URL,
       nonce: generateNonce()
     });
 

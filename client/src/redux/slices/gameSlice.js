@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const defaultState = {
   loaded: false,
   autocheck: false,
-  savedToDB: true,
+  savedBoardToDB: true,
   board: [...Array(225).keys()].map((num) => ({
     initial: true,
     index: num,
@@ -174,7 +174,7 @@ export const gameSlice = createSlice({
         })
       }
       if (action.payload.source !== "external") {
-        state.savedToDB = false;
+        state.savedBoardToDB = false;
       }
       
 
@@ -183,7 +183,7 @@ export const gameSlice = createSlice({
       return action.payload;
     },
     'gameSaved': (state, action) => {
-      state.savedToDB = true;
+      state.savedBoardToDB = true;
     },
     'resetGame': (state, action) => {
       if (action.payload.gameId === state.gameId) {
@@ -200,7 +200,7 @@ export const gameSlice = createSlice({
           penciled: false
         }));
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: state.gameId,
             type: "resetGame",
@@ -213,7 +213,7 @@ export const gameSlice = createSlice({
       if (action.payload.gameId === state.gameId) {
         state.autocheck = !state.autocheck;
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: state.gameId,
             type: "toggleAutocheck",
@@ -236,7 +236,7 @@ export const gameSlice = createSlice({
           if (action.payload.advanceCursor) {
             state.advanceCursor = state.advanceCursor + 1;
           }
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: state.gameId,
             type: "changeInput",
@@ -252,7 +252,7 @@ export const gameSlice = createSlice({
           state.board[action.payload.id].check = true;
         }
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestCheckSquare",
@@ -269,7 +269,7 @@ export const gameSlice = createSlice({
           }
         });
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestCheckWord",
@@ -289,7 +289,7 @@ export const gameSlice = createSlice({
             : square
         });
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestCheckPuzzle",
@@ -310,7 +310,7 @@ export const gameSlice = createSlice({
           state.board[action.payload.id].verified = true
         }
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestRevealSquare",
@@ -334,7 +334,7 @@ export const gameSlice = createSlice({
           }
         });
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestRevealWord",
@@ -358,7 +358,7 @@ export const gameSlice = createSlice({
           }
         });
         if (action.payload.source !== "external") {
-          state.savedToDB = false;
+          state.savedBoardToDB = false;
           state.mostRecentAction = {
             gameId: action.payload.gameId,
             type: "requestRevealPuzzle",
@@ -370,19 +370,19 @@ export const gameSlice = createSlice({
     'markVerified': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         state.board[action.payload.id].verified = true
-        state.savedToDB = false;
+        state.savedBoardToDB = false;
       }
     },
     'markIncorrect': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         state.board[action.payload.id].incorrect = true
-        state.savedToDB = false;
+        state.savedBoardToDB = false;
       }
     },
     'markPartial': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         state.board[action.payload.id].partial = true
-        state.savedToDB = false;
+        state.savedBoardToDB = false;
       }
     }
   }

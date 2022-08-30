@@ -19,10 +19,8 @@ export default memo((props) => {
   const navigate = useNavigate();
   const logger = new Logger("GameMenu");
 
-  // const user = useAuthenticatedUser(auth);
   const [user, initialized] = useAuthenticatedUser(auth);
   const teamGames = useSelector(state => state.pov.teamGames);
-
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuContent, setMenuContent] = useState(null);
@@ -179,7 +177,7 @@ export default memo((props) => {
         </MenuItem>
       )
     });
-    if (teamGames.length > 0) {
+    if (Object.keys(teamGames).length > 0) {
       currentMenuItems.unshift([gamesWithFriends, displayTeamGames(), soloGameHeading]);
     }
     setMenuItems(currentMenuItems);
