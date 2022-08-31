@@ -18,7 +18,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { initializeAuth } from './auth';
 import Logger from './utils/logger';
 
-console.log(process.env);
 const logger = new Logger("Index");
 /**
  * Initialize Socket.io

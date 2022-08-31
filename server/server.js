@@ -15,13 +15,13 @@ import Debug from "debug";
 const debug = Debug("Server");
 
 if (process.env.NODE_ENV === "development") {
+  console.log("Uploading env vars from .env.local");
   dotenv.config({ path: '../.env.local'});
 } else if (process.env.NODE_ENV === "heroku-local") {
   dotenv.config({ path: '../.env.heroku-local'});
 }
-
 const firebaseServerConfig = JSON.parse(process.env.FIREBASE_SERVER_CONFIG);
-const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS); 
 
 const firebaseAppConfig = {
   ...firebaseServerConfig, 
@@ -310,10 +310,15 @@ io.on("connection", async(socket) => {
 
         } else {
           let player = await getDbObjectPromise("players", playerId);
-          let teamGames = await addPlayerToGame(player, game, io);
-          debug("Sending load-team-games event back to client");
-          socket.emit("load-team-games", teamGames);
-          sendGame(game, playerId);
+          if (player) {
+            let teamGames = await addPlayerToGame(player, game, io);
+            debug("Sending load-team-games event back to client");
+            socket.emit("load-team-games", teamGames);
+            sendGame(game, playerId);
+          } else {
+            debug("Could not find player in player list.");
+          }
+
         }
       } else {
         // anonymous game
@@ -444,8 +449,12 @@ const defaultPlayerColors = [
 
 
 async function addPlayerToGame(player, game, io) {
+  console.log(player);
+
   //update game object
   let players = game.players;
+  console.log(players);
+
   let gameId = game.gameId;
   if (players.find(p => p.playerId === player.id)) {
     debug(`Player ${player.id} already part of game ${gameId}.`);
