@@ -2,8 +2,13 @@
   "name": "crossword-with-friends",
   "type": "module",
   "version": "1.0.0",
+  "engines": {
+    "node": "16.16.0"
+  },
+  "cacheDirectories": ["client/node_modules", "server/node_modules"],
   "scripts": {
-    "staging": "cd client && npm run build-staging && cd ../server && npm run staging",
-    "prod": "cd client && npm run build-prod && cd ../server && npm run prod"
+    "build": "cd server && npm install && cd ../client && npm install && npm run build-prod",
+    "start": "cd server && npm run prod",
+    "heroku-local": "heroku local -f Procfile.local -e .env.heroku-local"
   }
 }

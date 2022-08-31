@@ -13,7 +13,6 @@ import {
 } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { io } from 'socket.io-client';
-import { getFirebaseConfig } from './firebase-config';
 import { initializeApp } from "firebase/app";
 import { onAuthStateChanged } from "firebase/auth";
 import { initializeAuth } from './auth';
@@ -36,7 +35,7 @@ socket.on('disconnect', (reason) => {
 /**
  * Initialize Firebase app
  */
-const firebaseAppConfig = getFirebaseConfig();
+const firebaseAppConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
 const app = initializeApp(firebaseAppConfig);
 logger.log("Initialized Firebase app");
 

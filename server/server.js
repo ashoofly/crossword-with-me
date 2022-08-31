@@ -1,4 +1,3 @@
-import { getFirebaseConfig } from './firebase-config.js';
 import { Server } from "socket.io";
 import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW, resetGameboard, cleanupOldGames } from "./functions/puzzleUtils.js";
 import { v4 as uuidv4 } from 'uuid';
@@ -15,11 +14,20 @@ import Debug from "debug";
 
 const debug = Debug("Server");
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV === "development") {
   dotenv.config({ path: '../.env.local'});
+} else if (process.env.NODE_ENV === "heroku-local") {
+  dotenv.config({ path: '../.env.heroku-local'});
 }
 
-const firebaseAppConfig = getFirebaseConfig();
+const firebaseServerConfig = JSON.parse(process.env.FIREBASE_SERVER_CONFIG);
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+const firebaseAppConfig = {
+  ...firebaseServerConfig, 
+  credential: admin.credential.cert(serviceAccount)
+}; 
+
 const firebaseApp = admin.initializeApp(firebaseAppConfig);
 debug("Initialized Firebase app");
 const auth = admin.auth(firebaseApp);
@@ -60,7 +68,7 @@ expressServer.post('/auth', async(req, res) => {
   res.redirect(returnedUrl);
 })
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV !== "development") {
   expressServer.use('/', express.static(root));
   expressServer.get('*', (req, res) => {
     res.sendFile(path.join(root, 'index.html'));
@@ -69,15 +77,15 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const httpServer = createServer(expressServer);
-const io = new Server(httpServer, process.env.NODE_ENV !== "production" ? 
+const io = new Server(httpServer, process.env.NODE_ENV === "development" ? 
   {
     cors: {
       origin: process.env.REACT_APP_DEV_CLIENT_SERVER,
       methods: ['GET', 'POST']
     }
   } : {});
-const port = process.env.NODE_ENV !== "production" ? 
-process.env.REACT_APP_DEV_SERVER_PORT : process.env.PORT;
+const port = process.env.NODE_ENV === "development" ? 
+                process.env.REACT_APP_DEV_SERVER_PORT : process.env.PORT;
 httpServer.listen(port);
 debug(`Http server created on port ${port}`);
 
@@ -302,7 +310,7 @@ io.on("connection", async(socket) => {
 
         } else {
           let player = await getDbObjectPromise("players", playerId);
-          let teamGames = await addPlayerToGame(player, game);
+          let teamGames = await addPlayerToGame(player, game, io);
           debug("Sending load-team-games event back to client");
           socket.emit("load-team-games", teamGames);
           sendGame(game, playerId);
@@ -370,70 +378,6 @@ io.on("connection", async(socket) => {
     });
   }
 
-  async function addPlayerToGame(player, game) {
-    //update game object
-    let players = game.players;
-    let gameId = game.gameId;
-    if (players.find(p => p.playerId === player.id)) {
-      debug(`Player ${player.id} already part of game ${gameId}.`);
-  
-    } else {
-      let numCurrentPlayers = players.length;
-      let addedPlayer = {
-        playerId: player.id,
-        photoURL: player.photoURL,
-        displayName: player.displayName,
-        owner: false,
-        color: defaultPlayerColors[numCurrentPlayers],
-        online: true
-      };
-      players.push(addedPlayer);
-      debug('Sending player-added-to-game to game room');
-      io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
-      const gameRef = db.ref(`games/${gameId}`);
-      gameRef.update({
-        players: players
-      }); 
-    }
-  
-    // update player object
-    let gameOwner = players[0].playerId;
-    if (gameOwner !== player.id) {
-      let playerGames = player.games;
-      if (!playerGames) {
-        playerGames = {owner: {}, team: {}};
-      } 
-      let teamGames = playerGames['team'];
-      if (!teamGames) { 
-        teamGames = {};
-      }
-      if (!teamGames[gameId]) {
-        // get game owner for front-end to display
-        let ownerId = game.players[0].playerId;
-        let owner = await getDbObjectPromise("players", ownerId);
-    
-        teamGames[gameId] = {
-          gameId: gameId,
-          friend: {
-            displayName: owner.displayName,
-            playerId: owner.id
-          },
-          dow: game.dow,
-          date: game.date
-        };
-    
-        playerGames.team = teamGames;
-    
-        debug(`Adding game ${gameId} to team game list for ${player.id}.`);
-        const playerRef = db.ref(`players/${player.id}`);
-        playerRef.update({
-          games: playerGames
-        });
-      }
-    }
-    return await getPlayerTeamGames(player.id);
-  }
-
   debug(`Connected to ${socket.id}`);
   const sockets = await io.fetchSockets();
   debug(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
@@ -499,11 +443,75 @@ const defaultPlayerColors = [
 ];
 
 
-async function addUserToGame(firebaseClientToken, gameId) {
+async function addPlayerToGame(player, game, io) {
+  //update game object
+  let players = game.players;
+  let gameId = game.gameId;
+  if (players.find(p => p.playerId === player.id)) {
+    debug(`Player ${player.id} already part of game ${gameId}.`);
+
+  } else {
+    let numCurrentPlayers = players.length;
+    let addedPlayer = {
+      playerId: player.id,
+      photoURL: player.photoURL,
+      displayName: player.displayName,
+      owner: false,
+      color: defaultPlayerColors[numCurrentPlayers],
+      online: true
+    };
+    players.push(addedPlayer);
+    debug('Sending player-added-to-game to game room');
+    io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
+    const gameRef = db.ref(`games/${gameId}`);
+    gameRef.update({
+      players: players
+    }); 
+  }
+
+  // update player object
+  let gameOwner = players[0].playerId;
+  if (gameOwner !== player.id) {
+    let playerGames = player.games;
+    if (!playerGames) {
+      playerGames = {owner: {}, team: {}};
+    } 
+    let teamGames = playerGames['team'];
+    if (!teamGames) { 
+      teamGames = {};
+    }
+    if (!teamGames[gameId]) {
+      // get game owner for front-end to display
+      let ownerId = game.players[0].playerId;
+      let owner = await getDbObjectPromise("players", ownerId);
+  
+      teamGames[gameId] = {
+        gameId: gameId,
+        friend: {
+          displayName: owner.displayName,
+          playerId: owner.id
+        },
+        dow: game.dow,
+        date: game.date
+      };
+  
+      playerGames.team = teamGames;
+  
+      debug(`Adding game ${gameId} to team game list for ${player.id}.`);
+      const playerRef = db.ref(`players/${player.id}`);
+      playerRef.update({
+        games: playerGames
+      });
+    }
+  }
+  return await getPlayerTeamGames(player.id);
+}
+
+async function addUserToGame(firebaseClientToken, gameId, io) {
   let user = await verifyFirebaseClientToken(firebaseClientToken);
   let player = await findOrCreatePlayer(user);
   let game = await getDbObjectPromise("games", gameId);
-  addPlayerToGame(player, game);
+  addPlayerToGame(player, game, io);
 }
 
 

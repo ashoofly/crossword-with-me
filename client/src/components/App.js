@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useMediaQuery } from 'react-responsive'
 import TitleBar from './TitleBar';
-import NavBar from './NavBar';
+import Navbar from './Navbar';
 import Board from './Board';
 import Clue from './Clue';
 import Keyboard from './Keyboard';
@@ -615,7 +615,7 @@ function App(props) {
               isWidescreen={isWidescreen}
               jumpToSquare={jumpToSquare}
             />
-            <NavBar
+            <Navbar
               socket={socket}
               auth={auth}
               gameId={loadedGameId}

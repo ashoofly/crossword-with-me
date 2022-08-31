@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { handleCredentialResponse } from '../auth';
 import cryptoRandomString from 'crypto-random-string';
-import { getFirebaseConfig } from '../firebase-config';
 import '../styles/SignIn.css';
 import Logger from '../utils/logger';
 
@@ -55,9 +54,12 @@ export default function JoinGame(props) {
 
 
     if (!initialized || user) return;
+
+    const firebaseAppConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
+
     /* global google */
     google.accounts.id.initialize({
-      client_id: getFirebaseConfig().googleClientId,
+      client_id: firebaseAppConfig.googleClientId,
       ux_mode: "redirect",
       login_uri: process.env.REACT_APP_AUTH_URL,
       nonce: generateNonce()

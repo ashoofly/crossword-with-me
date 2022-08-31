@@ -392,6 +392,7 @@ const { actions, reducer } = gameSlice
 
 export const gameSliceActions = actions;
 export const {
+  addPlayerToGame,
   loadGame,
   enteringPlayer,
   exitingPlayer,
