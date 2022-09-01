@@ -20,7 +20,7 @@ function handleCredentialResponse(googleToken, auth, socket, gameId) {
     // Send Firebase token to server so player can be 
     // added to database or relevant game if needed
     auth.currentUser.getIdToken(true).then(function(firebaseToken) {
-      logger.log(`Send event: user-signed-in to ${gameId}`);
+      logger.log(`Send event: user-signed-in ${gameId ? `to ${gameId}` : ''}`);
       socket.emit('user-signed-in', firebaseToken, gameId);
 
     }).catch(function(error) {

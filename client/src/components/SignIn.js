@@ -5,6 +5,8 @@ import { handleCredentialResponse } from '../auth';
 import cryptoRandomString from 'crypto-random-string';
 import '../styles/SignIn.css';
 import Logger from '../utils/logger';
+import { useDispatch, useSelector } from 'react-redux';
+import { povSliceActions as povActions } from "../redux/slices/povSlice";
 
 export default function JoinGame(props) {
   const {
@@ -16,14 +18,27 @@ export default function JoinGame(props) {
   const [searchParams, setSearchParams] = useSearchParams();
   let gameId = searchParams.get('gameId');
   let token = searchParams.get('token');
-  if (token) {
-    handleCredentialResponse(token, auth, socket, gameId);
-  }
 
   const navigate = useNavigate();
   const [user, initialized] = useAuthenticatedUser(auth);
   const [friendName, setFriendName] = useState(null);
   const [gameNotFound, setGameNotFound] = useState(false);
+
+  const dispatch = useDispatch();
+  const playerVerified = useSelector(state => state.pov.playerVerified);
+
+  useEffect(() => {
+    if (!token || !auth) return;
+    
+    try {
+      if (token) {
+        handleCredentialResponse(token, auth, socket, gameId);
+      }
+    } catch (error) {
+      logger.log(error);
+    }
+
+  }, [token]);
 
   useEffect(() => {
     if (socket === null) return;
@@ -34,12 +49,22 @@ export default function JoinGame(props) {
     function handleGameNotFound() {
       setGameNotFound(true);
     }
+
+    function handlePlayerVerified(playerId) {
+      logger.log(`Received player-exists event for ${playerId}`);
+      if (user.uid === playerId) {
+        dispatch(povActions.playerVerified({playerVerified: true}));
+      }
+    }
+
     socket.on('display-friend-request', handleDisplayFriendRequest);
     socket.on('game-not-found', handleGameNotFound);
+    socket.on('player-exists', handlePlayerVerified);
 
     return function cleanup() {
       socket.off('display-friend-request', handleDisplayFriendRequest);
-      socket.off('game-not-found', handleGameNotFound);      
+      socket.off('game-not-found', handleGameNotFound); 
+      socket.off('player-exists', handlePlayerVerified);     
     }
 
   }, [socket])
@@ -48,7 +73,6 @@ export default function JoinGame(props) {
     function generateNonce() {
       let randomStr = cryptoRandomString({length: 32});
       let url = window.location;
-      logger.log(`Generated nonce: ${url}---${randomStr}`);
       return btoa(`${url}---${randomStr}`);
     }
 
@@ -77,7 +101,7 @@ export default function JoinGame(props) {
     if (!user) {
       logger.log(`Send event: get-friend-request-name`);
       socket.emit("get-friend-request-name", gameId);
-    }
+    } 
 
     if (user && gameId) {
       setSearchParams([]);
@@ -86,7 +110,6 @@ export default function JoinGame(props) {
 
   }, [socket, initialized, user, gameId]);
 
-
   return (
     <Fragment>
       {initialized && !token && !user && !gameNotFound && <div className="join-game">
@@ -94,7 +117,7 @@ export default function JoinGame(props) {
         <div id="signInDiv"></div>
       </div>
       }
-      {token && !user && !gameNotFound && <div className="join-game">
+      {token && (!user || !playerVerified) && !gameNotFound && <div className="join-game">
         <h1>Signing in...</h1>
       </div>
       }
@@ -102,7 +125,7 @@ export default function JoinGame(props) {
         <p>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</p>
       </div>
       }
-      {user && <div className="join-game">
+      {user && playerVerified && <div className="join-game">
         <h1>Successfully signed in!</h1>
       </div>
       }

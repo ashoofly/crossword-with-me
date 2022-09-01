@@ -20,6 +20,8 @@ import {
   setTeamGames
 } from '../redux/slices/povSlice';
 import Logger from '../utils/logger';
+import { povSliceActions as povActions } from "../redux/slices/povSlice";
+import { signout } from '../auth';
 
 function App(props) {
   const { 
@@ -49,6 +51,7 @@ function App(props) {
   const game = useSelector(state => state.game);
   const players = useSelector(state => state.game.players);
   const logger = new Logger("App");
+  const playerVerified = useSelector(state => state.pov.playerVerified);
 
   useEffect(() => {
     function setAppLayout() {
@@ -123,7 +126,10 @@ function App(props) {
    * Handle direct request for specific game, or get default game if no game ID specified
    */
     useEffect(() => {
-      if (socket === null || !initialized) return;
+      if (socket === null || !initialized || !playerVerified) return;
+
+      logger.log(`Send event: get-team-games - user: ${user.uid}`)
+      socket.emit("get-team-games", user.uid);
 
       const requestedGameId = searchParams.get('gameId');
       if (!requestedGameId) {
@@ -144,7 +150,7 @@ function App(props) {
       //   logger.log(`Requested game id ${requestedGameId} is same as currently loaded game id ${loadedGameId}. Will not request game from server again.`)
       // }
 
-  }, [socket, user, initialized, searchParams]);
+  }, [socket, user, playerVerified, initialized, searchParams]);
 
   /**
    * Respond to socket events loading games
@@ -153,8 +159,7 @@ function App(props) {
     if (!user || socket === null) return;
 
     function handleLoadTeamGame(returnedGames) {
-      console.log('load team games');
-      console.log(returnedGames);
+      logger.log('Received load-team-games');
       if (returnedGames) {
         dispatch(setTeamGames({teamGames: returnedGames}));
       }
@@ -181,18 +186,38 @@ function App(props) {
       setGameNotFound(true);
     }
 
+    function handlePlayerVerified(playerId) {
+      logger.log(`Received player-exists event for ${playerId}`);
+      if (user.uid === playerId) {
+        dispatch(povActions.playerVerified({playerVerified: true}));
+      }
+    }
+
+    function handlePlayerNotFound(playerId) {
+      logger.log(`Received player-not-found event for ${playerId}`);
+      if (user.uid === playerId) {
+        dispatch(povActions.playerVerified({playerVerified: false}));
+        // signout(auth);
+      }
+    }
+
     socket.on("load-team-games", handleLoadTeamGame);
     socket.on('load-game', handleLoadGame);
     socket.on('game-not-found', handleGameNotFound);
+    socket.on("player-exists", handlePlayerVerified);
+    socket.on("player-not-found", handlePlayerNotFound);
 
-    logger.log(`Send event: get-team-games - user: ${user.uid}`)
-    socket.emit("get-team-games", user.uid);
-
+    if (user && !playerVerified) {
+      logger.log(`Send verify-player-exists event for ${user.uid}`);
+      socket.emit("verify-player-exists", user.uid);
+    }
 
     return function cleanup() { 
       socket.off("load-team-games", handleLoadTeamGame);
       socket.off('load-game', handleLoadGame);
       socket.off('game-not-found', handleGameNotFound);
+      socket.off("player-exists", handlePlayerVerified);
+      socket.off("player-not-found", handlePlayerNotFound);
     }
   
   }, [socket, user]);
@@ -604,7 +629,10 @@ function App(props) {
   return (
     <div className="container" onKeyDown={handleKeyDown}>
       {initialized && !user && <SignIn auth={auth} socket={socket} />}
-      {user && <Fragment>
+      {user && !playerVerified && <div className="loading">
+        <h1>Loading...</h1>
+      </div>}
+      {user && playerVerified && <Fragment>
         {requestedGameId && gameNotFound && <h1>Game {requestedGameId} not found. Games are rotated every week, so this may have been a game from last week.</h1>}
         {!gameNotFound && <div className="App">
           {loaded && <Fragment>

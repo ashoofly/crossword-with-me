@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { getFocusedWord } from '../../puzzleUtils';
 
 const defaultState = {
+  playerVerified: false,
   defaultFocus: 0,
   rebusActive: false,
   pencilActive: false,
@@ -22,6 +23,9 @@ export const povSlice = createSlice({
   name: 'pov',
   initialState: defaultState,
   reducers: {
+    'playerVerified': (state, action) => {
+      state.playerVerified = action.payload.playerVerified
+    },
     'initializePlayerView': (state, action) => {
       let focusedWord = getFocusedWord(
         action.payload.gameGrid,
@@ -99,7 +103,9 @@ export const povSlice = createSlice({
     }
   }
 });
+const { actions, reducer } = povSlice
 
+export const povSliceActions = actions;
 export const {
   initializePlayerView,
   setFocusedSquare,
@@ -108,5 +114,5 @@ export const {
   togglePencil,
   toggleOrientation,
   setTeamGames
-} = povSlice.actions;
-export default povSlice.reducer;
+} = actions;
+export default reducer;

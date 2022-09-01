@@ -15,7 +15,6 @@ import Debug from "debug";
 const debug = Debug("Server");
 
 if (process.env.NODE_ENV === "development") {
-  console.log("Uploading env vars from .env.local");
   dotenv.config({ path: '../.env.local'});
 } else if (process.env.NODE_ENV === "heroku-local") {
   dotenv.config({ path: '../.env.heroku-local'});
@@ -43,8 +42,6 @@ expressServer.use(bodyParser.urlencoded({ extended: true }));
 expressServer.use(cookieParser());
 
 expressServer.post('/auth', async(req, res) => {
-  debug(req.body);
-
   checkCSRFToken(req, res); 
 
   const idToken = req.body.credential;
@@ -343,44 +340,69 @@ io.on("connection", async(socket) => {
       debug(`Could not find player ${playerId}`);
     }
   });
-  socket.on('user-signed-in', (idToken, gameId) => {
-    debug(`Received user-signed-in event with gameId: ${gameId}`);
+  socket.on('user-signed-in', async(idToken, gameId) => {
+    debug(`Received user-signed-in event`);
+    let player = null;
     if (gameId) {
       // add user to game if not already added
-      addUserToGame(idToken, gameId, io);
+      debug(`Adding user to ${gameId} if not already added`);
+      player = await addUserToGame(idToken, gameId, io);
 
     } else {
       // add player to db if not already added
-      addPlayerToDB(idToken);
+      debug(`Adding player to db if not already added`);
+      player = await addPlayerToDB(idToken);
+    }
+    if (player) {
+      debug(`Send player-exists event for ${player.id}`);
+      socket.emit('player-exists', player.id);
+    }
+  }); 
+
+  socket.on('verify-player-exists', async(playerId) => {
+    debug(`Received verify-player-exists event for ${playerId}`);
+    const player = await getDbObjectPromise("players", playerId);
+    if (player) {
+      debug(`Send player-exists event for ${playerId}`);
+      socket.emit('player-exists', playerId);
+    } else {
+      debug(`Send player-not-found event for ${playerId}`);
+      socket.emit('player-not-found', playerId);
     }
   });
 
   async function sendGame(game, playerId) {
     let player = await getDbObjectPromise("players", playerId);
-    let gameId = game.gameId;
-    debug("Sending game " + gameId);
-    socket.emit("load-game", game, socket.id);
 
-    // leave any previous game rooms
-    let currentRooms = Array.from(socket.rooms);
-    if (currentRooms.length > 1) {
-      let prevGameId = currentRooms[1];
-      socket.leave(prevGameId);
-      io.to(prevGameId).emit('player-offline', playerId, prevGameId);
-      updateGameOnlineStatusForPlayer(prevGameId, playerId, false);
+    if (player) {
+      let gameId = game.gameId;
+      debug("Sending game " + gameId);
+      socket.emit("load-game", game, socket.id);
+  
+      // leave any previous game rooms
+      let currentRooms = Array.from(socket.rooms);
+      if (currentRooms.length > 1) {
+        let prevGameId = currentRooms[1];
+        socket.leave(prevGameId);
+        io.to(prevGameId).emit('player-offline', playerId, prevGameId);
+        updateGameOnlineStatusForPlayer(prevGameId, playerId, false);
+      }
+  
+      // join current game room
+      socket.join(gameId);
+      io.to(gameId).emit('player-online', playerId, player.displayName, gameId);
+      updateGameOnlineStatusForPlayer(gameId, playerId, true);
+  
+      // add listeners
+      socket.on('disconnect', () => {
+        debug(`Send disconnect event to room ${gameId}`);
+        io.to(gameId).emit("player-offline", playerId, gameId);
+        updateGameOnlineStatusForPlayer(gameId, playerId, false);
+      });
+    } else {
+      debug(`Could not find player ${playerId} in the database`);
     }
 
-    // join current game room
-    socket.join(gameId);
-    io.to(gameId).emit('player-online', playerId, player.displayName, gameId);
-    updateGameOnlineStatusForPlayer(gameId, playerId, true);
-
-    // add listeners
-    socket.on('disconnect', () => {
-      debug(`Send disconnect event to room ${gameId}`);
-      io.to(gameId).emit("player-offline", playerId, gameId);
-      updateGameOnlineStatusForPlayer(gameId, playerId, false);
-    });
   }
 
   debug(`Connected to ${socket.id}`);
@@ -424,15 +446,14 @@ async function verifyFirebaseClientToken(idToken) {
   debug('Verifying Firebase client token...');
   try {
     let decodedToken = await auth.verifyIdToken(idToken);
-    debug(decodedToken);
     const uid = decodedToken.uid;
 
     let user = await auth.getUser(uid);
-    debug(user);
     return user;
     
   } catch(error) {
     debug(error);
+    return null;
   };
 }
 
@@ -449,12 +470,8 @@ const defaultPlayerColors = [
 
 
 async function addPlayerToGame(player, game, io) {
-  console.log(player);
-
   //update game object
   let players = game.players;
-  console.log(players);
-
   let gameId = game.gameId;
   if (players.find(p => p.playerId === player.id)) {
     debug(`Player ${player.id} already part of game ${gameId}.`);
@@ -517,21 +534,32 @@ async function addPlayerToGame(player, game, io) {
 }
 
 async function addUserToGame(firebaseClientToken, gameId, io) {
-  let user = await verifyFirebaseClientToken(firebaseClientToken);
-  let player = await findOrCreatePlayer(user);
-  let game = await getDbObjectPromise("games", gameId);
-  addPlayerToGame(player, game, io);
+  try {
+    let user = await verifyFirebaseClientToken(firebaseClientToken);
+    let player = await findOrCreatePlayer(user);
+    let game = await getDbObjectPromise("games", gameId);
+    addPlayerToGame(player, game, io);
+    return player;
+
+  } catch (error) {
+    debug(error);
+    return null;
+  }
 }
 
 
 async function addPlayerToDB(firebaseClientToken) {
   let user = await verifyFirebaseClientToken(firebaseClientToken);
-  findOrCreatePlayer(user);
+  try {
+    return await findOrCreatePlayer(user);
+  } catch (error) {
+    debug(error);
+    return null;
+  }
 }
 
 
 async function createNewPlayer(user) {
-  debug(user);
   if (!user) return;
   let playerId = user.uid;
   const playerRef = db.ref(`players/${playerId}`);

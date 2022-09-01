@@ -44,6 +44,7 @@ logger.log("Initialized Firebase app");
 const auth = initializeAuth(app);
 logger.log("Initialized Firebase authentication");
 
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

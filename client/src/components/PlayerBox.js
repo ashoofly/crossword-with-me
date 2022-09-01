@@ -7,9 +7,11 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { signout } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Tooltip from '@mui/material/Tooltip';
 import Logger from '../utils/logger';
+import { povSliceActions as povActions } from '../redux/slices/povSlice';
+
 
 export default memo((props) => {
   // console.log("Render Account component");
@@ -18,7 +20,7 @@ export default memo((props) => {
     socket,
   } = props;
   const logger = new Logger("PlayerBox");
-
+  const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
   // const [meIcon, setMeIcon] = useState(null);
@@ -90,6 +92,7 @@ export default memo((props) => {
     logger.log(`Send event: leave-game`);
     socket.emit('leave-game', user.uid, gameId);
     signout(auth);
+    dispatch(povActions.playerVerified({playerVerified: false}));
   }
   // function handleSignin() {
   //   signin(auth);
