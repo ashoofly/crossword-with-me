@@ -1,3 +1,7 @@
+# Live Demo
+
+https://floating-plains-76141.herokuapp.com/
+
 # Deployments
 
 ## Local
@@ -19,7 +23,7 @@ Go to `localhost:5000` to see UI
 ```
 git push heroku master
 ```
-
+Go to https://floating-plains-76141.herokuapp.com/ to see UI
 
 # Tech Stack
 
