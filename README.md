@@ -1,3 +1,26 @@
+# Deployments
+
+## Local
+```
+cd server
+npm run dev
+cd ../client
+npm run dev
+```
+Go to `localhost:3000` to see UI
+
+## Heroku Local
+```
+npm run heroku-local
+```
+Go to `localhost:5000` to see UI
+
+## Heroku Production
+```
+git push heroku master
+```
+
+
 # Tech Stack
 
 * Modern React (v18)
