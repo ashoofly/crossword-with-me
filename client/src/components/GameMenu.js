@@ -1,6 +1,8 @@
 import { useState, useEffect, Fragment, memo } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
@@ -200,8 +202,11 @@ export default memo((props) => {
   }
   return (
     <Fragment>
-      <div className="gameMenu-title" onClick={handleClick}>
-        <div dangerouslySetInnerHTML={heading}></div>
+      <div 
+        className="gameMenu-title" 
+        onClick={handleClick}
+      >
+        <div className="gameMenu-span" dangerouslySetInnerHTML={heading}></div><KeyboardArrowDownIcon className="arrow" />
       </div>
       <Menu
         className="menu"

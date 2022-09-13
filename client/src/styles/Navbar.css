@@ -124,9 +124,13 @@
 }
 
 .gameMenu-title {
-  /* font-family: 'Roboto Mono', monospace; */
   cursor: pointer;
+  display: flex;
 }
+.gameMenu-span {
+  padding-right: 5px;
+}
+
 
 .date-subtitle {
   color: #657B83;

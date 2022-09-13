@@ -18,9 +18,7 @@ export default memo((props) => {
     if (game.hasTitle) {
       return game.title;
     } else {
-      const sourceAndDateRegex = /([A-Za-z\s]+), (.+)/;
-      const [ original, source, dailyTitle ] = sourceAndDateRegex.exec(game.title);
-      return dailyTitle;
+      return `${game.dow}, ${game.date}`;
     }
   }
 
@@ -29,6 +27,7 @@ export default memo((props) => {
       className="info-page">
       <header>
         <h1>{getTitle()}</h1>
+        {game.hasTitle && <h2>{game.dow}, {game.date}</h2>}
         <h3>By {game.author}</h3>
         <h4>Edited by {game.editor}</h4>
         <small>	&copy; {game.copyright}</small>

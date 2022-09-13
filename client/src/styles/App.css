@@ -3,6 +3,7 @@
   --app-width: 100%;
   --bar-height: 8vh;
   --max-board-height: 53vh;
+  --max-clue-height: 10vh;
   --board-padding: 2px;
   --keyboard-height: 16vh;
   --keyboard-row-margin: 1px;
@@ -42,7 +43,7 @@
 }
 
 .clue {
-  height: var(--bar-height);
+  max-height: var(--max-clue-height);
 }
 
 .Keyboard {

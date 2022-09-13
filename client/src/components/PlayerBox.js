@@ -68,6 +68,7 @@ export default memo((props) => {
 
   useEffect(() => {
     if (!initialized || !user || !players) return;
+    console.log(players);
     let me = players.find(player => player.playerId === user.uid);
     setMeIconClasses(`avatar-bg ${me.color}-border`);
     let friends = players.filter(player => player.playerId !== user.uid);
@@ -102,7 +103,7 @@ export default memo((props) => {
       <div className="player-box">
         {friendIcons}
         {user && <Badge color="success" overlap="circular" badgeContent="">
-          <Tooltip title={`${user.displayName} (me)`}>
+          <Tooltip title={`${user.displayName} (me)`} enterTouchDelay={0}>
             <Avatar className={meIconClasses} onClick={handleClick} >
               <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
@@ -124,20 +125,6 @@ export default memo((props) => {
         }}
       >
         {user && <MenuItem className="displayName">{user.displayName ?? user.email} (me)</MenuItem>}
-        <div className="color-choices">
-        <div className="color-blob blue"></div>
-        <div className="color-blob magenta"></div>
-
-        <div className="color-blob violet"></div>
-        <div className="color-blob green"></div>
-
-        <div className="color-blob red"></div>
-        <div className="color-blob cyan"></div>
-
-        <div className="color-blob orange"></div>
-
-          <div className="color-blob yellow"></div>
-        </div>
         <MenuItem onClick={handleSignout}>Sign out</MenuItem>
       </Menu>
     </Fragment>

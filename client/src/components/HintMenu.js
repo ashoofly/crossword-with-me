@@ -36,6 +36,7 @@ export default memo((props) => {
   const focus = useSelector(state => state.pov.focused.square);
   const focusedWord = useSelector(state => state.pov.focused.word);
   const gameId = useSelector(state => state.game.gameId);
+  const players = useSelector(state => state.game.players);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [showDetailedMenu, setShowDetailedMenu] = useState(false);
@@ -43,6 +44,15 @@ export default memo((props) => {
   const [openToast, setOpenToast] = useState(false);
   const open = Boolean(anchorEl);
   useEffect(showMenu, [user, gameId, showDetailedMenu, autocheck, focus]);
+
+  function amOwner() {
+    let me = players.find(player => player.playerId === user.uid);
+    if (me) {
+      return me.owner ? true : false;
+    } else {
+      return false;
+    }
+  }
 
   function copyUrlToClipboard() {
     handleClose();
@@ -124,34 +134,47 @@ export default memo((props) => {
         "color": "#08992e"
       },
       hide: user ? false : true
-    },  
+    }, 
+    {
+      id: -1,
+      text: "Only the owner of the puzzle can reveal/check",
+      style: {
+        color: "rgb(220,50,47)",
+        fontSize: 12,
+        fontWeight: "bold",
+        cursor: "default"
+      },
+      hide: amOwner() ? true : false
+    }, 
     {
       id: 1,
       text: `Turn ${autocheck ? "OFF" : "ON"} Autocheck`,
-      onClick: handleAutocheck
+      onClick: handleAutocheck,
+      disabled: amOwner() ? false : true
     },
     {
       id: 2,
       text: "Check Square",
       onClick: checkActiveSquare,
-      disabled: autocheck ? true : false
+      disabled: autocheck ? true : (amOwner() ? false : true)
     },
     {
       id: 3,
       text: "Check Word",
       onClick: checkActiveWord,
-      disabled: autocheck ? true : false
+      disabled: autocheck ? true : (amOwner() ? false : true)
     },
     {
       id: 4,
       text: "Check Puzzle",
       onClick: checkPuzzle,
-      disabled: autocheck ? true : false
+      disabled: autocheck ? true : (amOwner() ? false : true)
     },
     {
       id: 5,
       text: "Reveal / Clear...",
-      onClick: goToRevealMenu
+      onClick: goToRevealMenu,      
+      disabled: amOwner() ? false : true
     }
   ];
   const revealMenuItems = [
