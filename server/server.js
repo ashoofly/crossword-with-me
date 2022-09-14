@@ -487,12 +487,12 @@ async function addPlayerToGame(player, game, io) {
       online: true
     };
     players.push(addedPlayer);
-    debug('Sending player-added-to-game to game room');
-    io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
     const gameRef = db.ref(`games/${gameId}`);
-    gameRef.update({
+    await gameRef.update({
       players: players
     }); 
+    debug('Sending player-added-to-game to game room');
+    io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
   }
 
   // update player object

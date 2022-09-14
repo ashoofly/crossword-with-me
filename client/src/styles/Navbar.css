@@ -27,13 +27,14 @@
   column-gap: 10px;
 }
 
-.title-bar h1 {
+.title-text {
   margin: 0;
   /* font-family: 'Roboto Mono', monospace; */
   /* font-weight: 600; */
   font-size: 1.25rem;
   color: rgb(238,232,213);
   padding: 10px;
+  cursor: pointer;
 
 }
 

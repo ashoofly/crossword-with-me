@@ -75,6 +75,31 @@ function getDbObjectById(db, collectionType, id, successCallback, errorCallback)
   });
 }
 
+function getDbRefPromise(db, refPath) {
+  return new Promise((resolve, reject) => {
+    getDbObjectByRef(db, refPath, (successResponse) => {
+      resolve(successResponse);
+    }, (errorResponse) => {
+      reject(errorResponse);
+    });
+  });
+}
+
+function getDbObjectByRef(db, refPath, successCallback, errorCallback) {
+  const objectRef = db.ref(refPath);
+
+  objectRef.once("value", (snapshot) => {
+    if (snapshot.exists()) {
+      successCallback(snapshot.val());
+    } else {
+      successCallback(null);
+    }
+  }, (error) => {
+    console.log(error);
+    errorCallback(error);
+  });
+}
+
 function getDbCollectionPromise(db, collectionType) {
   return new Promise((resolve, reject) => {
     getDbCollection(db, collectionType, (successResponse) => {
@@ -226,6 +251,7 @@ async function resetGameboard(db, dow) {
   saveNewPuzzle(db, puzzle);
 }
 
+
 async function cleanupOldGames(db) {
   const now = new Date();
   const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate()-7);
@@ -234,40 +260,29 @@ async function cleanupOldGames(db) {
     for (const gameKey of Object.keys(games)) {
       const game = games[gameKey];
       const gameDate = new Date(Date.parse(game.date));
-      if (gameDate.getTime() === lastWeek.getTime()) {
-        console.log(`Deleting game ${game.gameId}: ${gameDate}`);
-        db.ref(`games/${game.gameId}`).remove();
-
-        // remove from player objects too
-        const playersRef = db.ref("players");
-
-        // remove from owned games
-        const dow = game.dow;
-        playersRef.orderByChild(`games/owner/${dow}`).equalTo(game.gameId).once("value", (snapshot) => {
-          if (snapshot.exists()) {
-            const players = snapshot.val();
-            for (const playerId in players) {
-              console.log(`Removing players/${playerId}/games/owner/${dow} game: ${game.gameId}`);
-              db.ref(`players/${playerId}/games/owner/${dow}`).remove();
+      if (gameDate.getTime() <= lastWeek.getTime()) {
+        const players = game.players;
+        for (const player of players) {
+          if (player.owner) {
+            // remove game from player owner list
+            const gameRef = `players/${player.playerId}/games/owner/${game.dow}`;
+            const ownedGame = await getDbRefPromise(db, gameRef);
+            if (ownedGame && ownedGame === game.gameId) {
+              console.log(`Removing ${gameRef}`);
+              db.ref(gameRef).remove();
             }
           } else {
-            console.log(`No player owns ${game.gameId}`);
+            // remove game from player team list
+            const teamGameRef = `players/${player.playerId}/games/team/${game.gameId}`;
+            const teamGame = await getDbRefPromise(db, teamGameRef);
+            if (teamGame) {
+              console.log(`Removing ${teamGameRef}`);
+              db.ref(teamGameRef).remove();
+            }
           }
-        });
-
-        // remove from team games
-        playersRef.orderByChild(`games/team/${game.gameId}/gameId`).equalTo(game.gameId)
-            .once("value", (snapshot) => {
-              if (snapshot.exists()) {
-                const players = snapshot.val();
-                for (const playerId in players) {
-                  console.log(`Removing players/${playerId}/games/team/${game.gameId} game`);
-                  db.ref(`players/${playerId}/games/team/${game.gameId}`).remove();
-                }
-              } else {
-                console.log(`No team games with gameId ${game.gameId}`);
-              }
-            });
+        }
+        console.log(`Deleting game ${game.gameId}: ${gameDate}`);
+        db.ref(`games/${game.gameId}`).remove();
       }
     }
   } else {

@@ -125,9 +125,11 @@ export default memo((props) => {
     let date = new Date(game.date);
     let dow = abbrevDow[game.dow];
     let month = abbrevMonths[date.getMonth()];
-
+    logger.log(teamGames);
     let gameInfo = teamGames.find(teamGame => teamGame.gameId === game.gameId);
-    setHeading({__html: `<span class="heading-dow">${gameInfo.friend.displayName.split(' ')[0]}'s</span> <span class="heading-date">${dow} ${month} ${date.getDate()}</span>`});
+    if (gameInfo) {
+      setHeading({__html: `<span class="heading-dow">${gameInfo.friend.displayName.split(' ')[0]}'s</span> <span class="heading-date">${dow} ${month} ${date.getDate()}</span>`});
+    }
   }
 
   const soloGameHeading = <MenuItem className="submenu-heading">My Games</MenuItem>

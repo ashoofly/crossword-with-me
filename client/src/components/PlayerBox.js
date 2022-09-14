@@ -68,7 +68,6 @@ export default memo((props) => {
 
   useEffect(() => {
     if (!initialized || !user || !players) return;
-    console.log(players);
     let me = players.find(player => player.playerId === user.uid);
     setMeIconClasses(`avatar-bg ${me.color}-border`);
     let friends = players.filter(player => player.playerId !== user.uid);

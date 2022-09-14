@@ -3,7 +3,7 @@
   --app-width: 100%;
   --bar-height: 8vh;
   --max-board-height: 53vh;
-  --max-clue-height: 10vh;
+  --clue-height: 10vh;
   --board-padding: 2px;
   --keyboard-height: 16vh;
   --keyboard-row-margin: 1px;
@@ -43,7 +43,7 @@
 }
 
 .clue {
-  max-height: var(--max-clue-height);
+  height: var(--clue-height);
 }
 
 .Keyboard {
@@ -124,7 +124,8 @@
   .App {
     display: grid;
     --barH: min(80px, var(--bar-height));
-    grid-template-rows: var(--barH) calc(var(--barH) + 50px) var(--barH) calc(100% - (3 * var(--barH) + 50px));
+    --clueH: min(100px, var(--clue-height));
+    grid-template-rows: var(--barH) calc(var(--barH) + 50px) var(--clueH) calc(100% - (2 * var(--barH) + var(--clueH) + 50px));
     justify-content: initial;
   }
 
@@ -133,9 +134,8 @@
   }
 
   .title-bar,
-  .navbar,
-  .clue-container,
-  .clue {
+  .navbar
+   {
     max-height: 80px;
   }
 
@@ -152,6 +152,8 @@
 
   .clue-container {
     width: var(--board-width);
+    height: var(--clue-height);
+
   }
 
   .Board {
@@ -161,6 +163,8 @@
 
   .clue-container {
     grid-row: 3 / 4;
+    height: var(--clue-height);
+
   }
 
   .clue {
@@ -168,6 +172,7 @@
     color: #073642;
     font-weight: bold;
     font-size: min(18px, 2vh);
+    height: var(--clue-height);
 
   }
 

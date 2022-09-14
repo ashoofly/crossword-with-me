@@ -23,12 +23,12 @@ async function fetchCurrentPuzzle() {
   return JSON.parse(value);
 }
 
-function saveNewPuzzle(puzzle) {
+async function saveNewPuzzle(puzzle) {
   try {
     const { grid, clueDictionary } = setupGameBoard(puzzle);
     console.log("Saving puzzle to Firebase database");
     const puzzleRef = db.ref(`puzzles/${puzzle.dow}`);
-    puzzleRef.set({
+    await puzzleRef.set({
       ...puzzle,
       gameGrid: grid,
       clueDictionary: clueDictionary,
@@ -48,7 +48,7 @@ exports.fetchNewPuzzle = functions
     .onRun(async (context) => {
       console.log("Fetching new puzzle");
       if (!(await isCurrentPuzzleSaved(db))) {
-        const saved = saveNewPuzzle(await fetchCurrentPuzzle());
+        const saved = await saveNewPuzzle(await fetchCurrentPuzzle());
         if (saved) {
           console.log("Cleaning up old games..");
           cleanupOldGames(db);

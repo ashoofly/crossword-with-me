@@ -24,3 +24,9 @@ header {
   color: rgb(87,110,117);
   font-size: 14px;
 }
+
+.contact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}

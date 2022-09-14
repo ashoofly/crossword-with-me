@@ -58,7 +58,7 @@ function App(props) {
       const { width, height } = window.visualViewport;
       const maxBoardHeightSmallScreen = height * 0.53;
       const barHeight = (isWidescreen && isTouchDevice) ? (height * 0.1) : (height * 0.08);
-      const maxClueHeight = height * 0.1;
+      const clueHeight = height * 0.1;
       const keyboardHeight = isWidescreen ? (height * 0.3) : (height * 0.23);
       const keyboardRowMargin = 2;
       const keyboardMargins = 2 + 3 + 10;
@@ -66,7 +66,7 @@ function App(props) {
       document.documentElement.style.setProperty("--app-height", `${height}px`);
       document.documentElement.style.setProperty("--app-width", `${width}px`);
       document.documentElement.style.setProperty("--max-board-height", `${maxBoardHeightSmallScreen}px`);
-      document.documentElement.style.setProperty("--max-clue-height", `${maxClueHeight}px`);
+      document.documentElement.style.setProperty("--clue-height", `${clueHeight}px`);
       document.documentElement.style.setProperty("--board-padding", `${boardPadding}px`);
       document.documentElement.style.setProperty("--bar-height", `${barHeight}px`);
       document.documentElement.style.setProperty("--keyboard-height", `${keyboardHeight}px`);
