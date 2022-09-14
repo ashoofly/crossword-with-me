@@ -75,7 +75,7 @@ export default memo((props) => {
       let friendIcons = [];
       friends.forEach(friend => {
         friendIcons.push(
-          <Tooltip title={friend.displayName} key={friend.playerId}>
+          <Tooltip title={friend.displayName} key={friend.playerId} enterTouchDelay={0}>
             <Avatar className={`avatar-bg ${friend.color}-border ${friend.online ? '' : "offline"}`} >
               <img className="avatar-img" alt={friend.displayName} src={friend.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
@@ -102,7 +102,7 @@ export default memo((props) => {
       <div className="player-box">
         {friendIcons}
         {user && <Badge color="success" overlap="circular" badgeContent="">
-          <Tooltip title={`${user.displayName} (me)`} enterTouchDelay={0}>
+          <Tooltip title={`${user.displayName} (me)`}>
             <Avatar className={meIconClasses} onClick={handleClick} >
               <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
