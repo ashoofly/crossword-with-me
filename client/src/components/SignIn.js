@@ -105,7 +105,7 @@ export default function JoinGame(props) {
 
     if (user && gameId) {
       setSearchParams([]);
-      navigate(`/crossword-with-friends?gameId=${gameId}`);
+      navigate(`/?gameId=${gameId}`);
     }
 
   }, [socket, initialized, user, gameId]);

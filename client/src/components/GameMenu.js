@@ -164,7 +164,7 @@ export default memo((props) => {
   function handleTeamGameClick(game) {
     handleClose();
     setSelectedTeamGameId(game.gameId);
-    navigate(`/crossword-with-friends?gameId=${game.gameId}`);
+    navigate(`/?gameId=${game.gameId}`);
 
   }
 

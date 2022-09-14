@@ -56,7 +56,7 @@ export default memo((props) => {
 
   function copyUrlToClipboard() {
     handleClose();
-    let shareUrl = `${window.location.origin}/crossword-with-friends?gameId=${gameId}`;
+    let shareUrl = `${window.location.origin}?gameId=${gameId}`;
     navigator.clipboard.writeText(shareUrl);
     setOpenToast(true);
   }

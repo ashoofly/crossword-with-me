@@ -26,6 +26,7 @@ Go to `localhost:5000` to see UI
 ```
 git push staging master
 ```
+Go to https://evening-inlet-23063.herokuapp.com/ to see UI
 
 ## Heroku Production
 ```

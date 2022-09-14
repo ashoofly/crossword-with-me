@@ -145,7 +145,7 @@ function App(props) {
           logger.log(`Send event: get-game-by-id with ${user.uid}`)
           socket.emit('get-game-by-id', requestedGameId, user.uid);
         } else {
-          navigate(`/crossword-with-friends/join-game?gameId=${requestedGameId}`);
+          navigate(`/join-game?gameId=${requestedGameId}`);
         }
       } 
       // else if (requestedGameId === loadedGameId) {

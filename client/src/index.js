@@ -51,9 +51,8 @@ root.render(
     <Provider store={setupStore()}>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate replace to={`/crossword-with-friends`} />} />
-          <Route path="/crossword-with-friends" element={<App socket={socket} auth={auth} />} />
-          <Route path="/crossword-with-friends/join-game" element={<SignIn socket={socket} auth={auth} />} />
+          <Route path="/" element={<App socket={socket} auth={auth} />} />
+          <Route path="/join-game" element={<SignIn socket={socket} auth={auth} />} />
 
         </Routes>
       </Router>
