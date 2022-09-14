@@ -21,7 +21,7 @@ export default memo((props) => {
   return (
     <div className="title-bar">
       <div></div>
-      <h1 className="title-text" onClick={handleClick}>Crossword Buds</h1>
+      <h1 className="title-text" onClick={handleClick}>Crossword with Me</h1>
       <PlayerBox 
         auth={auth}
         socket={socket}

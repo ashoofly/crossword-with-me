@@ -7,6 +7,11 @@
   align-content: center;
 }
 
+.join-game-text {
+  text-align: center;
+  padding: 20px;
+}
+
 .signin-button {
   width: 200px;
   height: 50px;

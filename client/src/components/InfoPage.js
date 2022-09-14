@@ -32,9 +32,9 @@ export default memo((props) => {
         <h4>Edited by {game.editor}</h4>
         <small>	&copy; {game.copyright}</small>
       </header>
-      <h3>Crossword Buds</h3>
+      <h3>Crossword with Me</h3>
       <ul>
-        <li>Crossword Buds keeps the <b>current week</b> of New York Times crossword puzzles for you to play with friends.</li>
+        <li>Crossword with Me keeps the <b>current week</b> of New York Times crossword puzzles for you to play with friends.</li>
         <li>To add a friend to a game, choose <b>'Phone a Friend'</b> from the Hint menu.</li>
         <li>Only the person who started the game is <b>allowed to reveal or check</b> answers.</li>
         <li><b>Anybody can add</b> a person to the game. They must sign in to play.</li>

@@ -105,7 +105,7 @@ export default function JoinGame(props) {
 
     if (user && gameId) {
       setSearchParams([]);
-      navigate(`/?gameId=${gameId}`);
+      navigate(`?gameId=${gameId}`);
     }
 
   }, [socket, initialized, user, gameId]);
@@ -113,7 +113,7 @@ export default function JoinGame(props) {
   return (
     <Fragment>
       {initialized && !token && !user && !gameNotFound && <div className="join-game">
-        <h1>Please sign in to {gameId ? `join ${friendName}'s game:` : `play Crossword with Friends!`}</h1>
+        <h2 className="join-game-text">Please sign in to {gameId ? `join ${friendName}'s game:` : `play Crossword with Me:`}</h2>
         <div id="signInDiv"></div>
       </div>
       }
