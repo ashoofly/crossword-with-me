@@ -24,8 +24,8 @@
   },
   "scripts": {
     "dev": "env-cmd -f ../.env.local react-scripts start",
-    "build-heroku-local": "env-cmd -f ../.env.heroku-local react-scripts build",
-    "build-prod": "react-scripts build",
+    "build-heroku-local": "env-cmd -f ../.env.heroku-local node ./build.js",
+    "build-prod": "node ./build.js",
     "test": "react-scripts test",
     "snap": "jest --updateSnapshot",
     "eject": "react-scripts eject"
@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^4.0.0"
+    "gh-pages": "^4.0.0",
+    "rewire": "^6.0.0"
   }
 }
