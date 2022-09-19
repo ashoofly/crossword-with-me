@@ -1,18 +1,18 @@
 module.exports = {
-  "root": true,
-  "env": {
+  root: true,
+  env: {
     es6: true,
     node: true,
   },
-  "parserOptions": {
-    "ecmaVersion": 9,
+  parserOptions: {
+    ecmaVersion: 13,
   },
-  "extends": [
-    "eslint:recommended",
-    "google",
+  extends: [
+    'eslint:recommended',
+    'eslint-config-airbnb-base',
   ],
-  "rules": {
-    "quotes": ["error", "double"],
-    "max-len": ["error", {"code": 105}],
+  rules: {
+    'max-len': ['error', { code: 105 }],
+    'no-console': 'off',
   },
 };
