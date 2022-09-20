@@ -1,4 +1,4 @@
-const AdminDatabaseListener = require('../AdminDatabaseListener');
+const AdminDatabaseListener = require('./AdminDatabaseListener');
 
 class PuzzleUtils {
   constructor(db) {

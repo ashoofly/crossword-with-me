@@ -1,113 +1,73 @@
-import { Server } from "socket.io";
-import { weekdays, isCurrentPuzzleSaved, getCurrentDOW, getPreviousDOW, resetGameboard, cleanupOldGames } from "./functions/puzzleUtils.js";
+/* eslint-disable no-underscore-dangle */
+import { Server } from 'socket.io';
+import PuzzleUtils from './functions/utils/PuzzleUtils';
 import { v4 as uuidv4 } from 'uuid';
-import express from 'express'; 
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import {jwtVerify, createRemoteJWKSet} from 'jose';
-import admin from "firebase-admin";
-import path from 'path';
-import {fileURLToPath} from 'url';
-import { createServer } from 'http';
+import admin from 'firebase-admin';
 import dotenv from 'dotenv';
-import Debug from "debug";
+import Debug from 'debug';
+import HttpServer from './httpServer';
 
-const debug = Debug("Server");
+const debug = Debug('Server');
 
-if (process.env.NODE_ENV === "development") {
-  dotenv.config({ path: '../.env.local'});
-} else if (process.env.NODE_ENV === "heroku-local") {
-  dotenv.config({ path: '../.env.heroku-local'});
+if (process.env.NODE_ENV === 'development') {
+  dotenv.config({ path: '../.env.local' });
+} else if (process.env.NODE_ENV === 'heroku-local') {
+  dotenv.config({ path: '../.env.heroku-local' });
 }
 const firebaseServerConfig = JSON.parse(process.env.FIREBASE_SERVER_CONFIG);
-const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS); 
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 const firebaseAppConfig = {
-  ...firebaseServerConfig, 
-  credential: admin.credential.cert(serviceAccount)
-}; 
+  ...firebaseServerConfig,
+  credential: admin.credential.cert(serviceAccount),
+};
 
 const firebaseApp = admin.initializeApp(firebaseAppConfig);
-debug("Initialized Firebase app");
+debug('Initialized Firebase app');
 const auth = admin.auth(firebaseApp);
-debug("Initialized Firebase authentication");
-const db = admin.database(firebaseApp); 
-debug("Initialized Firebase realtime database");
+debug('Initialized Firebase authentication');
+const db = admin.database(firebaseApp);
+debug('Initialized Firebase realtime database');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const root = path.join(__dirname, '../client/build');
-const expressServer = express();
-expressServer.use(bodyParser.urlencoded({ extended: true }));
-expressServer.use(cookieParser());
+const httpServer = new HttpServer();
 
-expressServer.post('/auth', async(req, res) => {
-  checkCSRFToken(req, res); 
+const io = new Server(
+  httpServer,
+  process.env.NODE_ENV === 'development'
+    ? {
+      cors: {
+        origin: process.env.REACT_APP_DEV_CLIENT_SERVER,
+        methods: ['GET', 'POST'],
+      },
+    } : {},
+);
 
-  const idToken = req.body.credential;
-  const payload = await verifyJWT(idToken);
+const port = process.env.NODE_ENV === 'development'
+  ? process.env.REACT_APP_DEV_SERVER_PORT : process.env.PORT;
 
-  // Get redirect url
-  const nonce = payload.nonce;
-  const decodedNonce = Buffer.from(nonce, 'base64').toString('ascii');
-  debug(decodedNonce);
-  const redirectUrlRegex = /(http.+)---(.+)/;
-  const [ original, redirectUrl, hash ] = redirectUrlRegex.exec(decodedNonce);
-
-  let returnedUrl = null;
-  if (redirectUrl.includes("?gameId=")) {
-    returnedUrl = `${redirectUrl}&token=${idToken}`;
-
-  } else {
-    returnedUrl = `${redirectUrl}?token=${idToken}`;
-  }
-  debug(`Redirecting Google auth token back to front-end`);
-  res.redirect(returnedUrl);
-})
-
-if (process.env.NODE_ENV !== "development") {
-  expressServer.use('/', express.static(root));
-  expressServer.get('*', (req, res) => {
-    res.sendFile(path.join(root, 'index.html'));
-  });
-  debug("Serving static files for front-end.")
-}
-
-const httpServer = createServer(expressServer);
-const io = new Server(httpServer, process.env.NODE_ENV === "development" ? 
-  {
-    cors: {
-      origin: process.env.REACT_APP_DEV_CLIENT_SERVER,
-      methods: ['GET', 'POST']
-    }
-  } : {});
-const port = process.env.NODE_ENV === "development" ? 
-                process.env.REACT_APP_DEV_SERVER_PORT : process.env.PORT;
 httpServer.listen(port);
 debug(`Http server created on port ${port}`);
 
-let dbCollections = {
+const cache = {
   players: {},
   games: {},
-  puzzles: {}
-}
- 
+  puzzles: {},
+};
+
 function getDbObjectPromise(collectionType, id, forcePull) {
-  let force = forcePull ? true : false;
   return new Promise((resolve, reject) => {
-    getDbObjectById(collectionType, id, force, successResponse => {
+    getDbObjectById(collectionType, id, forcePull, (successResponse) => {
       resolve(successResponse);
-    }, errorResponse => {
+    }, (errorResponse) => {
       reject(errorResponse);
     });
   });
 }
 
 function getDbObjectById(collectionType, id, forcePull, successCallback, errorCallback) {
-  let objectCollection = dbCollections[collectionType];
   if (!forcePull) {
-    if (objectCollection[id]) {
-      successCallback(objectCollection[id]);
+    if (cache[collectionType][id]) {
+      successCallback(cache[collectionType][id]);
     } else {
       addDbListener(collectionType, id, successCallback, errorCallback);
     }
@@ -129,7 +89,7 @@ function getDbObjectById(collectionType, id, forcePull, successCallback, errorCa
 }
 
 function addDbListener(collectionType, id, successCallback, errorCallback) {
-  const objectCollection = dbCollections[collectionType];
+  const objectCollection = cache[collectionType];
   const objectRef = db.ref(`${collectionType}/${id}`);
   objectRef.on('value', (snapshot) => {
     if (snapshot.exists()) {
@@ -138,18 +98,17 @@ function addDbListener(collectionType, id, successCallback, errorCallback) {
     } else {
       successCallback(null);
     }
-
   }, (error) => {
     debug(error);
     errorCallback(error);
-  }); 
+  });
 }
 
 function getDbCollectionPromise(collectionType) {
   return new Promise((resolve, reject) => {
-    getDbCollection(collectionType, successResponse => {
+    getDbCollection(collectionType, (successResponse) => {
       resolve(successResponse);
-    }, errorResponse => {
+    }, (errorResponse) => {
       reject(errorResponse);
     });
   });
@@ -161,7 +120,7 @@ function getDbCollection(collectionType, successCallback, errorCallback) {
   collectionRef.once('value', (snapshot) => {
     if (snapshot.exists()) {
       successCallback(snapshot.val());
-      dbCollections[collectionType] = snapshot.val();
+      cache[collectionType] = snapshot.val();
     } else {
       successCallback(null);
     }
@@ -174,7 +133,7 @@ function getDbCollection(collectionType, successCallback, errorCallback) {
 async function updatePlayerFocus(playerId, gameId, currentFocus) {
   const players = await getGamePlayers(gameId);
   if (players) {
-    const index = players.findIndex(player => player.playerId === playerId);
+    const index = players.findIndex((player) => player.playerId === playerId);
     const playerRef = db.ref(`games/${gameId}/players/${index}`);
     playerRef.update({
       currentFocus: currentFocus
@@ -186,9 +145,9 @@ async function updatePlayerFocus(playerId, gameId, currentFocus) {
 async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
   let players = await getGamePlayers(gameId);
   if (players) {
-    let index = players.findIndex(player => player.playerId === playerId);
+    let index = players.findIndex((player) => player.playerId === playerId);
     if (index !== -1) {
-      debug(`Updating ${playerId} status for ${gameId} to ${online ? "online" : "offline"}`)
+      debug(`Updating ${playerId} status for ${gameId} to ${online ? 'online' : 'offline'}`)
       const playerRef = db.ref(`games/${gameId}/players/${index}`);
       playerRef.update({
         online: online
@@ -205,12 +164,12 @@ async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
           for (const index of playerFocus.word) {
             if (board[index].activeWordColors) {
               board[index].activeWordColors = board[index].activeWordColors.filter(
-                color => color !== player.color
+                (color) => color !== player.color
               )
             }
             if (board[index].activeLetterColors) {
               board[index].activeLetterColors = board[index].activeLetterColors.filter(
-                color => color !== player.color
+                (color) => color !== player.color
               )
             }
           }
@@ -228,60 +187,60 @@ async function updateGameOnlineStatusForPlayer(gameId, playerId, online) {
   
 
 
-io.of('/').adapter.on("join-room", (room, id) => {
+io.of('/').adapter.on('join-room', (room, id) => {
   debug(`Socket ${id} has joined room ${room}`);
 });
 
-io.of("/").adapter.on("leave-room", (room, id) => {
+io.of('/').adapter.on('leave-room', (room, id) => {
   debug(`Socket ${id} has left room ${room}`);
 });
 
-io.on("connection", async(socket) => {
-  socket.on("save-board", async (gameId, board, players) => {
+io.on('connection', async(socket) => {
+  socket.on('save-board', async (gameId, board, players) => {
     debug(`Received save-board event for ${gameId}...`);
     updateGame(gameId, board);
   });
-  socket.on("get-puzzle-dates", async () => {
-    debug("Received get-puzzle-dates event...")
+  socket.on('get-puzzle-dates', async () => {
+    debug('Received get-puzzle-dates event...')
     const puzzleDates = await getPuzzleDates(); 
-    debug("Sending load-puzzle-dates event");
+    debug('Sending load-puzzle-dates event');
     socket.emit('load-puzzle-dates', puzzleDates); 
   });
-  socket.on("get-game-by-dow", async(dow, playerId) => {
+  socket.on('get-game-by-dow', async(dow, playerId) => {
     debug(`Received get-game-by-dow event from ${playerId} for ${dow} game`);
     const game = await findOrCreateGame(dow, playerId);
     sendGame(game, playerId);
   });
-  socket.on("get-default-game", async(playerId) => {
+  socket.on('get-default-game', async(playerId) => {
     debug(`Received get-default-game event from ${playerId}`);
     const game = await getDefaultGame(playerId);
     sendGame(game, playerId);
   });
-  socket.on("get-friend-request-name", async(gameId) => {
+  socket.on('get-friend-request-name', async(gameId) => {
     debug(`Received get-friend-request-name with ${gameId}`);
-    const game = await getDbObjectPromise("games", gameId);
+    const game = await getDbObjectPromise('games', gameId);
     if (game) {
       if (game.players) {
         let ownerId = game.players[0].playerId;
         if (ownerId) {
-          let ownerInfo = await getDbObjectPromise("players", ownerId);
+          let ownerInfo = await getDbObjectPromise('players', ownerId);
           if (ownerInfo) { 
-            debug(`Sending display-friend-request event back to client`);
-            socket.emit("display-friend-request", ownerInfo.displayName);
+            debug('Sending display-friend-request event back to client');
+            socket.emit('display-friend-request', ownerInfo.displayName);
           } 
         }
       } else {
-        debug("Sending game-not-found");
-        socket.emit("game-not-found");
+        debug('Sending game-not-found');
+        socket.emit('game-not-found');
       }
     } else { 
-      debug("Sending game-not-found");
-      socket.emit("game-not-found");
+      debug('Sending game-not-found');
+      socket.emit('game-not-found');
     }
   });
   socket.on('send-player-cursor-change', (playerId, gameId, currentFocus) => {
     debug(`Sending load-player-cursor-change event to room ${gameId}`);
-    io.to(gameId).emit("load-player-cursor-change", socket.id, playerId, gameId, currentFocus);
+    io.to(gameId).emit('load-player-cursor-change', socket.id, playerId, gameId, currentFocus);
     updatePlayerFocus(playerId, gameId, currentFocus);
   });
   socket.on('leave-game', async(playerId, gameId) => {
@@ -291,14 +250,14 @@ io.on("connection", async(socket) => {
     io.to(gameId).emit('player-offline', playerId, gameId);
     updateGameOnlineStatusForPlayer(gameId, playerId, false); 
   });
-  socket.on('send-changes', action => {
+  socket.on('send-changes', (action) => {
     debug(`Received send-changes event from client ${socket.id} for game ${action.gameId}`);
     debug(action);
-    io.to(action.gameId).emit("receive-changes", action);
+    io.to(action.gameId).emit('receive-changes', action);
   });
   socket.on('get-game-by-id', async (gameId, playerId) => {
     debug(`Received get-game-by-id request for game ${gameId} from player ${playerId}`);
-    const game = await getDbObjectPromise("games", gameId);
+    const game = await getDbObjectPromise('games', gameId);
     if (game) {
       if (game.players) {
         let ownerId = game.players[0].playerId;
@@ -306,32 +265,32 @@ io.on("connection", async(socket) => {
           sendGame(game, playerId);
 
         } else {
-          let player = await getDbObjectPromise("players", playerId);
+          let player = await getDbObjectPromise('players', playerId);
           if (player) {
             let teamGames = await addPlayerToGame(player, game, io);
-            debug("Sending load-team-games event back to client");
-            socket.emit("load-team-games", teamGames);
+            debug('Sending load-team-games event back to client');
+            socket.emit('load-team-games', teamGames);
             sendGame(game, playerId);
           } else {
-            debug("Could not find player in player list.");
+            debug('Could not find player in player list.');
           }
 
         }
       } else {
         // anonymous game
-        debug("Sending game-not-found event")
-        socket.emit("game-not-found");
+        debug('Sending game-not-found event')
+        socket.emit('game-not-found');
       }
     }
   });
   socket.on('get-team-games', async(playerId) => {
-    debug("Received get-team-games event")
-    let player = await getDbObjectPromise("players", playerId);
+    debug('Received get-team-games event')
+    let player = await getDbObjectPromise('players', playerId);
     if (player) {
       let playerGames = player.games;
       if (playerGames) {
         let teamGames = playerGames['team'];
-        debug("Sending load-team-games event")
+        debug('Sending load-team-games event')
         socket.emit('load-team-games', teamGames);
       } else {
         debug(`No team games found for player ${playerId}`);
@@ -341,7 +300,7 @@ io.on("connection", async(socket) => {
     }
   });
   socket.on('user-signed-in', async(idToken, gameId) => {
-    debug(`Received user-signed-in event`);
+    debug('Received user-signed-in event');
     let player = null;
     if (gameId) {
       // add user to game if not already added
@@ -350,7 +309,7 @@ io.on("connection", async(socket) => {
 
     } else {
       // add player to db if not already added
-      debug(`Adding player to db if not already added`);
+      debug('Adding player to db if not already added');
       player = await addPlayerToDB(idToken);
     }
     if (player) {
@@ -361,7 +320,7 @@ io.on("connection", async(socket) => {
 
   socket.on('verify-player-exists', async(playerId) => {
     debug(`Received verify-player-exists event for ${playerId}`);
-    const player = await getDbObjectPromise("players", playerId);
+    const player = await getDbObjectPromise('players', playerId);
     if (player) {
       debug(`Send player-exists event for ${playerId}`);
       socket.emit('player-exists', playerId);
@@ -372,12 +331,12 @@ io.on("connection", async(socket) => {
   });
 
   async function sendGame(game, playerId) {
-    let player = await getDbObjectPromise("players", playerId);
+    let player = await getDbObjectPromise('players', playerId);
 
     if (player) {
       let gameId = game.gameId;
-      debug("Sending game " + gameId);
-      socket.emit("load-game", game, socket.id);
+      debug('Sending game ' + gameId);
+      socket.emit('load-game', game, socket.id);
   
       // leave any previous game rooms
       let currentRooms = Array.from(socket.rooms);
@@ -396,7 +355,7 @@ io.on("connection", async(socket) => {
       // add listeners
       socket.on('disconnect', () => {
         debug(`Send disconnect event to room ${gameId}`);
-        io.to(gameId).emit("player-offline", playerId, gameId);
+        io.to(gameId).emit('player-offline', playerId, gameId);
         updateGameOnlineStatusForPlayer(gameId, playerId, false);
       });
     } else {
@@ -407,40 +366,14 @@ io.on("connection", async(socket) => {
 
   debug(`Connected to ${socket.id}`);
   const sockets = await io.fetchSockets();
-  debug(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
+  debug(`Connected sockets: ${sockets.map((socket) => socket.id).join(', ')}`);
 
-  socket.on("disconnect", async(reason) => {
+  socket.on('disconnect', async(reason) => {
     debug(`Disconnected from ${socket.id}: ${reason}`)
     const sockets = await io.fetchSockets();
-    debug(`Connected sockets: ${sockets.map(socket => socket.id).join(', ')}`);
+    debug(`Connected sockets: ${sockets.map((socket) => socket.id).join(', ')}`);
   });
 });
-
-function checkCSRFToken(req, res) {
-  let csrfCookie = req.cookies['g_csrf_token'];
-  if (!csrfCookie) {
-    res.status(400).send('No CSRF token in Cookie.');
-  }
-  let csrfBody = req.body['g_csrf_token'];
-  if (!csrfBody) {
-    res.status(400).send('No CSRF token in post body.'); 
-  }
-  if (csrfCookie !== csrfBody) {
-    res.status(400).send('Failed to verify double submit cookie.');
-  }
-}
-
-async function verifyJWT(idToken) {
-  const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
-
-  const { payload } = await jwtVerify(idToken, JWKS, {
-    issuer: 'https://accounts.google.com',
-    audience: firebaseAppConfig.googleClientId,
-  });
-  
-  return payload;
-}
-
 
 async function verifyFirebaseClientToken(idToken) {
   debug('Verifying Firebase client token...');
@@ -458,14 +391,14 @@ async function verifyFirebaseClientToken(idToken) {
 }
 
 const defaultPlayerColors = [
-  "blue",
-  "magenta",
-  "violet",
-  "green",
-  "red",
-  "cyan", 
-  "orange",
-  "yellow"
+  'blue',
+  'magenta',
+  'violet',
+  'green',
+  'red',
+  'cyan', 
+  'orange',
+  'yellow'
 ];
 
 
@@ -473,7 +406,7 @@ async function addPlayerToGame(player, game, io) {
   //update game object
   let players = game.players;
   let gameId = game.gameId;
-  if (players.find(p => p.playerId === player.id)) {
+  if (players.find((p) => p.playerId === player.id)) {
     debug(`Player ${player.id} already part of game ${gameId}.`);
 
   } else {
@@ -500,7 +433,7 @@ async function addPlayerToGame(player, game, io) {
   if (gameOwner !== player.id) {
     let playerGames = player.games;
     if (!playerGames) {
-      playerGames = {owner: {}, team: {}};
+      playerGames = { owner: {}, team: {} };
     } 
     let teamGames = playerGames['team'];
     if (!teamGames) { 
@@ -509,7 +442,7 @@ async function addPlayerToGame(player, game, io) {
     if (!teamGames[gameId]) {
       // get game owner for front-end to display
       let ownerId = game.players[0].playerId;
-      let owner = await getDbObjectPromise("players", ownerId);
+      let owner = await getDbObjectPromise('players', ownerId);
   
       teamGames[gameId] = {
         gameId: gameId,
@@ -537,7 +470,7 @@ async function addUserToGame(firebaseClientToken, gameId, io) {
   try {
     let user = await verifyFirebaseClientToken(firebaseClientToken);
     let player = await findOrCreatePlayer(user);
-    let game = await getDbObjectPromise("games", gameId);
+    let game = await getDbObjectPromise('games', gameId);
     addPlayerToGame(player, game, io);
     return player;
 
@@ -569,13 +502,13 @@ async function createNewPlayer(user) {
     email: user.email,
     photoURL: user.photoURL
   });
-  return await getDbObjectPromise("players", playerId, true);
+  return await getDbObjectPromise('players', playerId, true);
 }
 
 async function createNewGame(dow, playerId) {
   let gameId = uuidv4();
-  let puzzle = await getDbObjectPromise("puzzles", dow);
-  let player = await getDbObjectPromise("players", playerId);
+  let puzzle = await getDbObjectPromise('puzzles', dow);
+  let player = await getDbObjectPromise('players', playerId);
   debug(`Creating game ${gameId} for ${playerId} with ${dow} puzzle...`)
   let numSquares = puzzle.size.rows * puzzle.size.cols;
   const gameRef = db.ref(`games/${gameId}`);
@@ -616,14 +549,14 @@ async function createNewGame(dow, playerId) {
     numRows: puzzle.size.rows,
     numCols: puzzle.size.cols
   });
-  return await getDbObjectPromise("games", gameId, true);
+  return await getDbObjectPromise('games', gameId, true);
 }
 
 
 async function getDefaultGame(playerId) {
-  debug("Getting default game...");
+  debug('Getting default game...');
   try {
-    let player = await getDbObjectPromise("players", playerId);
+    let player = await getDbObjectPromise('players', playerId);
     if (player) {
       let dow;
       if (await isCurrentPuzzleSaved(db)) {
@@ -640,7 +573,7 @@ async function getDefaultGame(playerId) {
 }
 
 async function getPuzzleDates() {
-  let puzzles = await getDbCollectionPromise("puzzles");
+  let puzzles = await getDbCollectionPromise('puzzles');
   if (puzzles) {
     let dates = {};
     for (const dow in puzzles) {
@@ -649,13 +582,13 @@ async function getPuzzleDates() {
     return dates;
 
   } else {
-    debug("Nothing at path puzzles/");
+    debug('Nothing at path puzzles/');
     return null;
   }
 }
 
 async function getGamePlayers(gameId) {
-  let game = await getDbObjectPromise("games", gameId);
+  let game = await getDbObjectPromise('games', gameId);
   if (game.players) {
     return game.players;
   } else {
@@ -664,7 +597,7 @@ async function getGamePlayers(gameId) {
 } 
 
 async function getPlayerTeamGames(playerId) {
-  let player = await getDbObjectPromise("players", playerId);
+  let player = await getDbObjectPromise('players', playerId);
   if (player.games && player.games.team) {
     return player.games.team;
   } else {
@@ -673,12 +606,12 @@ async function getPlayerTeamGames(playerId) {
 } 
 
 async function getGameById(gameId) {
-  return await getDbObjectPromise("games", gameId);
+  return await getDbObjectPromise('games', gameId);
 }
 
 async function getGameIfCurrent(gameId, dow) {
-  let currentPuzzle = await getDbObjectPromise("puzzles", dow);
-  let game = await getDbObjectPromise("games", gameId);
+  let currentPuzzle = await getDbObjectPromise('puzzles', dow);
+  let game = await getDbObjectPromise('games', gameId);
   if (game) {
     if (game.date === currentPuzzle.date) {
       return game;
@@ -719,7 +652,7 @@ async function createGameAndUpdatePlayer(player, dow) {
 async function findOrCreateGame(dow, playerId) {
   if (playerId) {
     // find player game
-    let player = await getDbObjectPromise("players", playerId);
+    let player = await getDbObjectPromise('players', playerId);
     if (player) {
       let playerGames = player.games;
       if (playerGames && playerGames['owner'] && playerGames['owner'][dow]) {
@@ -735,24 +668,24 @@ async function findOrCreateGame(dow, playerId) {
         return await createGameAndUpdatePlayer(player, dow);
       }
     } else {
-      debug("Cannot find player in database");
+      debug('Cannot find player in database');
       return null;
     }
 
   } else {
-    debug("No playerId given. Will not create game.");
+    debug('No playerId given. Will not create game.');
   }
 } 
 
 async function findOrCreatePlayer(user) {
   if (user === null) return;
-  const player = await getDbObjectPromise("players", user.uid);
+  const player = await getDbObjectPromise('players', user.uid);
   if (player) {
-    debug("Found player!");
+    debug('Found player!');
     // await updatePhotoIfNeeded(user, player);
     return player;
   } else {
-    debug("Could not find player, creating new one");
+    debug('Could not find player, creating new one');
     return await createNewPlayer(user);
   }
 }

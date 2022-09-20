@@ -1,3 +1,7 @@
+# Note
+
+Firebase Cloud Functions requires [CommonJS modules](https://firebase.google.com/docs/functions/handle-dependencies), so this directory differs from the rest of the source code, which uses ES6 syntax.
+
 # Local Development
 ## Test functions locally with emulator
 
