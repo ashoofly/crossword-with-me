@@ -15,7 +15,8 @@ class DbWorker {
   /**
    * Fetches game from the DB
    * @param {string} gameId
-   * @returns Promise that can resolve to game object, or null if game not in db
+   * @returns Promise that can resolve to game object
+   * @returns null if game not in db
    */
   async getGameById(gameId) {
     return this.dbListener.getDbObjectByIdOnce('games', gameId);
@@ -24,7 +25,8 @@ class DbWorker {
   /**
    * Fetches puzzle from the DB
    * @param {string} dow
-   * @returns Promise that can resolve to puzzle object, or null if day-of-the-week puzzle not in db
+   * @returns Promise that can resolve to puzzle object
+   * @returns null if day-of-the-week puzzle not in db
    */
   async getPuzzleById(dow) {
     return this.dbListener.getDbObjectByIdOnce('puzzles', dow);
@@ -33,7 +35,8 @@ class DbWorker {
   /**
    * Fetches player from the DB
    * @param {string} playerId
-   * @returns Promise that can resolve to player object, or null if player not in db
+   * @returns Promise that can resolve to player object
+   * @returns null if player not in db
    */
   async getPlayerById(playerId) {
     return this.dbListener.getDbObjectByIdOnce('players', playerId);
@@ -43,7 +46,8 @@ class DbWorker {
    * Returns game for the day-of-the-week if current
    * @param {string} gameId
    * @param {string} dow
-   * @returns Game object if game is current, null if not
+   * @returns Game object if game is current
+   * @returns null if Game is not current
    */
   async getGameIfCurrent(gameId, dow) {
     const currentPuzzle = await this.getPuzzleById(dow);
@@ -54,11 +58,19 @@ class DbWorker {
     return null;
   }
 
-  async createNewGame(dow, playerId) {
-    const gameId = uuidv4();
+  /**
+   * Creates new game
+   * @param {String} gameId
+   * @param {String} dow
+   * @param {String} playerId
+   * @returns Newly created game if found in ref path after creation
+   * @returns null if no game found at ref path
+   */
+  async createNewGame(gameId, dow, playerId) {
     const puzzle = await this.getPuzzleById(dow);
     const player = await this.getPlayerById(playerId);
     const numSquares = puzzle.size.rows * puzzle.size.cols;
+    console.log(this.db);
     const gameRef = this.db.ref(`games/${gameId}`);
     await gameRef.set({
       gameId,
@@ -336,7 +348,8 @@ class DbWorker {
     const playerId = player.id;
 
     // create new game
-    const newGame = await this.createNewGame(dow, playerId);
+    const gameId = uuidv4();
+    const newGame = await this.createNewGame(gameId, dow, playerId);
 
     // update player object
     let playerGames = player.games;

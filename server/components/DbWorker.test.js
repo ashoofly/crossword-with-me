@@ -1,8 +1,6 @@
 /* eslint-disable no-undef */
 const { test } = require('@jest/globals');
 const admin = require('firebase-admin');
-// jest.mock('firebase-admin');
-// const admin = require('firebase-admin');
 const AdminDatabaseListener = require('../functions/utils/AdminDatabaseListener');
 const DbWorker = require('./DbWorker');
 const mockPuzzle = require('../tests/mockPuzzle');
@@ -11,11 +9,6 @@ const mockGame = require('../tests/mockGame');
 
 jest.mock('../functions/utils/AdminDatabaseListener');
 
-// admin.initializeApp.mockResolvedValue(jest.fn());
-// admin.auth.mockResolvedValue(jest.fn());
-// admin.database.mockResolvedValue(jest.fn());
-// let db;
-// let auth;
 // eslint-disable-next-line one-var, one-var-declaration-per-line
 let mockDbListener, dbWorker, db;
 
@@ -69,16 +62,17 @@ test('Dbworker returns null if game not current', async () => {
 test('Dbworker saves new game at new db ref', async () => {
   // eslint-disable-next-line no-unused-vars
   mockDbListener.getDbObjectByIdOnce.mockImplementation((collection, id) => {
-    if (collection === 'puzzles') {
+    if (collection === 'puzzles' && id === 'Friday') {
       return Promise.resolve(mockPuzzle);
     }
-    if (collection === 'player') {
+    if (collection === 'player' && id === 'abc123') {
       return Promise.resolve(mockPlayer);
     }
     return Promise.resolve(null);
   });
-  const mockRef = jest.spyOn(admin.Database.prototype, 'ref');
+  // const mockRef = jest.spyOn(admin.Database.prototype, 'ref');
+  db.ref.mockImplementation(jest.fn());
   const mockRefSetSpy = jest.spyOn(admin.database.Reference.prototype, 'set');
-  await dbWorker.createNewGame('Tuesday', 'abc123');
+  await dbWorker.createNewGame('e27dd721-a9fd-4f95-97ae-b4bfa939e7df', 'Friday', 'abc123');
   expect(mockRefSetSpy).toHaveBeenCalledWith(mockGame);
 });
