@@ -8,9 +8,9 @@ class AdminDatabaseListener {
     this.db = db;
   }
 
-  getDbObjectById(collectionType, id) {
+  getDbObjectByIdOnce(collectionType, id) {
     return new Promise((resolve, reject) => {
-      this.#getDbObjectByIdWithCallbacks(collectionType, id, (successResponse) => {
+      this.#getDbObjectByIdOnceWithCallbacks(collectionType, id, (successResponse) => {
         resolve(successResponse);
       }, (errorResponse) => {
         reject(errorResponse);
@@ -18,9 +18,9 @@ class AdminDatabaseListener {
     });
   }
 
-  getDbCollection(collectionType) {
+  getDbCollectionOnce(collectionType) {
     return new Promise((resolve, reject) => {
-      this.#getDbCollectionWithCallbacks(collectionType, (successResponse) => {
+      this.#getDbCollectionOnceWithCallbacks(collectionType, (successResponse) => {
         resolve(successResponse);
       }, (errorResponse) => {
         reject(errorResponse);
@@ -28,9 +28,9 @@ class AdminDatabaseListener {
     });
   }
 
-  getDbObjectByRef(refPath) {
+  getDbObjectByRefOnce(refPath) {
     return new Promise((resolve, reject) => {
-      this.#getDbObjectByRefWithCallbacks(refPath, (successResponse) => {
+      this.#getDbObjectByRefOnceWithCallbacks(refPath, (successResponse) => {
         resolve(successResponse);
       }, (errorResponse) => {
         reject(errorResponse);
@@ -38,7 +38,7 @@ class AdminDatabaseListener {
     });
   }
 
-  #getDbObjectByIdWithCallbacks(collectionType, id, successCallback, errorCallback) {
+  #getDbObjectByIdOnceWithCallbacks(collectionType, id, successCallback, errorCallback) {
     const objectRef = this.db.ref(`${collectionType}/${id}`);
 
     objectRef.once('value', (snapshot) => {
@@ -53,7 +53,7 @@ class AdminDatabaseListener {
     });
   }
 
-  #getDbCollectionWithCallbacks(collectionType, successCallback, errorCallback) {
+  #getDbCollectionOnceWithCallbacks(collectionType, successCallback, errorCallback) {
     const collectionRef = this.db.ref(`${collectionType}`);
 
     collectionRef.once('value', (snapshot) => {
@@ -68,7 +68,7 @@ class AdminDatabaseListener {
     });
   }
 
-  #getDbObjectByRefWithCallbacks(refPath, successCallback, errorCallback) {
+  #getDbObjectByRefOnceWithCallbacks(refPath, successCallback, errorCallback) {
     const objectRef = this.db.ref(refPath);
 
     objectRef.once('value', (snapshot) => {

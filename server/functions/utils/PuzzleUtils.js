@@ -26,7 +26,7 @@ class PuzzleUtils {
     console.log(`[puzzleUtils] Looking for current ${currentDOW} puzzle`);
 
     try {
-      const puzzles = await this.dbListener.getDbCollection('puzzles');
+      const puzzles = await this.dbListener.getDbCollectionOnce('puzzles');
       if (puzzles) {
         const fetchedPuzzle = puzzles[currentDOW];
         if (fetchedPuzzle) {
@@ -181,7 +181,7 @@ class PuzzleUtils {
   async cleanupOldGames() {
     const now = new Date();
     const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const games = await this.dbListener.getDbCollection('games');
+    const games = await this.dbListener.getDbObjectByIdOnce('games');
     if (games) {
       Object.values(games).forEach(async (game) => {
         const gameDate = new Date(Date.parse(game.date));
@@ -190,7 +190,7 @@ class PuzzleUtils {
             if (player.owner) {
               // remove game from player owner list
               const gameRef = `players/${player.playerId}/games/owner/${game.dow}`;
-              const ownedGame = await this.dbListener.getDbObjectByRef(gameRef);
+              const ownedGame = await this.dbListener.getDbObjectByRefOnce(gameRef);
               if (ownedGame && ownedGame === game.gameId) {
                 console.log(`Removing ${gameRef}`);
                 this.db.ref(gameRef).remove();
@@ -198,7 +198,7 @@ class PuzzleUtils {
             } else {
               // remove game from player team list
               const teamGameRef = `players/${player.playerId}/games/team/${game.gameId}`;
-              const teamGame = await this.dbListener.getDbObjectByRef(teamGameRef);
+              const teamGame = await this.dbListener.getDbObjectByRefOnce(teamGameRef);
               if (teamGame) {
                 console.log(`Removing ${teamGameRef}`);
                 this.db.ref(teamGameRef).remove();

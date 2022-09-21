@@ -1,6 +1,6 @@
 # To start server
 ```
-nodemon server.js
+nodemon index.js
 ```
 or 
 ```
