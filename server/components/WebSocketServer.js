@@ -50,7 +50,7 @@ class WebSocketServer {
 
     this.io.on('connection', async (socket) => {
       socket.on('save-board', async (gameId, board) => {
-        this.dbWorker.updateGame(gameId, board);
+        this.dbWorker.saveBoard(gameId, board);
       });
       socket.on('get-puzzle-dates', async () => {
         const puzzleDates = await this.dbWorker.getPuzzleDates();
@@ -82,7 +82,7 @@ class WebSocketServer {
           socket.emit('game-not-found');
         }
       });
-      socket.on('send-player-cursor-change', (playerId, gameId, currentFocus) => {
+      socket.on('update-player-focus', (playerId, gameId, currentFocus) => {
         this.io.to(gameId).emit('load-player-cursor-change', socket.id, playerId, gameId, currentFocus);
         this.dbWorker.updatePlayerFocus(playerId, gameId, currentFocus);
       });

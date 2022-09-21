@@ -14,6 +14,9 @@ class DbWorker {
 
   /**
    * Fetches game from the DB
+   * Called when received following Socket event from client:
+   * - get-friend-request-name
+   * - get-game-by-id
    * @param {string} gameId
    * @returns Promise that can resolve to game object
    * @returns null if game not in db
@@ -34,6 +37,11 @@ class DbWorker {
 
   /**
    * Fetches player from the DB
+   * Called when receiving these Socket events from client:
+   * - get-friend-request-name
+   * - get-game-by-id
+   * - get-team-games
+   * - verify-player-exists
    * @param {string} playerId
    * @returns Promise that can resolve to player object
    * @returns null if player not in db
@@ -42,123 +50,128 @@ class DbWorker {
     return this.dbListener.getDbObjectByIdOnce('players', playerId);
   }
 
-  /**
-   * Returns game for the day-of-the-week if current
-   * @param {string} gameId
-   * @param {string} dow
-   * @returns Game object if game is current
-   * @returns null if Game is not current
-   */
-  async getGameIfCurrent(gameId, dow) {
-    const currentPuzzle = await this.getPuzzleById(dow);
-    const game = await this.getGameById(gameId);
-    if (game && game.date === currentPuzzle.date) {
-      return game;
-    }
-    return null;
-  }
 
   /**
-   * Creates new game
-   * @param {String} gameId
-   * @param {String} dow
-   * @param {String} playerId
-   * @returns Newly created game if found in ref path after creation
-   * @returns null if no game found at ref path
-   */
-  async createNewGame(gameId, dow, playerId) {
-    const puzzle = await this.getPuzzleById(dow);
-    const player = await this.getPlayerById(playerId);
-    const numSquares = puzzle.size.rows * puzzle.size.cols;
-    console.log(this.db);
-    const gameRef = this.db.ref(`games/${gameId}`);
-    await gameRef.set({
-      gameId,
-      savedBoardToDB: true,
-      autocheck: false,
-      advanceCursor: 0,
-      // TODO: Need to change this to dictionary instead of index for cleaner code
-      players: [{
-        playerId: player.id,
-        photoURL: player.photoURL,
-        displayName: player.displayName,
-        owner: true,
-        color: GameConfig.defaultPlayerColors[0],
-      }],
-      board: [...Array(numSquares).keys()].map((num) => ({
-        initial: true,
-        index: num,
-        input: '',
-        reveal: false,
-        check: false,
-        verified: false,
-        incorrect: false,
-        partial: false,
-        penciled: false,
-        activeWordColors: [],
-        activeLetterColors: [],
-      })),
-      clueDictionary: puzzle.clueDictionary,
-      gameGrid: puzzle.gameGrid,
-      copyright: puzzle.copyright,
-      date: puzzle.date,
-      dow: puzzle.dow,
-      editor: puzzle.editor,
-      author: puzzle.author,
-      hasTitle: puzzle.hastitle,
-      title: puzzle.title,
-      numRows: puzzle.size.rows,
-      numCols: puzzle.size.cols,
-    });
-    return this.getGameById(gameId);
-  }
-
-  /**
+   * Called on receiving 'get-game-by-dow' Socket event from client
    * Fetches or creates game for player based on day-of-the-week
    * @param {String} dow day of week
    * @param {String} playerId Firebase ID
    * @returns Always returns a game
+   * @throws Error if player is not found in DB
    */
-  async findOrCreateGame(dow, playerId) {
-    if (playerId) {
-      // find player game
-      const player = await this.dbListener.getPlayerById(playerId);
-      if (player) {
-        const playerGames = player.games;
-        if (playerGames && playerGames.owner && playerGames.owner.dow) {
-          const gameId = playerGames.owner.dow;
-          const currentGame = await this.getGameIfCurrent(gameId, dow);
-          if (currentGame) {
-            return currentGame;
-          }
+   async getGameByDow(dow, playerId) {
+    const player = await this.getPlayerById(playerId);
+    if (player) {
+      const playerGames = player.games;
+      if (playerGames && playerGames.owner && playerGames.owner.dow) {
+        const gameId = playerGames.owner.dow;
+        const currentGame = await this.getGameIfCurrent(gameId, dow);
+        if (currentGame) {
+          return currentGame;
         }
-        return this.createGameAndUpdatePlayer(player, dow);
       }
-      this.debug('Cannot find player in database');
-      return null;
+      return this.__createGameAndUpdatePlayer(player, dow);
     }
-    this.debug('No playerId given. Will not create game.');
-    return null;
+    throw new Error(`Cannot find player ${playerId} in database`);
   }
 
   /**
+   * Called on receiving 'get-default-game' Socket event from client
    * Fetches default game for player
    * @param {String} playerId
    * @returns Always returns a game (if it does not exist, it is created)
+   * @throws Error if player is not found in DB
    */
   async getDefaultGame(playerId) {
-    try {
-      const player = await this.getPlayerById(playerId);
-      if (player) {
-        let dow;
-        if (await this.puzzleUtils.isCurrentPuzzleSaved()) {
-          dow = PuzzleUtils.getCurrentDOW();
-        } else {
-          dow = PuzzleUtils.getPreviousDOW();
-        }
-        return this.findOrCreateGame(dow, playerId);
+    const player = await this.getPlayerById(playerId);
+    if (player) {
+      let dow;
+      if (await this.puzzleUtils.isCurrentPuzzleSaved()) {
+        dow = PuzzleUtils.getCurrentDOW();
+      } else {
+        dow = PuzzleUtils.getPreviousDOW();
       }
+      return this.getGameByDow(dow, playerId);
+    }
+    throw new Error(`Cannot find player ${playerId} in database`);
+  }
+
+  /** 
+   * Called on receiving Socket event 'update-player-focus'
+   */
+   async updatePlayerFocus(playerId, gameId, currentFocus) {
+    const players = await this.#getGamePlayers(gameId);
+    if (players) {
+      // TODO: Change db schema so playerId is key
+      const index = players.findIndex((player) => player.playerId === playerId);
+      const playerRef = this.db.ref(`games/${gameId}/players/${index}`);
+      playerRef.update({
+        currentFocus,
+      });
+    }
+  }
+
+
+  /**
+   * Called on receiving Socket event 'get-puzzle-dates' from client
+   */
+   async getPuzzleDates() {
+    const puzzles = await this.dbListener.getDbCollectionOnce('puzzles');
+    if (puzzles) {
+      const dates = {};
+      puzzles.forEach((dow) => {
+        dates[dow] = puzzles[dow].date;
+      });
+      return dates;
+    }
+    this.debug('Nothing at path puzzles/');
+    return null;
+  }
+
+
+  /**
+   * Called on receiving Socket event 'save-board'
+   * @param {*} gameId 
+   * @param {*} board 
+   */
+   async saveBoard(gameId, board) {
+    const gameRef = this.db.ref(`games/${gameId}`);
+    gameRef.update({
+      board,
+    });
+  }
+
+  const TOO_VAGUELY_NAMED = 1;
+  /**** TODO: NOW START THE TOO VAGUELY NAMED FUNCTIONS. CHANGE NAMES. */
+
+  /**
+   * Called on Socket event 'user-signed-in'
+   * @param {*} firebaseClientToken 
+   * @param {*} gameId 
+   * @returns 
+   */
+   async addUserToGame(firebaseClientToken, gameId) {
+    try {
+      const user = await this.verifyFirebaseClientToken(firebaseClientToken);
+      const player = await this.findOrCreatePlayer(user);
+      const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
+      this.addPlayerToGame(player, game);
+      return player;
+    } catch (error) {
+      this.debug(error);
       return null;
+    }
+  }
+
+  /**
+   * Called on Socket event 'user-signed-in'
+   * @param {*} firebaseClientToken 
+   * @returns 
+   */
+  async addPlayerToDB(firebaseClientToken) {
+    const user = await this.verifyFirebaseClientToken(firebaseClientToken);
+    try {
+      return await this.findOrCreatePlayer(user);
     } catch (error) {
       this.debug(error);
       return null;
@@ -166,7 +179,13 @@ class DbWorker {
   }
 
 
-  async addPlayerToGame(player, game) {
+  /**
+   * Called on receiving Socket event 'get-game-by-id'
+   * @param {*} player 
+   * @param {*} game 
+   * @returns 
+   */
+   async addPlayerToGame(player, game) {
     let addedPlayer;
     // update game object
     const { players, gameId } = game;
@@ -226,22 +245,16 @@ class DbWorker {
         });
       }
     }
-    const teamGames = this.#getPlayerTeamGames(player.id);
+    const teamGames = this.__getPlayerTeamGames(player.id);
     return { teamGames, addedPlayer };
   }
 
-  async updatePlayerFocus(playerId, gameId, currentFocus) {
-    const players = await this.#getGamePlayers(gameId);
-    if (players) {
-      // TODO: Change db schema so playerId is key
-      const index = players.findIndex((player) => player.playerId === playerId);
-      const playerRef = this.db.ref(`games/${gameId}/players/${index}`);
-      playerRef.update({
-        currentFocus,
-      });
-    }
-  }
-
+  /**
+   * Called on receiving Socket event 'leave-game'
+   * @param {*} gameId 
+   * @param {*} playerId 
+   * @param {*} online 
+   */
   async updateGameOnlineStatusForPlayer(gameId, playerId, online) {
     const players = await this.#getGamePlayers(gameId);
     if (players) {
@@ -282,42 +295,14 @@ class DbWorker {
     }
   }
 
-  async verifyFirebaseClientToken(idToken) {
-    try {
-      const decodedToken = await this.auth.verifyIdToken(idToken);
-      const { uid } = decodedToken;
-      const user = await this.auth.getUser(uid);
-      return user;
-    } catch (error) {
-      this.debug(error);
-      return null;
-    }
-  }
+  const PRIVATE_METHODS_START_HERE = 1;
 
-  async addUserToGame(firebaseClientToken, gameId) {
-    try {
-      const user = await this.verifyFirebaseClientToken(firebaseClientToken);
-      const player = await this.findOrCreatePlayer(user);
-      const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
-      this.addPlayerToGame(player, game);
-      return player;
-    } catch (error) {
-      this.debug(error);
-      return null;
-    }
-  }
-
-  async addPlayerToDB(firebaseClientToken) {
-    const user = await this.verifyFirebaseClientToken(firebaseClientToken);
-    try {
-      return await this.findOrCreatePlayer(user);
-    } catch (error) {
-      this.debug(error);
-      return null;
-    }
-  }
-
-  async createNewPlayer(user) {
+  /**
+   * Creates player from FirebaseUser and saves to DB
+   * @param {FirebaseUser} user
+   * @returns newly created player
+   */
+  async __createNewPlayer(user) {
     if (!user) return;
     const playerId = user.uid;
     const playerRef = this.db.ref(`players/${playerId}`);
@@ -330,47 +315,130 @@ class DbWorker {
     this.dbListener.getDbObjectByIdOnce('players', playerId);
   }
 
+  /**
+   * Creates new game
+   * @param {String} gameId
+   * @param {String} dow
+   * @param {String} playerId
+   * @returns Newly created game if found in ref path after creation
+   * @returns null if no game found at ref path
+   */
+  async __createNewGame(gameId, dow, playerId) {
+    const puzzle = await this.getPuzzleById(dow);
+    const player = await this.getPlayerById(playerId);
+    const numSquares = puzzle.size.rows * puzzle.size.cols;
+    const gameRef = this.db.ref(`games/${gameId}`);
+    await gameRef.set({
+      gameId,
+      savedBoardToDB: true,
+      autocheck: false,
+      advanceCursor: 0,
+      // TODO: Need to change this to dictionary instead of indexed array for cleaner code
+      players: [{
+        playerId: player.id,
+        photoURL: player.photoURL,
+        displayName: player.displayName,
+        owner: true,
+        color: GameConfig.defaultPlayerColors[0],
+      }],
+      board: [...Array(numSquares).keys()].map((num) => ({
+        initial: true,
+        index: num,
+        input: '',
+        reveal: false,
+        check: false,
+        verified: false,
+        incorrect: false,
+        partial: false,
+        penciled: false,
+        activeWordColors: [],
+        activeLetterColors: [],
+      })),
+      clueDictionary: puzzle.clueDictionary,
+      gameGrid: puzzle.gameGrid,
+      copyright: puzzle.copyright,
+      date: puzzle.date,
+      dow: puzzle.dow,
+      editor: puzzle.editor,
+      author: puzzle.author,
+      hasTitle: puzzle.hastitle,
+      title: puzzle.title,
+      numRows: puzzle.size.rows,
+      numCols: puzzle.size.cols,
+    });
+    return this.getGameById(gameId);
+  }
 
-  async getPuzzleDates() {
-    const puzzles = await this.dbListener.getDbCollectionOnce('puzzles');
-    if (puzzles) {
-      const dates = {};
-      puzzles.forEach((dow) => {
-        dates[dow] = puzzles[dow].date;
-      });
-      return dates;
+  /**
+   * Returns game for the day-of-the-week if current
+   * @param {string} gameId
+   * @param {string} dow
+   * @returns Game object if game is current
+   * @returns null if Game is not current
+   */
+  async __getGameIfCurrent(gameId, dow) {
+    const currentPuzzle = await this.getPuzzleById(dow);
+    const game = await this.getGameById(gameId);
+    if (game && game.date === currentPuzzle.date) {
+      return game;
     }
-    this.debug('Nothing at path puzzles/');
     return null;
   }
 
-  async createGameAndUpdatePlayer(player, dow) {
+  /**
+   * Creates a new game, saves to database, and updates player games
+   * @param {*} player player DB object
+   * @param {*} dow day-of-week
+   * @returns Newly created game
+   * @throws Error if game was not created correctly
+   */
+  async __createGameAndUpdatePlayer(player, dow) {
+    // TODO: Change to playerId for consistency with rest of code.
     const playerId = player.id;
 
     // create new game
     const gameId = uuidv4();
     const newGame = await this.createNewGame(gameId, dow, playerId);
 
-    // update player object
-    let playerGames = player.games;
-    if (!playerGames) {
-      playerGames = {};
-    }
-    let ownerGames = playerGames.owner;
-    if (!ownerGames) {
-      ownerGames = {};
-    }
-    ownerGames[dow] = newGame.gameId;
-    playerGames.owner = ownerGames;
+    if (newGame) {
+      // update player object
+      let playerGames = player.games;
+      if (!playerGames) {
+        playerGames = {};
+      }
+      let ownerGames = playerGames.owner;
+      if (!ownerGames) {
+        ownerGames = {};
+      }
+      ownerGames[dow] = newGame.gameId;
+      playerGames.owner = ownerGames;
 
-    const playerRef = this.db.ref(`players/${playerId}`);
-    playerRef.update({
-      games: playerGames,
-    });
+      const playerRef = this.db.ref(`players/${playerId}`);
+      await playerRef.update({
+        games: playerGames,
+      });
+    } else {
+      throw new Error(
+        `Game ${gameId} was not created correctly. Will not add game to player ${playerId}.`,
+      );
+    }
     return newGame;
   }
 
-  async findOrCreatePlayer(user) {
+  async __verifyFirebaseClientToken(idToken) {
+    try {
+      const decodedToken = await this.auth.verifyIdToken(idToken);
+      const { uid } = decodedToken;
+      const user = await this.auth.getUser(uid);
+      return user;
+    } catch (error) {
+      this.debug(error);
+      return null;
+    }
+  }
+
+
+  async __findOrCreatePlayer(user) {
     if (user === null) return null;
     const player = await this.dbListener.getDbObjectByIdOnce('players', user.uid);
     if (player) {
@@ -379,14 +447,8 @@ class DbWorker {
     return this.createNewPlayer(user);
   }
 
-  async updateGame(gameId, board) {
-    const gameRef = this.db.ref(`games/${gameId}`);
-    gameRef.update({
-      board,
-    });
-  }
 
-  async #getGamePlayers(gameId) {
+  async __getGamePlayers(gameId) {
     const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
     if (game.players) {
       return game.players;
@@ -394,7 +456,7 @@ class DbWorker {
     return null;
   }
 
-  async #getPlayerTeamGames(playerId) {
+  async __getPlayerTeamGames(playerId) {
     const player = await this.dbListener.getDbObjectByIdOnce('players', playerId);
     if (player.games && player.games.team) {
       return player.games.team;

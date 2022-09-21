@@ -4,7 +4,8 @@ const puppeteer = require('puppeteer');
 const PuzzleUtils = require('./utils/PuzzleUtils');
 
 admin.initializeApp();
-const db = admin.database();
+const db = admin.data
+base();
 const puzzleUtils = new PuzzleUtils(db);
 
 async function fetchCurrentPuzzle() {
