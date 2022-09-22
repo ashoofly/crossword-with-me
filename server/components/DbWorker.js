@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const Debug = require('debug');
 const { v4: uuidv4 } = require('uuid');
 const PuzzleUtils = require('../functions/utils/PuzzleUtils');
@@ -18,8 +19,7 @@ class DbWorker {
    * - get-friend-request-name
    * - get-game-by-id
    * @param {string} gameId
-   * @returns Promise that can resolve to game object
-   * @returns null if game not in db
+   * @returns Promise that can resolve to game object or null if game not in db
    */
   async getGameById(gameId) {
     return this.dbListener.getDbObjectByIdOnce('games', gameId);
@@ -28,11 +28,18 @@ class DbWorker {
   /**
    * Fetches puzzle from the DB
    * @param {string} dow
-   * @returns Promise that can resolve to puzzle object
-   * @returns null if day-of-the-week puzzle not in db
+   * @returns Promise that can resolve to puzzle object or null if puzzle not in db
    */
   async getPuzzleById(dow) {
     return this.dbListener.getDbObjectByIdOnce('puzzles', dow);
+  }
+
+  /**
+   * Fetches puzzles from the DB
+   * @returns Promise that can resolve to puzzle collection or null if no puzzles
+   */
+  async getPuzzles() {
+    return this.dbListener.getDbCollectionOnce('puzzles');
   }
 
   /**
@@ -59,7 +66,7 @@ class DbWorker {
    * @returns Always returns a game
    * @throws Error if player is not found in DB
    */
-   async getGameByDow(dow, playerId) {
+  async getGameByDow(dow, playerId) {
     const player = await this.getPlayerById(playerId);
     if (player) {
       const playerGames = player.games;
@@ -100,7 +107,7 @@ class DbWorker {
    * Called on receiving Socket event 'update-player-focus'
    */
    async updatePlayerFocus(playerId, gameId, currentFocus) {
-    const players = await this.#getGamePlayers(gameId);
+    const players = await this.__getGamePlayers(gameId);
     if (players) {
       // TODO: Change db schema so playerId is key
       const index = players.findIndex((player) => player.playerId === playerId);
@@ -111,12 +118,11 @@ class DbWorker {
     }
   }
 
-
   /**
    * Called on receiving Socket event 'get-puzzle-dates' from client
    */
-   async getPuzzleDates() {
-    const puzzles = await this.dbListener.getDbCollectionOnce('puzzles');
+  async getPuzzleDates() {
+    const puzzles = await this.getPuzzles();
     if (puzzles) {
       const dates = {};
       puzzles.forEach((dow) => {
@@ -124,10 +130,8 @@ class DbWorker {
       });
       return dates;
     }
-    this.debug('Nothing at path puzzles/');
-    return null;
+    throw new Error('No puzzles found in DB');
   }
-
 
   /**
    * Called on receiving Socket event 'save-board'
@@ -141,7 +145,6 @@ class DbWorker {
     });
   }
 
-  const TOO_VAGUELY_NAMED = 1;
   /**** TODO: NOW START THE TOO VAGUELY NAMED FUNCTIONS. CHANGE NAMES. */
 
   /**
@@ -256,7 +259,7 @@ class DbWorker {
    * @param {*} online 
    */
   async updateGameOnlineStatusForPlayer(gameId, playerId, online) {
-    const players = await this.#getGamePlayers(gameId);
+    const players = await this.__getGamePlayers(gameId);
     if (players) {
       // TODO: Change db schema so playerId is key
       const index = players.findIndex((player) => player.playerId === playerId);
@@ -294,8 +297,6 @@ class DbWorker {
       }
     }
   }
-
-  const PRIVATE_METHODS_START_HERE = 1;
 
   /**
    * Creates player from FirebaseUser and saves to DB

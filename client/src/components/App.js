@@ -252,7 +252,7 @@ function App(props) {
 
     function handleLoadPlayerCursorChange(socketId, playerId, serverGameId, currentFocus) {
       if (socketId !== socket.id) {
-        logger.log(`Received load-player-cursor-change from ${playerId}`);
+        logger.log(`Received update-player-focus from ${playerId}`);
         dispatch(gameActions.updatePlayerFocus({playerId: playerId, gameId: serverGameId, currentFocus: currentFocus, source: "external"}));
       }
     }
@@ -260,12 +260,12 @@ function App(props) {
     socket.on("player-added-to-game", handlePlayerAddedToGame);
     socket.on("player-online", handlePlayerOnline);
     socket.on("player-offline", handlePlayerOffline);
-    socket.on("load-player-cursor-change", handleLoadPlayerCursorChange);
+    socket.on("update-player-focus", handleLoadPlayerCursorChange);
 
     return function cleanup() {
       socket.off("player-online", handlePlayerOnline);
       socket.off("player-offline", handlePlayerOffline);
-      socket.off("load-player-cursor-change", handleLoadPlayerCursorChange);
+      socket.off("update-player-focus", handleLoadPlayerCursorChange);
     }
 
   }, [loadedGameId, socket, user]);

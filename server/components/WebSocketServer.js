@@ -1,5 +1,19 @@
+/* eslint-disable no-underscore-dangle */
 const Debug = require('debug');
 const { Server } = require('socket.io');
+
+// eslint-disable-next-line func-names
+const tryCatch = function (f) {
+  // eslint-disable-next-line func-names
+  return (function (...args) {
+    try {
+      return f.apply(this, args);
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  }());
+};
 
 class WebSocketServer {
   constructor(httpServer, dbWorker) {
@@ -17,73 +31,87 @@ class WebSocketServer {
     );
   }
 
-  initialize() {
-    async function sendGame(socket, game, playerId) {
-      const player = await this.dbWorker.getDbObjectById('players', playerId);
-
-      if (player) {
-        const { gameId } = game;
-        socket.emit('load-game', game, socket.id);
-
-        // leave any previous game rooms
-        const currentRooms = Array.from(socket.rooms);
-        if (currentRooms.length > 1) {
-          const prevGameId = currentRooms[1];
-          socket.leave(prevGameId);
-          this.io.to(prevGameId).emit('player-offline', playerId, prevGameId);
-          this.dbWorker.updateGameOnlineStatusForPlayer(prevGameId, playerId, false);
-        }
-
-        // join current game room
-        socket.join(gameId);
-        this.io.to(gameId).emit('player-online', playerId, player.displayName, gameId);
-        this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, true);
-
-        // add listeners
-        socket.on('disconnect', () => {
-          this.debug(`Send disconnect event to room ${gameId}`);
-          this.io.to(gameId).emit('player-offline', playerId, gameId);
-          this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, false);
-        });
-      }
+  __leavePreviousGameRooms(socket, playerId) {
+    const currentRooms = Array.from(socket.rooms);
+    if (currentRooms.length > 1) {
+      const prevGameId = currentRooms[1];
+      socket.leave(prevGameId);
+      this.io.to(prevGameId).emit('player-offline', playerId, prevGameId);
+      this.dbWorker.updateGameOnlineStatusForPlayer(prevGameId, playerId, false);
     }
+  }
 
+  async __joinCurrentGameRoom(socket, gameId, playerId) {
+    socket.join(gameId);
+
+    const player = await this.dbWorker.getPlayerById(playerId);
+    this.io.to(gameId).emit('player-online', playerId, player.displayName, gameId);
+    this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, true);
+
+    // add listeners
+    socket.on('disconnect', () => {
+      this.debug(`Send disconnect event to room ${gameId}`);
+      this.io.to(gameId).emit('player-offline', playerId, gameId);
+      this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, false);
+    });
+  }
+
+  async __sendGameToClient(socket, game, playerId) {
+    const { gameId } = game;
+    socket.emit('load-game', game, socket.id);
+    this.__leavePreviousGameRooms(socket, playerId);
+    this.__joinCurrentGameRoom(socket, gameId, playerId);
+  }
+
+  initialize() {
     this.io.on('connection', async (socket) => {
       socket.on('save-board', async (gameId, board) => {
-        this.dbWorker.saveBoard(gameId, board);
+        try {
+          this.dbWorker.saveBoard(gameId, board);
+        } catch (e) {
+          this.debug(e);
+        }
       });
       socket.on('get-puzzle-dates', async () => {
-        const puzzleDates = await this.dbWorker.getPuzzleDates();
-        socket.emit('load-puzzle-dates', puzzleDates);
+        try {
+          const puzzleDates = await this.dbWorker.getPuzzleDates();
+          socket.emit('load-puzzle-dates', puzzleDates);
+        } catch (e) {
+          this.debug(e);
+        }
       });
       socket.on('get-game-by-dow', async (dow, playerId) => {
-        const game = await this.dbWorker.findOrCreateGame(dow, playerId);
-        sendGame(socket, game, playerId);
+        try {
+          const game = await this.dbWorker.getGameByDow(dow, playerId);
+          this.__sendGameToClient(socket, game, playerId);
+        } catch (e) {
+          this.debug(e);
+        }
       });
       socket.on('get-default-game', async (playerId) => {
-        const game = await this.dbWorker.getDefaultGame(playerId);
-        sendGame(socket, game, playerId);
+        try {
+          const game = await this.dbWorker.getDefaultGame(playerId);
+          this.__sendGameToClient(socket, game, playerId);
+        } catch (e) {
+          this.debug(e);
+        }
       });
       socket.on('get-friend-request-name', async (gameId) => {
-        const game = await this.dbWorker.getDbObjectById('games', gameId);
-        if (game) {
-          if (game.players) {
+        try {
+          const game = await this.dbWorker.getGameById(gameId);
+          if (game) {
             const ownerId = game.players[0].playerId;
-            if (ownerId) {
-              const ownerInfo = await this.dbWorker.getDbObjectById('players', ownerId);
-              if (ownerInfo) {
-                socket.emit('display-friend-request', ownerInfo.displayName);
-              }
-            }
+            const ownerInfo = await this.dbWorker.getPlayerById(ownerId);
+            socket.emit('display-friend-request', ownerInfo.displayName);
           } else {
             socket.emit('game-not-found');
           }
-        } else {
-          socket.emit('game-not-found');
+        } catch (e) {
+          this.debug(e);
         }
       });
       socket.on('update-player-focus', (playerId, gameId, currentFocus) => {
-        this.io.to(gameId).emit('load-player-cursor-change', socket.id, playerId, gameId, currentFocus);
+        this.io.to(gameId).emit('update-player-focus', socket.id, playerId, gameId, currentFocus);
         this.dbWorker.updatePlayerFocus(playerId, gameId, currentFocus);
       });
       socket.on('leave-game', async (playerId, gameId) => {
@@ -100,7 +128,7 @@ class WebSocketServer {
           if (game.players) {
             const ownerId = game.players[0].playerId;
             if (playerId === ownerId) {
-              sendGame(socket, game, playerId);
+              this.__sendGameToClient(socket, game, playerId);
             } else {
               const player = await this.dbWorker.getDbObjectById('players', playerId);
               if (player) {
@@ -109,7 +137,7 @@ class WebSocketServer {
                   this.io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
                 }
                 socket.emit('load-team-games', teamGames);
-                sendGame(socket, game, playerId);
+                this.__sendGameToClient(socket, game, playerId);
               }
             }
           } else {

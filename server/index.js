@@ -11,7 +11,6 @@ const AdminDatabaseListener = require('./functions/utils/AdminDatabaseListener')
 
 try {
   const debug = Debug('Server');
-
   if (process.env.NODE_ENV === 'development') {
     dotenv.config({ path: '../.env.local' });
   } else if (process.env.NODE_ENV === 'heroku-local') {

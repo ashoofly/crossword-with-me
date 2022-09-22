@@ -1,6 +1,6 @@
-const GameConfig = require('../components/GameConfig');
+const GameConfig = require('../../components/GameConfig');
 const puzzle = require('./mockPuzzle');
-const player = require('./mockPlayer');
+const { newPlayer: player } = require('./mockPlayer');
 
 module.exports = {
   gameId: 'e27dd721-a9fd-4f95-97ae-b4bfa939e7df',

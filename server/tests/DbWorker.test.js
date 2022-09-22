@@ -6,10 +6,10 @@
 // const admin = require('firebase-admin');
 const { test, expect } = require('@jest/globals');
 const AdminDatabaseListener = require('../functions/utils/AdminDatabaseListener');
-const DbWorker = require('./DbWorker');
-const mockPuzzle = require('../tests/mockPuzzle');
-const { newPlayer, onlyTeamPlayer, ownsMondayGamePlayer } = require('../tests/mockPlayer');
-const mockGame = require('../tests/mockGame');
+const DbWorker = require('../components/DbWorker');
+const mockPuzzle = require('./mocks/mockPuzzle');
+const { newPlayer, onlyTeamPlayer, ownsMondayGamePlayer } = require('./mocks/mockPlayer');
+const mockGame = require('./mocks/mockGame');
 const firebaseAdmin = require('../firebase');
 
 jest.mock('../functions/utils/AdminDatabaseListener');
