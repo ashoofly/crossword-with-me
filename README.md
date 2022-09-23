@@ -36,17 +36,24 @@ https://crosswordwith.me
 
 ## Build Tools
 * Webpack
-
-
+* ESLint
+* Jest for Tests
+  * server-side complete
+  * client-side TO DO
+  
 # To Do 
-* Linting
-* Tests
+* Linting for Client-side
+* Tests for Client-Side
 * If puzzle fetch fails, send message to me
   * Other monitoring
-* Allow anonymous players
-  * Clear anonymous games from the database every night
+* Alert player when puzzle complete and correct
+  * Streaks, scores
 * Display when avatar icons exceed title bar
   * Allow custom colors
+* Allow anonymous players
+  * Clear anonymous games from the database every night
+
+
 
 
 

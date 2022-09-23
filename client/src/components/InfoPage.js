@@ -57,11 +57,12 @@ export default memo((props) => {
       </ul>
       <h3>Thank you</h3>
       <ul>
-        <li><a href="https://www.xwordinfo.com/">xword.info</a> for the daily crossword data</li>
+        <li>xword.info for the daily crossword data</li>
+        <li>New York Times for not sending me a cease-and-desist letter yet for this multiplayer proof-of-concept</li>
         <li>Ethan Schoonover for the <a href="https://ethanschoonover.com/solarized/">Solarized</a> color scheme</li>
       </ul>
       <h3>Contact</h3>
-      <a href="https://github.com/ashoofly" target="_blank" rel="noreferrer"><div className="contact"><GitHubIcon />https://github.com/ashoofly</div></a>
+      Report any issues to: <a href="https://github.com/ashoofly" target="_blank" rel="noreferrer"><div className="contact"><GitHubIcon />https://github.com/ashoofly</div></a>
     </Dialog>
   )
 });

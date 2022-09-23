@@ -7,8 +7,9 @@
   },
   "cacheDirectories": ["client/node_modules", "server/node_modules"],
   "scripts": {
-    "build": "cd server && npm install && cd ../client && npm install && npm run build-prod",
+    "build": "cd server && npm install && npm test && cd ../client && npm install && npm run build-prod",
     "start": "cd server && npm run prod",
-    "heroku-local": "heroku local -f Procfile.local -e .env.heroku-local"
+    "heroku-local": "heroku local -f Procfile.local -e .env.heroku-local",
+    "test": "cd server && npm install && npm test"
   }
 }

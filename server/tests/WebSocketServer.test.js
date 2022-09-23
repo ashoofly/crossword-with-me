@@ -2,7 +2,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable one-var-declaration-per-line */
 /* eslint-disable one-var */
-// const { expect, jest } = require('@jest/globals');
 const { createServer } = require('http');
 const Client = require('socket.io-client');
 const DbWorker = require('../components/DbWorker');
@@ -24,7 +23,7 @@ function expectAssertions(max, done) {
   return increment;
 }
 
-describe('my awesome project', () => {
+describe('socket.io server functionality', () => {
   let serverSocket, clientSocket, dbWorker, webSocketServer;
 
   beforeEach((done) => {
@@ -186,6 +185,13 @@ describe('my awesome project', () => {
     // update player online status in db
     expect(dbWorker.updateGameOnlineStatusForPlayer)
       .toHaveBeenCalledWith('newGame', mockPlayer.id, true);
+
+    // confirm added listeners correctly
+    serverSocket.on('disconnect', () => {
+      expect(mockIO.emit).toBeCalledWith('player-offline', mockPlayer.id, 'newGame');
+      expect(dbWorker.updateGameOnlineStatusForPlayer)
+        .toHaveBeenCalledWith('newGame', mockPlayer.id, false);
+    });
   });
 
   test('"get-friend-request-name" event to server will return "game-not-found" event'
