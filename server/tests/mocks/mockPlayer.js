@@ -5,6 +5,13 @@ const newPlayer = {
   photoURL: 'https://examplephoto.com',
 };
 
+const addedPlayer = {
+  displayName: 'Second Pal',
+  email: 'secondPal@gmail.com',
+  id: 'xyz987',
+  photoURL: 'https://examplephoto2.com',
+};
+
 const onlyTeamPlayer = {
   displayName: 'Best Bud',
   email: 'bestbud@gmail.com',
@@ -39,6 +46,7 @@ const ownsMondayGamePlayer = {
 
 module.exports = {
   newPlayer,
+  addedPlayer,
   onlyTeamPlayer,
   ownsMondayGamePlayer,
 };

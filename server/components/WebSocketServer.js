@@ -1,19 +1,5 @@
-/* eslint-disable no-underscore-dangle */
 const Debug = require('debug');
 const { Server } = require('socket.io');
-
-// eslint-disable-next-line func-names
-const tryCatch = function (f) {
-  // eslint-disable-next-line func-names
-  return (function (...args) {
-    try {
-      return f.apply(this, args);
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
-  }());
-};
 
 class WebSocketServer {
   constructor(httpServer, dbWorker) {
@@ -50,7 +36,6 @@ class WebSocketServer {
 
     // add listeners
     socket.on('disconnect', () => {
-      this.debug(`Send disconnect event to room ${gameId}`);
       this.io.to(gameId).emit('player-offline', playerId, gameId);
       this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, false);
     });
@@ -69,7 +54,7 @@ class WebSocketServer {
         try {
           this.dbWorker.saveBoard(gameId, board);
         } catch (e) {
-          this.debug(e);
+          console.error(e);
         }
       });
       socket.on('get-puzzle-dates', async () => {
@@ -77,7 +62,7 @@ class WebSocketServer {
           const puzzleDates = await this.dbWorker.getPuzzleDates();
           socket.emit('load-puzzle-dates', puzzleDates);
         } catch (e) {
-          this.debug(e);
+          console.error(e);
         }
       });
       socket.on('get-game-by-dow', async (dow, playerId) => {
@@ -85,7 +70,7 @@ class WebSocketServer {
           const game = await this.dbWorker.getGameByDow(dow, playerId);
           this.__sendGameToClient(socket, game, playerId);
         } catch (e) {
-          this.debug(e);
+          console.error(e);
         }
       });
       socket.on('get-default-game', async (playerId) => {
@@ -93,7 +78,7 @@ class WebSocketServer {
           const game = await this.dbWorker.getDefaultGame(playerId);
           this.__sendGameToClient(socket, game, playerId);
         } catch (e) {
-          this.debug(e);
+          console.error(e);
         }
       });
       socket.on('get-friend-request-name', async (gameId) => {
@@ -107,86 +92,96 @@ class WebSocketServer {
             socket.emit('game-not-found');
           }
         } catch (e) {
-          this.debug(e);
+          console.error(e);
         }
       });
       socket.on('update-player-focus', (playerId, gameId, currentFocus) => {
-        this.io.to(gameId).emit('update-player-focus', socket.id, playerId, gameId, currentFocus);
-        this.dbWorker.updatePlayerFocus(playerId, gameId, currentFocus);
+        try {
+          this.io.to(gameId).emit('update-player-focus', socket.id, playerId, gameId, currentFocus);
+          this.dbWorker.updatePlayerFocus(playerId, gameId, currentFocus);
+        } catch (e) {
+          console.error(e);
+        }
       });
       socket.on('leave-game', async (playerId, gameId) => {
-        socket.leave(gameId);
-        this.io.to(gameId).emit('player-offline', playerId, gameId);
-        this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, false);
+        try {
+          socket.leave(gameId);
+          this.io.to(gameId).emit('player-offline', playerId, gameId);
+          this.dbWorker.updateGameOnlineStatusForPlayer(gameId, playerId, false);
+        } catch (e) {
+          console.error(e);
+        }
       });
       socket.on('send-changes', (action) => {
-        this.io.to(action.gameId).emit('receive-changes', action);
+        try {
+          this.io.to(action.gameId).emit('receive-changes', action);
+        } catch (e) {
+          console.error(e);
+        }
       });
       socket.on('get-game-by-id', async (gameId, playerId) => {
-        const game = await this.dbWorker.getDbObjectById('games', gameId);
-        if (game) {
-          if (game.players) {
+        try {
+          const game = await this.dbWorker.getGameById(gameId);
+          if (game) {
             const ownerId = game.players[0].playerId;
             if (playerId === ownerId) {
               this.__sendGameToClient(socket, game, playerId);
             } else {
-              const player = await this.dbWorker.getDbObjectById('players', playerId);
-              if (player) {
-                const { teamGames, addedPlayer } = await this.dbWorker.addPlayerToGame(player, game);
-                if (addedPlayer) {
-                  this.io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
-                }
+              const player = await this.dbWorker.getPlayerById(playerId);
+              const { teamGames, addedPlayer } = await this.dbWorker.addPlayerToGame(player, game);
+              if (addedPlayer) {
+                this.io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
                 socket.emit('load-team-games', teamGames);
-                this.__sendGameToClient(socket, game, playerId);
               }
+              this.__sendGameToClient(socket, game, playerId);
             }
           } else {
-            // anonymous game
             socket.emit('game-not-found');
           }
+        } catch (e) {
+          console.error(e);
         }
       });
       socket.on('get-team-games', async (playerId) => {
-        const player = await this.dbWorker.getDbObjectById('players', playerId);
-        if (player) {
-          const playerGames = player.games;
-          if (playerGames) {
-            const teamGames = playerGames.team;
-            socket.emit('load-team-games', teamGames);
-          }
+        try {
+          const player = await this.dbWorker.getPlayerById(playerId);
+          const teamGames = player.games.team;
+          socket.emit('load-team-games', teamGames);
+        } catch (e) {
+          console.error(e);
         }
       });
       socket.on('user-signed-in', async (idToken, gameId) => {
-        this.debug('Received user-signed-in event');
-        let player = null;
-        if (gameId) {
-          // add user to game if not already added
-          this.debug(`Adding user to ${gameId} if not already added`);
-          player = await this.dbWorker.addUserToGame(idToken, gameId);
-          // TODO: Check this change.
-          this.io.to(gameId).emit('player-added-to-game', player, gameId);
-        } else {
-          // add player to db if not already added
-          this.debug('Adding player to db if not already added');
-          player = await this.dbWorker.addPlayerToDB(idToken);
-        }
-        if (player) {
-          this.debug(`Send player-exists event for ${player.id}`);
-          socket.emit('player-exists', player.id);
+        try {
+          let player = null;
+          if (gameId) {
+            // add user to game if not already added
+            player = await this.dbWorker.addUserToGame(idToken, gameId);
+            // TODO: Check this change.
+            this.io.to(gameId).emit('player-added-to-game', player, gameId);
+          } else {
+            // add player to db if not already added
+            player = await this.dbWorker.addPlayerToDB(idToken);
+          }
+          if (player) {
+            socket.emit('player-exists', player.id);
+          }
+        } catch (e) {
+          console.error(e);
         }
       });
       socket.on('verify-player-exists', async (playerId) => {
-        this.debug(`Received verify-player-exists event for ${playerId}`);
-        const player = await this.dbWorker.getDbObjectById('players', playerId);
-        if (player) {
-          this.debug(`Send player-exists event for ${playerId}`);
-          socket.emit('player-exists', playerId);
-        } else {
-          this.debug(`Send player-not-found event for ${playerId}`);
-          socket.emit('player-not-found', playerId);
+        try {
+          const player = await this.dbWorker.getPlayerById(playerId);
+          if (player) {
+            socket.emit('player-exists', playerId);
+          } else {
+            socket.emit('player-not-found', playerId);
+          }
+        } catch (e) {
+          console.error(e);
         }
       });
-
       this.debug(`Connected to ${socket.id}`);
       const sockets = await this.io.fetchSockets();
       this.debug(`Connected sockets: ${sockets.map((s) => s.id).join(', ')}`);

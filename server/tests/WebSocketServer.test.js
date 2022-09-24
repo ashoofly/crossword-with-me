@@ -1,14 +1,14 @@
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-undef */
-/* eslint-disable one-var-declaration-per-line */
-/* eslint-disable one-var */
 const { createServer } = require('http');
 const Client = require('socket.io-client');
 const DbWorker = require('../components/DbWorker');
 const WebSocketServer = require('../components/WebSocketServer');
 const mockPuzzleDates = require('./mocks/mockPuzzleDates');
 const mockGame = require('./mocks/mockGame');
-const { newPlayer: mockPlayer } = require('./mocks/mockPlayer');
+const {
+  newPlayer: mockPlayer,
+  addedPlayer,
+  onlyTeamPlayer: playerWithTeamGames,
+} = require('./mocks/mockPlayer');
 
 jest.mock('../components/DbWorker');
 
@@ -195,20 +195,235 @@ describe('socket.io server functionality', () => {
   });
 
   test('"get-friend-request-name" event to server will return "game-not-found" event'
-      + ' back to client if no game found in db', () => {
-
+      + ' back to client if no game found in db', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getGameById').mockImplementation(() => null);
+    clientSocket.on('game-not-found', () => {
+      done();
+    });
+    clientSocket.emit('get-friend-request-name', mockGame.gameId);
   });
 
   test('"get-friend-request-name" event to server will return "display-friend-request" event'
-      + ' back to client if game found in db', () => {
-
+      + ' back to client if game found in db', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getGameById').mockImplementation(() => mockGame);
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => mockPlayer);
+    clientSocket.on('display-friend-request', (arg) => {
+      try {
+        expect(arg).toBe(mockPlayer.displayName);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('get-friend-request-name', mockGame.gameId);
   });
 
+  test('"update-player-focus" client event sends "update-player-focus" server event to'
+     + ' all clients in game room', (done) => {
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    const currentFocus = { focus: 0 };
+    serverSocket.on('update-player-focus', () => {
+      try {
+        expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
+        expect(mockIO.emit).toBeCalledWith(
+          'update-player-focus', serverSocket.id, mockPlayer.id, mockGame.gameId, currentFocus);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('update-player-focus', mockPlayer.id, mockGame.gameId, currentFocus);
+  });
 
-  
+  test('"leave-game" client event removes player from game room', (done) => {
+    jest.spyOn(serverSocket, 'leave');
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    serverSocket.on('leave-game', () => {
+      try {
+        expect(serverSocket.leave).toHaveBeenCalledWith(mockGame.gameId);
+        expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
+        expect(mockIO.emit).toBeCalledWith('player-offline', mockPlayer.id, mockGame.gameId);
+        expect(dbWorker.updateGameOnlineStatusForPlayer)
+          .toHaveBeenCalledWith(mockGame.gameId, mockPlayer.id, false);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('leave-game', mockPlayer.id, mockGame.gameId);
+  });
 
+  test('Server socket sends "receive-changes" event to all clients in game room when receiving'
+     + '"send-changes" event from any client', (done) => {
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    const mockAction = { action: 'this is an action', gameId: mockGame.gameId };
+    serverSocket.on('send-changes', () => {
+      try {
+        expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
+        expect(mockIO.emit).toBeCalledWith('receive-changes', mockAction);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('send-changes', mockAction);
+  });
 
-  test('If any errors, debug will run', () => {
+  test('"get-game-by-id" client event triggers __sendGameToClient() with correct args'
+     + ' when ownerId === requesting playerId', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getGameById').mockImplementation(() => mockGame);
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => mockPlayer);
+    const sendGameToClientSpy = jest.spyOn(webSocketServer, '__sendGameToClient');
+    clientSocket.on('load-game', () => {
+      try {
+        expect(sendGameToClientSpy).toHaveBeenCalledWith(serverSocket, mockGame, mockPlayer.id);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('get-game-by-id', mockGame.gameId, mockPlayer.id);
+  });
 
+  test('"get-game-by-id" client event triggers __sendGameToClient() with correct args'
+     + ' when ownerId != requesting playerId, and also triggers'
+     + '"player-added-to-game" and "load-team-games" server events', (done) => {
+    const count = expectAssertions(2, done);
+    const teamGames = { teamGames: 'these are team games' };
+    jest.spyOn(DbWorker.prototype, 'getGameById').mockImplementation(() => mockGame);
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => addedPlayer);
+    jest.spyOn(DbWorker.prototype, 'addPlayerToGame').mockImplementation(() => ({
+      teamGames,
+      addedPlayer,
+    }));
+    const sendGameToClientSpy = jest.spyOn(webSocketServer, '__sendGameToClient');
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    clientSocket.on('load-game', () => {
+      try {
+        expect(sendGameToClientSpy).toHaveBeenCalledWith(serverSocket, mockGame, addedPlayer.id);
+        count();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.on('load-team-games', (arg) => {
+      try {
+        expect(arg).toStrictEqual(teamGames);
+        expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
+        expect(mockIO.emit).toBeCalledWith('player-added-to-game', addedPlayer, mockGame.gameId);
+        count();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('get-game-by-id', mockGame.gameId, addedPlayer.id);
+  });
+
+  test('"get-team-games client event triggers load-team-games server event', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => playerWithTeamGames);
+    clientSocket.on('load-team-games', (arg) => {
+      try {
+        expect(arg).toStrictEqual(playerWithTeamGames.games.team);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('get-team-games', playerWithTeamGames.id);
+  });
+
+  test('"user-signed-in" client event passed without gameId triggers addPlayerToDB()', (done) => {
+    const addPlayerSpy = jest.spyOn(DbWorker.prototype, 'addPlayerToDB')
+      .mockImplementation(() => mockPlayer);
+    clientSocket.on('player-exists', (arg) => {
+      try {
+        expect(arg).toStrictEqual(mockPlayer.id);
+        expect(addPlayerSpy).toHaveBeenCalledWith('mockIDToken');
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('user-signed-in', 'mockIDToken');
+  });
+
+  test('"user-signed-in" client event passed WITH gameId triggers addUserToGame()'
+     + ' and "player-added-to-game" event sent to all clients in game room', (done) => {
+    const addUserSpy = jest.spyOn(DbWorker.prototype, 'addUserToGame')
+      .mockImplementation(() => mockPlayer);
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    clientSocket.on('player-exists', (arg) => {
+      try {
+        expect(arg).toStrictEqual(mockPlayer.id);
+        expect(addUserSpy).toHaveBeenCalledWith('mockIDToken', 'mockGameId');
+        expect(ioToRoomSpy).toHaveBeenCalledWith('mockGameId');
+        expect(mockIO.emit).toBeCalledWith('player-added-to-game', mockPlayer, 'mockGameId');
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('user-signed-in', 'mockIDToken', 'mockGameId');
+  });
+
+  test('"verify-player-exists" client events triggers "player-not-found" server event'
+     + ' if no player found', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => null);
+    clientSocket.on('player-not-found', (arg) => {
+      try {
+        expect(arg).toStrictEqual('missingPlayer');
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('verify-player-exists', 'missingPlayer');
+  });
+
+  test('"verify-player-exists" client events triggers "player-exists" server event'
+  + ' if player found', (done) => {
+    jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => mockPlayer);
+    clientSocket.on('player-exists', (arg) => {
+      try {
+        expect(arg).toStrictEqual(mockPlayer.id);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('verify-player-exists', mockPlayer.id);
+  });
+
+  test('If there are any unexpected errors when server socket is processing client event,'
+     + ' console.error will output error', (done) => {
+    const mockError = new Error('This is a mock error!');
+    jest.spyOn(DbWorker.prototype, 'saveBoard').mockImplementation(() => {
+      throw mockError;
+    });
+    const errorLog = jest.spyOn(console, 'error');
+    serverSocket.on('save-board', () => {
+      try {
+        expect(errorLog).toHaveBeenCalledWith(mockError);
+        done();
+      } catch (e) {
+        done(e);
+      }
+    });
+    clientSocket.emit('save-board', mockGame.gameId, { board: true });
   });
 });

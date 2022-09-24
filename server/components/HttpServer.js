@@ -38,7 +38,6 @@ class HttpServer {
       } else {
         returnedUrl = `${redirectUrl}?token=${idToken}`;
       }
-      debug('Redirecting Google auth token back to front-end');
       res.redirect(returnedUrl);
     });
   }

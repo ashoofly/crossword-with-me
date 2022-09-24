@@ -31,6 +31,7 @@ https://crosswordwith.me
   * Google Domains CNAME and forwarding
 
 ## Development Tools
+* Create React App
 * Chrome React / Redux DevTools
 * nodemon
 
@@ -50,6 +51,8 @@ https://crosswordwith.me
   * Streaks, scores
 * Display when avatar icons exceed title bar
   * Allow custom colors
+* Chat Functionality
+  * To discuss game, etc. 
 * Allow anonymous players
   * Clear anonymous games from the database every night
 

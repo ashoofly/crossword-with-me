@@ -31,3 +31,9 @@ git push production master
 Go to https://floating-plains-76141.herokuapp.com/ to see UI
 
 Also available at crosswordwith.me.
+
+### View Server Logs
+```
+heroku logs
+```
+https://devcenter.heroku.com/articles/logging

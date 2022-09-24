@@ -4,7 +4,7 @@ nodemon index.js
 ```
 or 
 ```
-npm run devStart
+npm run dev
 ```
 
 # To update Cloud function

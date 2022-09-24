@@ -6,8 +6,8 @@
   "main": "server.js",
   "scripts": {
     "build": "npm install",
-    "dev": "NODE_ENV=development DEBUG=Server nodemon index.js",
-    "heroku-local": "NODE_ENV=heroku-local DEBUG=Server node index.js",
+    "dev": "NODE_ENV=development DEBUG=* nodemon index.js",
+    "heroku-local": "NODE_ENV=heroku-local DEBUG=* node index.js",
     "prod": "NODE_ENV=production node index.js",
     "help": "nodemon --help",
     "test": "jest"
