@@ -162,22 +162,6 @@ class PuzzleUtils {
     return { grid, clueDictionary };
   }
 
-  async saveNewPuzzle(puzzle) {
-    const { grid, clueDictionary } = PuzzleUtils.setupGameBoard(puzzle);
-    console.log('Saving puzzle to Firebase database');
-    const puzzleRef = this.db.ref(`puzzles/${puzzle.dow}`);
-    await puzzleRef.set({
-      ...puzzle,
-      gameGrid: grid,
-      clueDictionary,
-    });
-  }
-
-  async resetGameboard(dow) {
-    const puzzle = await this.dbListener.getObjectById('puzzles', dow);
-    this.saveNewPuzzle(puzzle);
-  }
-
   async cleanupOldGames() {
     const now = new Date();
     const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);

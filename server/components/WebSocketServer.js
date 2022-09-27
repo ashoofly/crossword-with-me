@@ -48,6 +48,19 @@ class WebSocketServer {
     this.__joinCurrentGameRoom(socket, gameId, playerId);
   }
 
+  // TODO: Write test
+  async __updateTeamGame(socket, game, playerId) {
+    const player = await this.dbWorker.getPlayerById(playerId);
+    const addedPlayer = await this.dbWorker.addPlayerToGame(player, game);
+    if (addedPlayer) {
+      this.io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
+    }
+    const teamGames = await this.dbWorker.addGameToPlayer(player, game);
+    if (teamGames) {
+      socket.emit('load-team-games', teamGames);
+    }
+  }
+
   initialize() {
     this.io.on('connection', async (socket) => {
       socket.on('save-board', async (gameId, board) => {
@@ -124,17 +137,10 @@ class WebSocketServer {
           const game = await this.dbWorker.getGameById(gameId);
           if (game) {
             const ownerId = game.players[0].playerId;
-            if (playerId === ownerId) {
-              this.__sendGameToClient(socket, game, playerId);
-            } else {
-              const player = await this.dbWorker.getPlayerById(playerId);
-              const { teamGames, addedPlayer } = await this.dbWorker.addPlayerToGame(player, game);
-              if (addedPlayer) {
-                this.io.to(game.gameId).emit('player-added-to-game', addedPlayer, game.gameId);
-                socket.emit('load-team-games', teamGames);
-              }
-              this.__sendGameToClient(socket, game, playerId);
+            if (playerId !== ownerId) {
+              this.__updateTeamGame(socket, game, playerId);
             }
+            this.__sendGameToClient(socket, game, playerId);
           } else {
             socket.emit('game-not-found');
           }
@@ -151,18 +157,18 @@ class WebSocketServer {
           console.error(e);
         }
       });
-      socket.on('user-signed-in', async (idToken, gameId) => {
+      socket.on('user-signed-in', async (idToken) => {
+        let user, player;
         try {
-          let player = null;
-          if (gameId) {
-            // add user to game if not already added
-            player = await this.dbWorker.addUserToGame(idToken, gameId);
-            // TODO: Check this change.
-            this.io.to(gameId).emit('player-added-to-game', player, gameId);
-          } else {
-            // add player to db if not already added
-            player = await this.dbWorker.addPlayerToDB(idToken);
-          }
+          user = await this.dbWorker.verifyFirebaseClientToken(idToken);
+        } catch (e) {
+          console.error(e);
+          socket.emit('server-auth-error');
+          return;
+        }
+        try {
+          // add player to db if not added yet
+          player = await this.dbWorker.findOrCreatePlayer(user);
           if (player) {
             socket.emit('player-exists', player.id);
           }

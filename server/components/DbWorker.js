@@ -50,13 +50,11 @@ class DbWorker {
    * - get-team-games
    * - verify-player-exists
    * @param {string} playerId
-   * @returns Promise that can resolve to player object
-   * @returns null if player not in db
+   * @returns Promise that can resolve to player object or null if player not in db
    */
   async getPlayerById(playerId) {
     return this.dbListener.getDbObjectByIdOnce('players', playerId);
   }
-
 
   /**
    * Called on receiving 'get-game-by-dow' Socket event from client
@@ -70,9 +68,9 @@ class DbWorker {
     const player = await this.getPlayerById(playerId);
     if (player) {
       const playerGames = player.games;
-      if (playerGames && playerGames.owner && playerGames.owner.dow) {
-        const gameId = playerGames.owner.dow;
-        const currentGame = await this.getGameIfCurrent(gameId, dow);
+      if (playerGames && playerGames.owner && playerGames.owner[dow]) {
+        const gameId = playerGames.owner[dow];
+        const currentGame = await this.__getGameIfCurrent(gameId, dow);
         if (currentGame) {
           return currentGame;
         }
@@ -103,19 +101,23 @@ class DbWorker {
     throw new Error(`Cannot find player ${playerId} in database`);
   }
 
-  /** 
+  /**
    * Called on receiving Socket event 'update-player-focus'
+   * @param {String} playerId
+   * @param {String} gameId
+   * @param {Object} currentFocus
    */
-   async updatePlayerFocus(playerId, gameId, currentFocus) {
+  async updatePlayerFocus(playerId, gameId, currentFocus) {
     const players = await this.__getGamePlayers(gameId);
-    if (players) {
-      // TODO: Change db schema so playerId is key
-      const index = players.findIndex((player) => player.playerId === playerId);
-      const playerRef = this.db.ref(`games/${gameId}/players/${index}`);
-      playerRef.update({
-        currentFocus,
-      });
+    // TODO: Change db schema so playerId is key
+    const index = players.findIndex((player) => player.playerId === playerId);
+    if (index === -1) {
+      throw new Error(`Cannot find player ${playerId} in game ${gameId}`);
     }
+    const playerRef = this.db.ref(`games/${gameId}/players/${index}`);
+    playerRef.update({
+      currentFocus,
+    });
   }
 
   /**
@@ -125,7 +127,7 @@ class DbWorker {
     const puzzles = await this.getPuzzles();
     if (puzzles) {
       const dates = {};
-      puzzles.forEach((dow) => {
+      Object.keys(puzzles).forEach((dow) => {
         dates[dow] = puzzles[dow].date;
       });
       return dates;
@@ -135,128 +137,123 @@ class DbWorker {
 
   /**
    * Called on receiving Socket event 'save-board'
-   * @param {*} gameId 
-   * @param {*} board 
+   * @param {String} gameId
+   * @param {Object} board
    */
-   async saveBoard(gameId, board) {
+  async saveBoard(gameId, board) {
     const gameRef = this.db.ref(`games/${gameId}`);
     gameRef.update({
       board,
     });
   }
 
-  /**** TODO: NOW START THE TOO VAGUELY NAMED FUNCTIONS. CHANGE NAMES. */
+  /**
+   * Called on receiving Socket event 'user-signed-in'
+   * @param {String} idToken
+   * @returns Promise resolved to Firebase user, or rejected if user can't be verified
+   */
+  async verifyFirebaseClientToken(idToken) {
+    const decodedToken = await this.auth.verifyIdToken(idToken);
+    const { uid } = decodedToken;
+    const user = await this.auth.getUser(uid);
+    return user;
+  }
 
   /**
-   * Called on Socket event 'user-signed-in'
-   * @param {*} firebaseClientToken 
-   * @param {*} gameId 
-   * @returns 
+   * Called on receiving Socket event 'user-signed-in'
+   * @param {FirebaseUser} user
+   * @returns Player object always, newly created if not found in DB
    */
-   async addUserToGame(firebaseClientToken, gameId) {
-    try {
-      const user = await this.verifyFirebaseClientToken(firebaseClientToken);
-      const player = await this.findOrCreatePlayer(user);
-      const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
-      this.addPlayerToGame(player, game);
+  async findOrCreatePlayer(user) {
+    if (!user) return null;
+    const player = await this.getPlayerById(user.uid);
+    if (player) {
       return player;
-    } catch (error) {
-      this.debug(error);
-      return null;
     }
+    return this.__createNewPlayer(user);
   }
 
   /**
-   * Called on Socket event 'user-signed-in'
-   * @param {*} firebaseClientToken 
-   * @returns 
+   * Called on receiving Socket event 'get-game-by-id' if player does not own game
+   * @param {Object} player
+   * @param {Object} game
+   * @returns GamePlayer object if successfully added to game, Null if Player was already part of Game
    */
-  async addPlayerToDB(firebaseClientToken) {
-    const user = await this.verifyFirebaseClientToken(firebaseClientToken);
-    try {
-      return await this.findOrCreatePlayer(user);
-    } catch (error) {
-      this.debug(error);
-      return null;
-    }
-  }
-
-
-  /**
-   * Called on receiving Socket event 'get-game-by-id'
-   * @param {*} player 
-   * @param {*} game 
-   * @returns 
-   */
-   async addPlayerToGame(player, game) {
-    let addedPlayer;
-    // update game object
+  async addPlayerToGame(player, game) {
     const { players, gameId } = game;
     // TODO: Change db schema so playerId is key
     if (players.find((p) => p.playerId === player.id)) {
-      this.debug(`Player ${player.id} already part of game ${gameId}.`);
-    } else {
-      const numCurrentPlayers = players.length;
-      addedPlayer = {
-        playerId: player.id,
-        photoURL: player.photoURL,
-        displayName: player.displayName,
-        owner: false,
-        color: GameConfig.defaultPlayerColors[numCurrentPlayers],
-        online: true,
-      };
-      players.push(addedPlayer);
-      const gameRef = this.db.ref(`games/${gameId}`);
-      await gameRef.update({
-        players,
-      });
-      this.debug('Sending player-added-to-game to game room');
+      return null;
     }
-
-    // update player object
-    const gameOwner = players[0].playerId;
-    if (gameOwner !== player.id) {
-      let playerGames = player.games;
-      if (!playerGames) {
-        playerGames = { owner: {}, team: {} };
-      }
-      let teamGames = playerGames.team;
-      if (!teamGames) {
-        teamGames = {};
-      }
-      if (!teamGames[gameId]) {
-        // get game owner for front-end to display
-        const ownerId = game.players[0].playerId;
-        const owner = await this.dbListener.getDbObjectByIdOnce('players', ownerId);
-
-        teamGames[gameId] = {
-          gameId,
-          friend: {
-            displayName: owner.displayName,
-            playerId: owner.id,
-          },
-          dow: game.dow,
-          date: game.date,
-        };
-
-        playerGames.team = teamGames;
-
-        this.debug(`Adding game ${gameId} to team game list for ${player.id}.`);
-        const playerRef = this.db.ref(`players/${player.id}`);
-        playerRef.update({
-          games: playerGames,
-        });
-      }
-    }
-    const teamGames = this.__getPlayerTeamGames(player.id);
-    return { teamGames, addedPlayer };
+    const numCurrentPlayers = players.length;
+    const addedPlayer = {
+      playerId: player.id,
+      photoURL: player.photoURL,
+      displayName: player.displayName,
+      owner: false,
+      color: GameConfig.defaultPlayerColors[numCurrentPlayers],
+      online: true,
+    };
+    players.push(addedPlayer);
+    const gameRef = this.db.ref(`games/${gameId}`);
+    await gameRef.update({
+      players,
+    });
+    return addedPlayer;
   }
 
   /**
-   * Called on receiving Socket event 'leave-game'
-   * @param {*} gameId 
-   * @param {*} playerId 
-   * @param {*} online 
+   * Called on receiving Socket event 'get-game-by-id' if player does not own game
+   * @param {Object} player
+   * @param {Object} game
+   * @returns Player team games if successfully added game, Null if game was already part of games
+   */
+  async addGameToPlayer(player, game) {
+    const { players, gameId } = game;
+    const gameOwner = players[0].playerId;
+
+    // return if player already owns game
+    if (gameOwner === player.id) return null;
+
+    let playerGames = player.games;
+    if (!playerGames) {
+      playerGames = { owner: {}, team: {} };
+    }
+    let teamGames = playerGames.team;
+    if (!teamGames) {
+      teamGames = {};
+    }
+    // return if game already exists in player team game list
+    if (teamGames[gameId]) return null;
+
+    // get game owner info for front-end to display
+    const ownerId = game.players[0].playerId;
+    const owner = await this.getPlayerById(ownerId);
+
+    teamGames[gameId] = {
+      gameId,
+      friend: {
+        displayName: owner.displayName,
+        playerId: owner.id,
+      },
+      dow: game.dow,
+      date: game.date,
+    };
+
+    playerGames.team = teamGames;
+
+    const playerRef = this.db.ref(`players/${player.id}`);
+    await playerRef.update({
+      games: playerGames,
+    });
+    return this.__getPlayerTeamGames(player.id);
+  }
+
+  /**
+   * Called on receiving Socket event 'leave-game' and when joining any game
+   * @param {String} gameId
+   * @param {String} playerId
+   * @param {Boolean} online
    */
   async updateGameOnlineStatusForPlayer(gameId, playerId, online) {
     const players = await this.__getGamePlayers(gameId);
@@ -264,37 +261,38 @@ class DbWorker {
       // TODO: Change db schema so playerId is key
       const index = players.findIndex((player) => player.playerId === playerId);
       if (index !== -1) {
-        this.debug(`Updating ${playerId} status for ${gameId} to ${online ? 'online' : 'offline'}`);
         const playerRef = this.db.ref(`games/${gameId}/players/${index}`);
         playerRef.update({
           online,
         });
         if (!online) {
-          // remove cursor from board
-          const player = players[index];
-          const playerFocus = player.currentFocus;
-          if (playerFocus) {
-            const game = await this.getGameById(gameId);
-            const { board } = game;
-            playerFocus.word.forEach((square) => {
-              if (board[square].activeWordColors) {
-                board[square].activeWordColors = board[square].activeWordColors.filter(
-                  (color) => color !== player.color,
-                );
-              }
-              if (board[square].activeLetterColors) {
-                board[square].activeLetterColors = board[square].activeLetterColors.filter(
-                  (color) => color !== player.color,
-                );
-              }
-            });
-            const gameRef = this.db.ref(`games/${gameId}`);
-            gameRef.update({
-              board,
-            });
-          }
+          this.__removeCursorFromBoard(gameId, players[index]);
         }
       }
+    }
+  }
+
+  async __removeCursorFromBoard(gameId, player) {
+    const playerFocus = player.currentFocus;
+    if (playerFocus) {
+      const game = await this.getGameById(gameId);
+      const { board } = game;
+      playerFocus.word.forEach((square) => {
+        if (board[square].activeWordColors) {
+          board[square].activeWordColors = board[square].activeWordColors.filter(
+            (color) => color !== player.color,
+          );
+        }
+        if (board[square].activeLetterColors) {
+          board[square].activeLetterColors = board[square].activeLetterColors.filter(
+            (color) => color !== player.color,
+          );
+        }
+      });
+      const gameRef = this.db.ref(`games/${gameId}`);
+      gameRef.update({
+        board,
+      });
     }
   }
 
@@ -304,16 +302,16 @@ class DbWorker {
    * @returns newly created player
    */
   async __createNewPlayer(user) {
-    if (!user) return;
+    if (!user) return null;
     const playerId = user.uid;
     const playerRef = this.db.ref(`players/${playerId}`);
-    playerRef.set({
+    await playerRef.set({
       id: playerId,
       displayName: user.displayName,
       email: user.email,
       photoURL: user.photoURL,
     });
-    this.dbListener.getDbObjectByIdOnce('players', playerId);
+    return this.getPlayerById(playerId);
   }
 
   /**
@@ -374,8 +372,7 @@ class DbWorker {
    * Returns game for the day-of-the-week if current
    * @param {string} gameId
    * @param {string} dow
-   * @returns Game object if game is current
-   * @returns null if Game is not current
+   * @returns Game object if game is current, null if Game is not current
    */
   async __getGameIfCurrent(gameId, dow) {
     const currentPuzzle = await this.getPuzzleById(dow);
@@ -399,7 +396,7 @@ class DbWorker {
 
     // create new game
     const gameId = uuidv4();
-    const newGame = await this.createNewGame(gameId, dow, playerId);
+    const newGame = await this.__createNewGame(gameId, dow, playerId);
 
     if (newGame) {
       // update player object
@@ -426,29 +423,6 @@ class DbWorker {
     return newGame;
   }
 
-  async __verifyFirebaseClientToken(idToken) {
-    try {
-      const decodedToken = await this.auth.verifyIdToken(idToken);
-      const { uid } = decodedToken;
-      const user = await this.auth.getUser(uid);
-      return user;
-    } catch (error) {
-      this.debug(error);
-      return null;
-    }
-  }
-
-
-  async __findOrCreatePlayer(user) {
-    if (user === null) return null;
-    const player = await this.dbListener.getDbObjectByIdOnce('players', user.uid);
-    if (player) {
-      return player;
-    }
-    return this.createNewPlayer(user);
-  }
-
-
   async __getGamePlayers(gameId) {
     const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
     if (game.players) {
@@ -458,7 +432,7 @@ class DbWorker {
   }
 
   async __getPlayerTeamGames(playerId) {
-    const player = await this.dbListener.getDbObjectByIdOnce('players', playerId);
+    const player = await this.getPlayerById(playerId);
     if (player.games && player.games.team) {
       return player.games.team;
     }

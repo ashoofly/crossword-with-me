@@ -12,21 +12,42 @@ const addedPlayer = {
   photoURL: 'https://examplephoto2.com',
 };
 
+const playerNoGames = {
+  id: 'playerNoGames',
+};
+
+const playerDifTeamGame = {
+  id: 'playerDifTeamGame',
+  games: {
+    team: {
+      difTeamGame: {
+        date: '9/15/2022',
+        dow: 'Thursday',
+        friend: {
+          displayName: 'Me My',
+          playerId: 'difTeamGamePlayer',
+        },
+        gameId: 'difTeamGame',
+      },
+    },
+  },
+};
+
 const onlyTeamPlayer = {
   displayName: 'Best Bud',
   email: 'bestbud@gmail.com',
-  id: 'abc123',
+  id: 'rebelplayer123',
   photoURL: 'https://examplephoto.com',
   games: {
     team: {
-      alsdjfasdf: {
+      'e27dd721-a9fd-4f95-97ae-b4bfa939e7df': {
         date: '9/15/2022',
         dow: 'Thursday',
         friend: {
           displayName: 'Me My',
           playerId: 'lskafjldf3',
         },
-        gameId: 'sflaskdfksjdfad',
+        gameId: 'e27dd721-a9fd-4f95-97ae-b4bfa939e7df',
       },
     },
   },
@@ -35,11 +56,23 @@ const onlyTeamPlayer = {
 const ownsMondayGamePlayer = {
   displayName: 'Best Bud',
   email: 'bestbud@gmail.com',
-  id: 'abc123',
+  id: 'ownsMondayGamePlayer',
   photoURL: 'https://examplephoto.com',
   games: {
     owner: {
       Monday: 'alsdkfjalksdjf',
+    },
+  },
+};
+
+const ownsFridayGamePlayer = {
+  displayName: 'Best Bud',
+  email: 'bestbud@gmail.com',
+  id: 'ownsFridayGamePlayer',
+  photoURL: 'https://examplephoto.com',
+  games: {
+    owner: {
+      Friday: 'alsdkfjalksdjf',
     },
   },
 };
@@ -49,4 +82,7 @@ module.exports = {
   addedPlayer,
   onlyTeamPlayer,
   ownsMondayGamePlayer,
+  ownsFridayGamePlayer,
+  playerNoGames,
+  playerDifTeamGame,
 };

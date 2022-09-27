@@ -10,18 +10,16 @@ let auth = null;
 let user = null;
 const logger = new Logger("Auth");
 
-function handleCredentialResponse(googleToken, auth, socket, gameId) {
+function handleCredentialResponse(googleToken, auth, socket) {
     // Build Firebase credential with the Google ID token.
   const credential = GoogleAuthProvider.credential(googleToken);
 
   // Sign in with credential from the Google user.
   signInWithCredential(auth, credential).then(result => {
     user = result.user;
-    // Send Firebase token to server so player can be 
-    // added to database or relevant game if needed
+    // Send Firebase token to server so player can be added to database if needed
     auth.currentUser.getIdToken(true).then(function(firebaseToken) {
-      logger.log(`Send event: user-signed-in ${gameId ? `to ${gameId}` : ''}`);
-      socket.emit('user-signed-in', firebaseToken, gameId);
+      socket.emit('user-signed-in', firebaseToken);
 
     }).catch(function(error) {
       // Handle error

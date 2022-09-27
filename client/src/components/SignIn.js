@@ -32,7 +32,7 @@ export default function JoinGame(props) {
     
     try {
       if (token) {
-        handleCredentialResponse(token, auth, socket, gameId);
+        handleCredentialResponse(token, auth, socket);
       }
     } catch (error) {
       logger.log(error);

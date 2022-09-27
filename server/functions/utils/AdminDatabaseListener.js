@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 /**
  * This file needs to be in functions/ directory for Firebase to be able to deploy as source code.
  * Firebase Admin SDK Database API: https://firebase.google.com/docs/database/admin/start
