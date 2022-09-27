@@ -3,15 +3,24 @@
 const AdminDatabaseListener = require('../functions/utils/AdminDatabaseListener');
 const DbWorker = require('../components/DbWorker');
 const mockPuzzle = require('./mocks/mockPuzzle');
-const { newPlayer, addedPlayer, onlyTeamPlayer, ownsMondayGamePlayer, ownsFridayGamePlayer, playerNoGames, playerDifTeamGame } = require('./mocks/mockPlayer');
+const {
+  newPlayer,
+  addedPlayer,
+  onlyTeamPlayer,
+  ownsMondayGamePlayer,
+  ownsFridayGamePlayer,
+  playerNoGames,
+  playerDifTeamGame,
+} = require('./mocks/mockPlayer');
 const mockGame = require('./mocks/mockGame');
 const mockGamePlayers = require('./mocks/mockGamePlayers');
 const mockPlayerFocus = require('./mocks/mockPlayerFocus');
 const mockPuzzles = require('./mocks/mockPuzzles');
 const mockMultiplayerGame = require('./mocks/mockMultiplayerGame');
+const mockGameWithActiveColors = require('./mocks/mockGameWithActiveColors');
+const mockGameWithActiveColorsExpected = require('./mocks/mockGameWithActiveColorsExpected');
 const firebaseAdmin = require('../firebase');
 const PuzzleUtils = require('../functions/utils/PuzzleUtils');
-const { expect, describe, test } = require('@jest/globals');
 
 jest.mock('../functions/utils/AdminDatabaseListener');
 jest.mock('../firebase', () => {
@@ -61,7 +70,7 @@ describe('database worker functionality', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks().restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('getXbyId', () => {
@@ -262,10 +271,11 @@ describe('database worker functionality', () => {
     });
 
     test('If player does not have any games, correctly update player & return team games', async () => {
+      const copyOfPlayerNoGames = JSON.parse(JSON.stringify(playerNoGames));
       jest.spyOn(dbWorker, 'getPlayerById').mockImplementation(() => newPlayer);
       const getTeamGamesSpy = jest.spyOn(dbWorker, '__getPlayerTeamGames').mockImplementation(() => {});
-      await dbWorker.addGameToPlayer(playerNoGames, mockMultiplayerGame);
-      const expectedRefPath = `players/${playerNoGames.id}`;
+      await dbWorker.addGameToPlayer(copyOfPlayerNoGames, mockMultiplayerGame);
+      const expectedRefPath = `players/${copyOfPlayerNoGames.id}`;
       const expectedGames = {
         owner: {},
         team: {
@@ -284,14 +294,15 @@ describe('database worker functionality', () => {
       expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
         games: expectedGames,
       });
-      expect(getTeamGamesSpy).toHaveBeenCalledWith(playerNoGames.id);
+      expect(getTeamGamesSpy).toHaveBeenCalledWith(copyOfPlayerNoGames.id);
     });
 
     test('If player does not have any team games, update player & return team games', async () => {
+      const copyOfMondayGamePlayer = JSON.parse(JSON.stringify(ownsMondayGamePlayer));
       jest.spyOn(dbWorker, 'getPlayerById').mockImplementation(() => newPlayer);
       const getTeamGamesSpy = jest.spyOn(dbWorker, '__getPlayerTeamGames').mockImplementation(() => {});
-      await dbWorker.addGameToPlayer(ownsMondayGamePlayer, mockMultiplayerGame);
-      const expectedRefPath = `players/${ownsMondayGamePlayer.id}`;
+      await dbWorker.addGameToPlayer(copyOfMondayGamePlayer, mockMultiplayerGame);
+      const expectedRefPath = `players/${copyOfMondayGamePlayer.id}`;
       const expectedGames = {
         owner: {
           Monday: 'alsdkfjalksdjf',
@@ -312,14 +323,15 @@ describe('database worker functionality', () => {
       expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
         games: expectedGames,
       });
-      expect(getTeamGamesSpy).toHaveBeenCalledWith(ownsMondayGamePlayer.id);
+      expect(getTeamGamesSpy).toHaveBeenCalledWith(copyOfMondayGamePlayer.id);
     });
 
     test('If player does not have specific team game, update player and return team games', async () => {
+      const copyDifTeamGamePlayer = JSON.parse(JSON.stringify(playerDifTeamGame));
       jest.spyOn(dbWorker, 'getPlayerById').mockImplementation(() => newPlayer);
       const getTeamGamesSpy = jest.spyOn(dbWorker, '__getPlayerTeamGames').mockImplementation(() => {});
-      await dbWorker.addGameToPlayer(playerDifTeamGame, mockMultiplayerGame);
-      const expectedRefPath = `players/${playerDifTeamGame.id}`;
+      await dbWorker.addGameToPlayer(copyDifTeamGamePlayer, mockMultiplayerGame);
+      const expectedRefPath = `players/${copyDifTeamGamePlayer.id}`;
       const expectedGames = {
         team: {
           difTeamGame: {
@@ -346,7 +358,7 @@ describe('database worker functionality', () => {
       expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
         games: expectedGames,
       });
-      expect(getTeamGamesSpy).toHaveBeenCalledWith(playerDifTeamGame.id);
+      expect(getTeamGamesSpy).toHaveBeenCalledWith(copyDifTeamGamePlayer.id);
     });
   });
 
@@ -375,64 +387,153 @@ describe('database worker functionality', () => {
     });
   });
 
-  test('[__getGameIfCurrent] Dbworker returns game if current', async () => {
-    mockDbListener.getDbObjectByIdOnce.mockImplementation((collection, id) => {
-      if (collection === 'puzzles') {
-        return Promise.resolve({ dow: id, date: '09/20/2022' });
-      }
-      if (collection === 'games') {
-        return Promise.resolve({ gameId: id, date: '09/20/2022' });
-      }
-      return Promise.resolve(null);
+  describe('__removeCursorFromBoard', () => {
+    test('Board active colors updated correctly', async () => {
+      jest.spyOn(dbWorker, 'getGameById').mockImplementation(() => mockGameWithActiveColors);
+      await dbWorker.__removeCursorFromBoard(
+        mockGameWithActiveColors.gameId,
+        mockGameWithActiveColors.players[0]);
+      const expectedRefPath = `games/${mockGameWithActiveColors.gameId}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
+        board: mockGameWithActiveColorsExpected.board,
+      });
     });
-    expect(await dbWorker.__getGameIfCurrent('789', 'Tuesday'))
-      .toStrictEqual({ gameId: '789', date: '09/20/2022' });
   });
 
-  test('[__getGameIfCurrent] Dbworker returns null if game not current', async () => {
-    mockDbListener.getDbObjectByIdOnce.mockImplementation((collection, id) => {
-      if (collection === 'puzzles') {
-        return Promise.resolve({ dow: id, date: '09/20/2022' });
-      }
-      if (collection === 'games') {
-        return Promise.resolve({ gameId: id, date: '09/13/2022' });
-      }
-      return Promise.resolve(null);
+  describe('__createNewPlayer', () => {
+    test('Saves new player object to db from Firebase user info', async () => {
+      const getPlayerFromDbSpy = jest.spyOn(dbWorker, 'getPlayerById').mockImplementation(() => {});
+      const firebaseUser = {
+        uid: 'uidDemo123',
+        displayName: 'skunkie',
+        email: 'skunkie@gmail.com',
+        photoURL: 'https://photourl.com',
+      };
+      await dbWorker.__createNewPlayer(firebaseUser);
+      const expectedRefPath = `players/${firebaseUser.uid}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).set).toHaveBeenCalledWith({
+        id: 'uidDemo123',
+        displayName: 'skunkie',
+        email: 'skunkie@gmail.com',
+        photoURL: 'https://photourl.com',
+      });
+      expect(getPlayerFromDbSpy).toHaveBeenCalledWith(firebaseUser.uid);
     });
-    expect(await dbWorker.__getGameIfCurrent('789', 'Tuesday'))
-      .toStrictEqual(null);
   });
 
-  test('[__createNewGame] Dbworker saves new game at new db ref', async () => {
-    await dbWorker.__createNewGame(mockGame.gameId, mockPuzzle.dow, newPlayer.id);
-    expect(db.ref).toHaveBeenCalledWith(`games/${mockGame.gameId}`);
-    expect(db.ref(`games/${mockGame.gameId}`).set).toHaveBeenCalledWith(mockGame);
+  describe('__createNewGame', () => {
+    test('Dbworker saves new game at new db ref', async () => {
+      await dbWorker.__createNewGame(mockGame.gameId, mockPuzzle.dow, newPlayer.id);
+      expect(db.ref).toHaveBeenCalledWith(`games/${mockGame.gameId}`);
+      expect(db.ref(`games/${mockGame.gameId}`).set).toHaveBeenCalledWith(mockGame);
+    });
   });
 
-  test('[__createGameAndUpdatePlayer] Dbworker adds game to player object '
-        + 'after creating player\'s game', async () => {
-    const createNewGameMock = jest.spyOn(DbWorker.prototype, '__createNewGame')
-      .mockImplementation(() => mockGame);
-    await dbWorker.__createGameAndUpdatePlayer(newPlayer, 'Friday');
-    expect(createNewGameMock).toHaveBeenCalledWith(expect.any(String), 'Friday', 'abc123');
-    expect(db.ref).toHaveBeenCalledWith('players/abc123');
-    expect(db.ref('players/abc123').update).toHaveBeenCalledWith({
-      games: {
-        owner: {
-          Friday: mockGame.gameId,
+  describe('__getGameIfCurrent', () => {
+    test('Dbworker returns game if current', async () => {
+      mockDbListener.getDbObjectByIdOnce.mockImplementation((collection, id) => {
+        if (collection === 'puzzles') {
+          return Promise.resolve({ dow: id, date: '09/20/2022' });
+        }
+        if (collection === 'games') {
+          return Promise.resolve({ gameId: id, date: '09/20/2022' });
+        }
+        return Promise.resolve(null);
+      });
+      expect(await dbWorker.__getGameIfCurrent('789', 'Tuesday'))
+        .toStrictEqual({ gameId: '789', date: '09/20/2022' });
+    });
+
+    test('Dbworker returns null if game not current', async () => {
+      mockDbListener.getDbObjectByIdOnce.mockImplementation((collection, id) => {
+        if (collection === 'puzzles') {
+          return Promise.resolve({ dow: id, date: '09/20/2022' });
+        }
+        if (collection === 'games') {
+          return Promise.resolve({ gameId: id, date: '09/13/2022' });
+        }
+        return Promise.resolve(null);
+      });
+      expect(await dbWorker.__getGameIfCurrent('789', 'Tuesday'))
+        .toStrictEqual(null);
+    });
+  });
+
+  describe('__createGameAndUpdatePlayer', () => {
+    test('Dbworker throws error if we can\'t find newly created game', async () => {
+      jest.spyOn(DbWorker.prototype, '__createNewGame').mockImplementation(() => null);
+      expect.assertions(1);
+      try {
+        await dbWorker.__createGameAndUpdatePlayer(newPlayer, 'Friday');
+      } catch (e) {
+        expect(e.message).toMatch(/Will not add game to player/);
+      }
+    });
+
+    test('If player does not have any games, correctly update player & return new game', async () => {
+      jest.spyOn(dbWorker, '__createNewGame').mockImplementation(() => mockGame);
+      const result = await dbWorker.__createGameAndUpdatePlayer(newPlayer, 'Friday');
+      const expectedRefPath = `players/${newPlayer.id}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
+        games: {
+          owner: {
+            Friday: mockGame.gameId,
+          },
         },
-      },
+      });
+      expect(result).toStrictEqual(mockGame);
     });
-  });
 
-  test('[__createGameAndUpdatePlayer] Dbworker throws error '
-       + 'if we can\'t find newly created game', async () => {
-    jest.spyOn(DbWorker.prototype, '__createNewGame').mockImplementation(() => null);
-    expect.assertions(1);
-    try {
-      await dbWorker.__createGameAndUpdatePlayer(newPlayer, 'Friday');
-    } catch (e) {
-      expect(e.message).toMatch(/Will not add game to player/);
-    }
+    test('If player does not have any owned games, update player & return new game', async () => {
+      jest.spyOn(dbWorker, '__createNewGame').mockImplementation(() => mockGame);
+      const result = await dbWorker.__createGameAndUpdatePlayer(onlyTeamPlayer, 'Friday');
+      const expectedRefPath = `players/${onlyTeamPlayer.id}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
+        games: {
+          owner: {
+            Friday: mockGame.gameId,
+          },
+          team: onlyTeamPlayer.games.team,
+        },
+      });
+      expect(result).toStrictEqual(mockGame);
+    });
+
+    test('If player has other dow game, update player with new game & return new game', async () => {
+      const copyOfMondayGamePlayer = JSON.parse(JSON.stringify(ownsMondayGamePlayer));
+      jest.spyOn(dbWorker, '__createNewGame').mockImplementation(() => mockGame);
+      const result = await dbWorker.__createGameAndUpdatePlayer(copyOfMondayGamePlayer, 'Friday');
+      const expectedRefPath = `players/${copyOfMondayGamePlayer.id}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
+        games: {
+          owner: {
+            Monday: copyOfMondayGamePlayer.games.owner.Monday,
+            Friday: mockGame.gameId,
+          },
+        },
+      });
+      expect(result).toStrictEqual(mockGame);
+    });
+
+    test('If player has old dow game, update player with new game & return new game', async () => {
+      const copyOfFridayGamePlayer = JSON.parse(JSON.stringify(ownsFridayGamePlayer));
+      jest.spyOn(dbWorker, '__createNewGame').mockImplementation(() => mockGame);
+      const result = await dbWorker.__createGameAndUpdatePlayer(copyOfFridayGamePlayer, 'Friday');
+      const expectedRefPath = `players/${copyOfFridayGamePlayer.id}`;
+      expect(db.ref).toHaveBeenCalledWith(expectedRefPath);
+      expect(db.ref(expectedRefPath).update).toHaveBeenCalledWith({
+        games: {
+          owner: {
+            Friday: mockGame.gameId,
+          },
+        },
+      });
+      expect(result).toStrictEqual(mockGame);
+    });
   });
 });

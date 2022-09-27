@@ -48,7 +48,6 @@ class WebSocketServer {
     this.__joinCurrentGameRoom(socket, gameId, playerId);
   }
 
-  // TODO: Write test
   async __updateTeamGame(socket, game, playerId) {
     const player = await this.dbWorker.getPlayerById(playerId);
     const addedPlayer = await this.dbWorker.addPlayerToGame(player, game);

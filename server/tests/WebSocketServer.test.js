@@ -312,40 +312,40 @@ describe('socket.io server functionality', () => {
     clientSocket.emit('get-game-by-id', mockGame.gameId, addedPlayer.id);
   });
 
-  // TODO:
-  test('__updateTeamGame() triggers "load-team-games" and "player-added-to-game" events when needed', () => {
-    // const count = expectAssertions(2, done);
-    // const teamGames = { teamGames: 'these are team games' };
-    // jest.spyOn(DbWorker.prototype, 'getGameById').mockImplementation(() => mockGame);
-    // jest.spyOn(DbWorker.prototype, 'getPlayerById').mockImplementation(() => addedPlayer);
-    // jest.spyOn(DbWorker.prototype, 'addPlayerToGame').mockImplementation(() => ({
-    //   teamGames,
-    //   addedPlayer,
-    // }));
-    // const sendGameToClientSpy = jest.spyOn(webSocketServer, '__sendGameToClient');
-    // const mockIO = {
-    //   emit: jest.fn().mockReturnThis(),
-    // };
-    // const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
-    // clientSocket.on('load-game', () => {
-    //   try {
-    //     expect(sendGameToClientSpy).toHaveBeenCalledWith(serverSocket, mockGame, addedPlayer.id);
-    //     count();
-    //   } catch (e) {
-    //     done(e);
-    //   }
-    // });
-    // clientSocket.on('load-team-games', (arg) => {
-    //   try {
-    //     expect(arg).toStrictEqual(teamGames);
-    //     expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
-    //     expect(mockIO.emit).toBeCalledWith('player-added-to-game', addedPlayer, mockGame.gameId);
-    //     count();
-    //   } catch (e) {
-    //     done(e);
-    //   }
-    // });
-    // clientSocket.emit('get-game-by-id', mockGame.gameId, addedPlayer.id);
+  test('__updateTeamGame() triggers "load-team-games" and "player-added-to-game" events', async () => {
+    jest.spyOn(dbWorker, 'getPlayerById').mockImplementation(() => addedPlayer);
+    const expectedGamePlayerObject = {
+      playerId: 'xyz987',
+      photoURL: 'https://examplephoto2.com',
+      displayName: 'Second Pal',
+      owner: false,
+      color: 'cyan',
+      online: true,
+    };
+    jest.spyOn(dbWorker, 'addPlayerToGame').mockImplementation(() => expectedGamePlayerObject);
+    const mockTeamGames = {
+      'e27dd721-a9fd-4f95-97ae-b4bfa939e7df': {
+        gameId: 'e27dd721-a9fd-4f95-97ae-b4bfa939e7df',
+        friend: {
+          displayName: 'Best Bud',
+          playerId: 'abc123',
+        },
+        dow: 'Friday',
+        date: '9/9/2022',
+      },
+    };
+    jest.spyOn(dbWorker, 'addGameToPlayer').mockImplementation(() => mockTeamGames);
+    const serverSocketEmitSpy = jest.spyOn(serverSocket, 'emit').mockImplementation(() => {});
+    const mockIO = {
+      emit: jest.fn().mockReturnThis(),
+    };
+    const ioToRoomSpy = jest.spyOn(webSocketServer.io, 'to').mockImplementation(() => mockIO);
+    await webSocketServer.__updateTeamGame(serverSocket, mockGame, addedPlayer.id);
+    expect(ioToRoomSpy).toHaveBeenCalledWith(mockGame.gameId);
+    expect(mockIO.emit).toBeCalledWith('player-added-to-game',
+      expectedGamePlayerObject,
+      mockGame.gameId);
+    expect(serverSocketEmitSpy).toHaveBeenCalledWith('load-team-games', mockTeamGames);
   });
 
   test('"get-team-games client event triggers load-team-games server event', (done) => {
@@ -363,6 +363,7 @@ describe('socket.io server functionality', () => {
 
   test('"user-signed-in" client event triggers "auth-error" server event'
      + ' if server cannot verify client token', (done) => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(DbWorker.prototype, 'verifyFirebaseClientToken').mockImplementation(
       () => Promise.reject(new Error('Mock auth error thrown')));
     clientSocket.on('server-auth-error', done);
@@ -419,7 +420,7 @@ describe('socket.io server functionality', () => {
     jest.spyOn(DbWorker.prototype, 'saveBoard').mockImplementation(() => {
       throw mockError;
     });
-    const errorLog = jest.spyOn(console, 'error');
+    const errorLog = jest.spyOn(console, 'error').mockImplementation(() => {});
     serverSocket.on('save-board', () => {
       try {
         expect(errorLog).toHaveBeenCalledWith(mockError);

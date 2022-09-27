@@ -272,6 +272,11 @@ class DbWorker {
     }
   }
 
+  /**
+   * Called by updateGameOnlineStatusForPlayer() method if player going offline
+   * @param {String} gameId
+   * @param {Object} player
+   */
   async __removeCursorFromBoard(gameId, player) {
     const playerFocus = player.currentFocus;
     if (playerFocus) {
@@ -401,6 +406,7 @@ class DbWorker {
     if (newGame) {
       // update player object
       let playerGames = player.games;
+
       if (!playerGames) {
         playerGames = {};
       }
@@ -423,14 +429,21 @@ class DbWorker {
     return newGame;
   }
 
+  /**
+   * Get players in the game
+   * @param {String} gameId
+   * @returns GamePlayers object
+   */
   async __getGamePlayers(gameId) {
-    const game = await this.dbListener.getDbObjectByIdOnce('games', gameId);
-    if (game.players) {
-      return game.players;
-    }
-    return null;
+    const game = await this.getGameById(gameId);
+    return game.players;
   }
 
+  /**
+   * Get team games from player
+   * @param {String} playerId
+   * @returns TeamGames object from Player
+   */
   async __getPlayerTeamGames(playerId) {
     const player = await this.getPlayerById(playerId);
     if (player.games && player.games.team) {

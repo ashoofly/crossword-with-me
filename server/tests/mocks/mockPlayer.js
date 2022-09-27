@@ -72,7 +72,7 @@ const ownsFridayGamePlayer = {
   photoURL: 'https://examplephoto.com',
   games: {
     owner: {
-      Friday: 'alsdkfjalksdjf',
+      Friday: 'jgkdlsjglkajgl',
     },
   },
 };

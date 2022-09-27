@@ -1,10 +1,10 @@
 module.exports = {
-  orientation: 'down',
-  square: 3,
+  orientation: 'across',
+  square: 47,
   word: [
-    3,
-    18,
-    33,
+    45,
+    46,
+    47,
     48,
   ],
 };
