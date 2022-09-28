@@ -26,7 +26,6 @@ export default memo((props) => {
   const focused = useSelector(state => state.pov.focused);
   const textColor = useSelector(state => state.game.board[id].color);
   const players = useSelector(state => state.game.players);
-  const playerColor = players.find(player => player.playerId === user.uid).color;
   const dispatch = useDispatch();
   const logger = new Logger("Square");
   const gameId = useSelector(state => state.game.gameId);

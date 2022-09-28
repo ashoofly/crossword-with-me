@@ -1,34 +1,30 @@
-/* eslint-disable no-console */
-/* eslint-disable no-underscore-dangle */
-import dotenv from 'dotenv';
-import Debug from 'debug';
-import HttpServer from './components/HttpServer';
-import DbWorker from './components/DbWorker';
-import WebSocketServer from './components/WebSocketServer';
-
-const firebaseAdmin = require('./firebase');
-const AdminDatabaseListener = require('./functions/utils/AdminDatabaseListener');
+// const dotenv = require('dotenv';
+const Debug = require('debug');
+const ExpressServer = require('./components/ExpressServer.js');
+const DbWorker = require('./components/DbWorker.js');
+const WebSocketServer = require('./components/WebSocketServer.js');
+const firebaseAdmin = require('./firebase.js');
+const AdminDatabaseListener = require('./functions/utils/AdminDatabaseListener.js');
 
 try {
+  // if (process.env.NODE_ENV === 'development') {
+  //   dotenv.config({ path: '../.env.local' });
+  // } else if (process.env.NODE_ENV === 'heroku-local') {
+  //   dotenv.config({ path: '../.env.heroku-local' });
+  // }
   const debug = Debug('Server');
-  if (process.env.NODE_ENV === 'development') {
-    dotenv.config({ path: '../.env.local' });
-  } else if (process.env.NODE_ENV === 'heroku-local') {
-    dotenv.config({ path: '../.env.heroku-local' });
-  }
-
   const auth = firebaseAdmin.auth();
   const db = firebaseAdmin.database();
   const dbListener = new AdminDatabaseListener(db);
   const dbWorker = new DbWorker(db, auth, dbListener);
 
-  const httpServer = new HttpServer();
-  const io = new WebSocketServer(httpServer, dbWorker);
+  const expressServer = new ExpressServer();
+  const io = new WebSocketServer(expressServer.httpServer, dbWorker);
   io.initialize();
 
   const port = process.env.NODE_ENV === 'development'
     ? process.env.REACT_APP_DEV_SERVER_PORT : process.env.PORT;
-  httpServer.listen(port);
+  expressServer.httpServer.listen(port);
   debug(`Server listening on port ${port}`);
 } catch (error) {
   console.log(error);

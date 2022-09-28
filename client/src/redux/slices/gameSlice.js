@@ -117,7 +117,8 @@ export const gameSlice = createSlice({
     'updatePlayerFocus': (state, action) => {
       if (action.payload.gameId === state.gameId) {
         let playerInfo = state.players.find(player => player.playerId === action.payload.playerId);
-
+        if (!playerInfo) return;
+        
         let playerColor = playerInfo.color;
         let playerFocus = playerInfo.currentFocus;
         

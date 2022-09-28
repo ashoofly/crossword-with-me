@@ -1,4 +1,4 @@
-class GameConfig {
+module.exports = class GameConfig {
   static defaultPlayerColors = [
     'blue',
     'magenta',
@@ -9,6 +9,4 @@ class GameConfig {
     'orange',
     'yellow',
   ];
-}
-
-module.exports = GameConfig;
+};

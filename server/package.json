@@ -1,12 +1,11 @@
 {
   "name": "cwf-server",
-  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
   "scripts": {
     "build": "npm install",
-    "dev": "NODE_ENV=development DEBUG=* nodemon index.js",
+    "dev": "NODE_ENV=development DEBUG=Server,ExpressServer,WebSocketServer,DbWorker nodemon index.js",
     "heroku-local": "NODE_ENV=heroku-local DEBUG=* node index.js",
     "prod": "NODE_ENV=production node index.js",
     "help": "nodemon --help",

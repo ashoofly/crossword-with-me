@@ -1,10 +1,9 @@
-/* eslint-disable no-underscore-dangle */
 const Debug = require('debug');
 const { v4: uuidv4 } = require('uuid');
 const PuzzleUtils = require('../functions/utils/PuzzleUtils');
 const GameConfig = require('./GameConfig');
 
-class DbWorker {
+module.exports = class DbWorker {
   constructor(db, auth, dbListener) {
     this.db = db;
     this.auth = auth;
@@ -451,6 +450,4 @@ class DbWorker {
     }
     return null;
   }
-}
-
-module.exports = DbWorker;
+};

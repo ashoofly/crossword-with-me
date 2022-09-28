@@ -1,14 +1,16 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import { jwtVerify, createRemoteJWKSet } from 'jose';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import Debug from 'debug';
+const Debug = require('debug');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const { jwtVerify, createRemoteJWKSet } = require('jose');
+const path = require('path');
+const { fileURLToPath } = require('url');
+const { createServer } = require('http');
+const { firebaseAppConfig } = require('../firebase.js');
 
-const debug = Debug('HTTP Server');
+const debug = Debug('ExpressServer');
 
-class HttpServer {
+module.exports = class ExpressServer {
   constructor() {
     this.firebaseServerConfig = JSON.parse(process.env.FIREBASE_SERVER_CONFIG);
     this.server = express();
@@ -16,13 +18,14 @@ class HttpServer {
     this.server.use(cookieParser());
     this.addAuthEndpoint();
     this.serveStaticFiles();
+    this.httpServer = createServer(this.server);
   }
 
   addAuthEndpoint() {
     this.server.post('/auth', async (req, res) => {
-      HttpServer.#checkCSRFToken(req, res);
+      ExpressServer.#checkCSRFToken(req, res);
       const idToken = req.body.credential;
-      const payload = await this.#verifyJWT(idToken);
+      const payload = await ExpressServer.#verifyJWT(idToken);
 
       // Get redirect url
       const { nonce } = payload;
@@ -44,10 +47,8 @@ class HttpServer {
 
   serveStaticFiles() {
     if (process.env.NODE_ENV !== 'development') {
-      // eslint-disable-next-line no-underscore-dangle
-      const __filename = fileURLToPath(import.meta.url);
-      // eslint-disable-next-line no-underscore-dangle
-      const __dirname = path.dirname(__filename);
+      // const __filename = fileURLToPath(import.meta.url);
+      // const __dirname = path.dirname(__filename);
       const root = path.join(__dirname, '../client/build');
       this.server.use('/', express.static(root));
       this.server.get('*', (req, res) => {
@@ -71,14 +72,12 @@ class HttpServer {
     }
   }
 
-  async #verifyJWT(idToken) {
+  static async #verifyJWT(idToken) {
     const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
     const { payload } = await jwtVerify(idToken, JWKS, {
       issuer: 'https://accounts.google.com',
-      audience: this.firebaseAppConfig.googleClientId,
+      audience: firebaseAppConfig.googleClientId,
     });
     return payload;
   }
 }
-
-export default HttpServer;

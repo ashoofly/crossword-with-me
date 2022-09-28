@@ -17,6 +17,8 @@
       "no-underscore-dangle": "off",
       "function-paren-newline": "off",
       "one-var": "off",
-      "one-var-declaration-per-line": "off"
+      "one-var-declaration-per-line": "off",
+      "import/extensions": "off",
+      "import/no-relative-packages": "off"
     }
 }
