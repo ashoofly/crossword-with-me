@@ -543,6 +543,7 @@ function App(props) {
     return currentWordClueDictionaryEntry.isLastClue && findWordEnd(index) === index;
   }
 
+  // TODO: max call stack size exceeded here
   function mapGridIndexToClueDictionaryEntry(index) {
     let currentWordStart = findWordStart(index);
     let gridNum = gameGrid[currentWordStart].gridNum;
