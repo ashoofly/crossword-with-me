@@ -1,6 +1,6 @@
-import { memo } from "react";
+import { React, memo } from 'react';
 import PlayerBox from './PlayerBox';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
 export default memo((props) => {
@@ -9,8 +9,8 @@ export default memo((props) => {
     auth,
     gameId,
   } = props;
-  const logger = new Logger("TitleBar");
-  const [user, initialized] = useAuthenticatedUser(auth);
+  const logger = new Logger('TitleBar');
+  const [user] = useAuthenticatedUser(auth);
 
   function handleClick() {
     if (user) {

@@ -7,7 +7,7 @@ import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 export default memo((props) => {
   const { 

@@ -5,11 +5,11 @@ import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { signout } from '../auth';
+import { signout } from '../utils/auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { useDispatch, useSelector } from "react-redux";
 import Tooltip from '@mui/material/Tooltip';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import { povSliceActions as povActions } from '../redux/slices/povSlice';
 
 

@@ -19,7 +19,7 @@ import {
 } from '../redux/slices/gameSlice';
 // import { signin } from '../auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 
 export default memo((props) => {

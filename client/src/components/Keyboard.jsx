@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   toggleRebus
 } from '../redux/slices/povSlice';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 export default memo((props) => {
   // console.log("Render keyboard");

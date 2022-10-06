@@ -4,7 +4,7 @@ import {
   signOut, 
   GoogleAuthProvider 
 } from "firebase/auth";
-import Logger from "./utils/logger.js";
+import Logger from "./Logger.js";
 
 let auth = null;
 let user = null;

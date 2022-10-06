@@ -2,7 +2,7 @@ import { memo } from "react";
 import Dialog from '@mui/material/Dialog';
 import '../styles/InfoPage.css';
 import { useSelector } from 'react-redux';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import GitHubIcon from '@mui/icons-material/GitHub';
 
 export default memo((props) => {

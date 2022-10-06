@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { markVerified, markPartial, markIncorrect } from '../redux/slices/gameSlice';
 import { setFocusedSquare, toggleOrientation } from '../redux/slices/povSlice';
 import { oneLine } from 'common-tags';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 export default memo((props) => {
   const {

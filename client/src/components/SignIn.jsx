@@ -1,10 +1,10 @@
 import { useEffect, useState, Fragment } from "react";
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
-import { handleCredentialResponse } from '../auth';
+import { handleCredentialResponse } from '../utils/auth';
 import cryptoRandomString from 'crypto-random-string';
 import '../styles/SignIn.css';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import { useDispatch, useSelector } from 'react-redux';
 import { povSliceActions as povActions } from "../redux/slices/povSlice";
 

@@ -10,7 +10,7 @@ import Button from '@mui/material/Button';
 import "../styles/Navbar.css";
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleZoom, toggleRebus, togglePencil } from '../redux/slices/povSlice';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 
 export default memo((props) => {

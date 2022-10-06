@@ -1,3 +1,0 @@
-Bugs:
-
-* When puzzle is filled out completely and you try to go back and fill in puzzle again (overwrite mode), the cursor stops on each word and won't advance automatically. 

@@ -389,33 +389,5 @@ export const gameSlice = createSlice({
   }
 })
 
-const { actions, reducer } = gameSlice
-
-export const gameSliceActions = actions;
-export const {
-  addPlayerToGame,
-  loadGame,
-  enteringPlayer,
-  exitingPlayer,
-  updatePlayerFocus,
-  loadSquareState,
-  loadWordState,
-  loadBoardState,
-  resetGame,
-  toggleAutocheck,
-  changeInput,
-  requestCheckSquare,
-  requestCheckWord,
-  requestCheckPuzzle,
-  requestRevealSquare,
-  requestRevealWord,
-  requestRevealPuzzle,
-  markBlock,
-  markVerified,
-  markPartial,
-  markIncorrect,
-  saveBoard,
-  boardSaved,
-  advanceCursor
-} = actions;
-export default reducer;
+export const gameActions = gameSlice.actions;
+export const gameReducer = gameSlice.reducer;

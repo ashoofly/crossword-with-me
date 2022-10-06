@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function useAuthenticatedUser(auth) {
-  const [ user, setUser ] = useState(auth.currentUser);
-  const [initialized, setInitialized ] = useState(false);
+  const [user, setUser] = useState(auth.currentUser);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (auth) {
-      onAuthStateChanged(auth, (returnedUser) => {
+      onAuthStateChanged(auth, returnedUser => {
         if (!initialized) {
           setInitialized(true);
         }
@@ -19,9 +19,8 @@ export default function useAuthenticatedUser(auth) {
           setUser(null);
         }
       });
-    } 
-  }, [auth]);
+    }
+  }, [auth, initialized]);
 
-  // return user;
   return [user, initialized];
 }

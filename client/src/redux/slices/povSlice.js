@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { getFocusedWord } from '../../puzzleUtils';
+import { getFocusedWord } from '../../utils/puzzleUtils';
 
 const defaultState = {
   playerVerified: false,
@@ -7,17 +7,12 @@ const defaultState = {
   rebusActive: false,
   pencilActive: false,
   zoomActive: false,
-  focused: {
-    // orientation: "across",
-    // word: [0],
-    // square: 0,
-  },
+  focused: {},
   numRows: 0,
   numCols: 0,
   board: [],
-  teamGames: []
+  teamGames: [],
 };
-
 
 export const povSlice = createSlice({
   name: 'pov',
@@ -103,16 +98,6 @@ export const povSlice = createSlice({
     }
   }
 });
-const { actions, reducer } = povSlice
 
-export const povSliceActions = actions;
-export const {
-  initializePlayerView,
-  setFocusedSquare,
-  toggleZoom,
-  toggleRebus,
-  togglePencil,
-  toggleOrientation,
-  setTeamGames
-} = actions;
-export default reducer;
+export const povActions = povSlice.actions;
+export const povReducer = povSlice.reducer;
