@@ -87,20 +87,20 @@ function App(props) {
    * Set board layout whenever new game is loaded and when resizing window
    */
   useEffect(() => {
-    setBoardLayout(window, isWidescreen, numCols);
-    const boundFunc = setBoardLayout.bind(null, window, isWidescreen, numCols);
+    setBoardLayout(window, isWidescreen, numCols, numRows, zoomActive);
+    const boundFunc = setBoardLayout.bind(null, window, isWidescreen, numCols, numRows, zoomActive);
     window.addEventListener('resize', boundFunc);
     return () => {
       window.removeEventListener('resize', boundFunc);
     };
-  }, [isWidescreen, loadedGameId, numCols]);
+  }, [isWidescreen, loadedGameId, numCols, numRows, zoomActive]);
 
   /**
    * Set board layout whenever zoom is toggled
    */
   useEffect(() => {
-    setBoardLayout(window, isWidescreen, numCols);
-  }, [isWidescreen, numCols, zoomActive]);
+    setBoardLayout(window, isWidescreen, numCols, numRows, zoomActive);
+  }, [isWidescreen, numCols, numRows, zoomActive]);
 
   /**
    * Initialize cursor for game

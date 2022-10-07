@@ -1,5 +1,8 @@
-import { React, useState, useEffect, memo } from 'react';
+import { React, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import Socket from 'socket.io-client';
+import { Auth } from 'firebase/app';
+import PropTypes from 'prop-types';
 import Tooltip from '@mui/material/Tooltip';
 import '../styles/colors.css';
 import '../styles/Navbar.css';
@@ -12,12 +15,12 @@ import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import Logger from '../common/Logger';
 import povActions from '../redux/slices/povSlice';
 
-export default memo(props => {
+const PlayerBox = memo(props => {
   const {
     auth,
     socket,
   } = props;
-  const logger = new Logger('PlayerBox');
+  const logger = useMemo(() => new Logger('PlayerBox'), []);
   logger.log('Render Account component');
 
   const dispatch = useDispatch();
@@ -44,40 +47,42 @@ export default memo(props => {
     setMeIconClasses(`avatar-bg ${me.color}-border`);
     const friends = players.filter(player => player.playerId !== user.uid);
     if (friends.length > 0) {
-      const friendIcons = [];
+      const icons = [];
       friends.forEach(friend => {
-        friendIcons.push(
+        icons.push(
           <Tooltip title={friend.displayName} key={friend.playerId} enterTouchDelay={0}>
-            <Avatar className={`avatar-bg ${friend.color}-border ${friend.online ? '' : 'offline'}`} >
+            <Avatar className={`avatar-bg ${friend.color}-border ${friend.online ? '' : 'offline'}`}>
               <img className="avatar-img" alt={friend.displayName} src={friend.photoURL} referrerPolicy="no-referrer" />
             </Avatar>
           </Tooltip>
         );
       });
-      setFriendIcons(friendIcons);
+      setFriendIcons(icons);
     } else {
       setFriendIcons(null);
     }
   }, [user, initialized, players]);
 
-  function handleSignout() {
+  const handleSignout = useCallback(() => {
     logger.log('Send event: leave-game');
     socket.emit('leave-game', user.uid, gameId);
     signout(auth);
-    dispatch(povActions.playerVerified({playerVerified: false}));
-  }
+    dispatch(povActions.playerVerified({ playerVerified: false }));
+  }, [auth, dispatch, gameId, logger, socket, user.uid]);
 
   return (
     <>
       <div className="player-box">
         {friendIcons}
-        {user && <Badge color="success" overlap="circular" badgeContent="">
-          <Tooltip title={`${user.displayName} (me)`}>
-            <Avatar className={meIconClasses} onClick={handleClick} >
-              <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
-            </Avatar>
-          </Tooltip>
-        </Badge>}
+        {user && (
+          <Badge color="success" overlap="circular" badgeContent="">
+            <Tooltip title={`${user.displayName} (me)`}>
+              <Avatar className={meIconClasses} onClick={handleClick}>
+                <img className="avatar-img" alt={user.displayName} src={user.photoURL} referrerPolicy="no-referrer" />
+              </Avatar>
+            </Tooltip>
+          </Badge>
+        )}
       </div>
       <Menu
         className="menu"
@@ -104,3 +109,10 @@ export default memo(props => {
     </>
   );
 });
+
+PlayerBox.propTypes = {
+  socket: PropTypes.instanceOf(Socket).isRequired,
+  auth: PropTypes.instanceOf(Auth).isRequired,
+};
+
+export default PlayerBox;

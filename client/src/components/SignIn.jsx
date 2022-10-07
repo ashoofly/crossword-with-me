@@ -1,5 +1,8 @@
-import { React, useEffect, useState } from 'react';
+import { React, useEffect, useState, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import Socket from 'socket.io-client';
+import { Auth } from 'firebase/app';
+import PropTypes from 'prop-types';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import cryptoRandomString from 'crypto-random-string';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
@@ -8,12 +11,12 @@ import '../styles/SignIn.css';
 import Logger from '../common/Logger';
 import povActions from '../redux/slices/povSlice';
 
-export default function JoinGame(props) {
+const SignIn = memo(props => {
   const {
     auth,
-    socket
+    socket,
   } = props;
-  const logger = new Logger('SignIn');
+  const logger = useMemo(() => new Logger('SignIn'), []);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const gameId = searchParams.get('gameId');
@@ -37,13 +40,13 @@ export default function JoinGame(props) {
     } catch (error) {
       logger.log(error);
     }
-  }, [token]);
+  }, [auth, logger, socket, token]);
 
   useEffect(() => {
     if (socket === null) return;
 
-    function handleDisplayFriendRequest(friendName) {
-      setFriendName(friendName);
+    function handleDisplayFriendRequest(fname) {
+      setFriendName(fname);
     }
     function handleGameNotFound() {
       setGameNotFound(true);
@@ -52,7 +55,7 @@ export default function JoinGame(props) {
     function handlePlayerVerified(playerId) {
       logger.log(`Received player-exists event for ${playerId}`);
       if (user.uid === playerId) {
-        dispatch(povActions.playerVerified({playerVerified: true}));
+        dispatch(povActions.playerVerified({ playerVerified: true }));
       }
     }
 
@@ -60,17 +63,17 @@ export default function JoinGame(props) {
     socket.on('game-not-found', handleGameNotFound);
     socket.on('player-exists', handlePlayerVerified);
 
+    // eslint-disable-next-line consistent-return
     return function cleanup() {
       socket.off('display-friend-request', handleDisplayFriendRequest);
-      socket.off('game-not-found', handleGameNotFound); 
-      socket.off('player-exists', handlePlayerVerified);     
-    }
-
-  }, [socket]);
+      socket.off('game-not-found', handleGameNotFound);
+      socket.off('player-exists', handlePlayerVerified);
+    };
+  }, [dispatch, logger, socket, user.uid]);
 
   useEffect(() => {
     function generateNonce() {
-      const randomStr = cryptoRandomString({length: 32});
+      const randomStr = cryptoRandomString({ length: 32 });
       const url = window.location;
       return btoa(`${url}---${randomStr}`);
     }
@@ -84,7 +87,7 @@ export default function JoinGame(props) {
       client_id: firebaseAppConfig.googleClientId,
       ux_mode: 'redirect',
       login_uri: process.env.REACT_APP_AUTH_URL,
-      nonce: generateNonce()
+      nonce: generateNonce(),
     });
 
     google.accounts.id.renderButton(
@@ -105,7 +108,7 @@ export default function JoinGame(props) {
       setSearchParams([]);
       navigate(`?gameId=${gameId}`);
     }
-  }, [socket, initialized, user, gameId]);
+  }, [socket, initialized, user, gameId, logger, setSearchParams, navigate]);
 
   return (
     <>
@@ -139,4 +142,11 @@ export default function JoinGame(props) {
       )}
     </>
   );
-}
+});
+
+SignIn.propTypes = {
+  socket: PropTypes.instanceOf(Socket).isRequired,
+  auth: PropTypes.instanceOf(Auth).isRequired,
+};
+
+export default SignIn;

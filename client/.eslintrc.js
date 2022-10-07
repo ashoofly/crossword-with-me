@@ -35,5 +35,8 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'no-param-reassign': ['error', { props: false }],
     'react-redux/useSelector-prefer-selectors': 'off',
+    'one-var': 'off',
+    'one-var-declaration-per-line': 'off',
+    'consistent-return': 'off',
   },
 };

@@ -1,17 +1,17 @@
-import { React, useEffect, useState, memo } from 'react';
+import { React, useEffect, useState, useCallback, memo, RefObject } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import PropTypes from 'prop-types';
 import { oneLine } from 'common-tags';
 import '../styles/Square.css';
 import gameActions from '../redux/slices/gameSlice';
 import povActions from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
+import { combinePlayerColors, showColorWithRevealedMarker, showColorWithVerifiedMarker, getClassNameAndRgbValue } from '../utils/render';
 
-export default memo(props => {
+const Square = memo(props => {
   const {
     id,
-    user,
     squareRef,
-    socket,
   } = props;
 
   const squareGrid = useSelector(state => state.game.gameGrid[id]);
@@ -33,88 +33,6 @@ export default memo(props => {
   const [textColorClass, setTextColorClass] = useState('');
   const [customStyle, setCustomStyle] = useState(null);
 
-  useEffect(displaySquare, [squareGameState, squareGrid]);
-  useEffect(checkAnswer, [autocheck, squareGameState, squareGrid]);
-
-  useEffect(() => {
-    setTextColorClass(textColor ? `${textColor}-text` : '');
-  }, [textColor]);
-
-  useEffect(() => {
-    setHighlightClasses('');
-    setCustomStyle({});
-    const activeWordArray = activeWordColors || [];
-    const activeLetterArray = activeLetterColors || [];
-
-    // combine colors if more than one player on the square
-    if ((activeWordArray.length + activeLetterArray.length) > 1) {
-      const allColors = [];
-      for (const color of activeWordArray) {
-        const cssProperty = `--${color}-focus-word`;
-        const cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
-        const rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
-        allColors.push(rgbArray);
-      } 
-      for (const color of activeLetterArray) {
-        const cssProperty = `--${color}-focus-square`;
-        const cssValue = getComputedStyle(document.documentElement).getPropertyValue(cssProperty);
-        const rgbArray = cssValue.replace(/[^\d,]/g, '').split(',').map(val => parseInt(val));
-        allColors.push(rgbArray);
-      }
-      const minR = Math.min(...allColors.map(rgbVal => rgbVal[0]));
-      const minG = Math.min(...allColors.map(rgbVal => rgbVal[1]));
-      const minB = Math.min(...allColors.map(rgbVal => rgbVal[2]));
-      const minRGB = [minR, minG, minB];
-
-      const maxR = Math.max(...allColors.map(rgbVal => rgbVal[0]));
-      const maxG = Math.max(...allColors.map(rgbVal => rgbVal[1]));
-      const maxB = Math.max(...allColors.map(rgbVal => rgbVal[2]));
-      const maxRGB = [maxR, maxG, maxB];
-
-      const midRGB = [];
-      minRGB.forEach((minColorComp, index) => {
-        midRGB.push((minColorComp + maxRGB[index])/2);
-      })
-      const combinedColors = `rgb(${midRGB[0]}, ${midRGB[1]}, ${midRGB[2]})`;
-
-      if (squareGameState.reveal) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${combinedColors} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
-          overflow: 'hidden' });
-      } else if (squareGameState.verified) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${combinedColors} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
-          overflow: 'hidden' });
-      } else {
-        setCustomStyle({ backgroundColor: combinedColors });
-      }
-    } else if (activeWordArray.length === 1) {
-      const className = `${activeWordColors[0]}-focus-word`;
-      const rgbValue = getComputedStyle(document.documentElement).getPropertyValue(`--${className}`);
-      if (squareGameState.reveal) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
-          overflow: 'hidden' });
-      } else if (squareGameState.verified) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`,
-          overflow: 'hidden' });
-      } else {
-        setHighlightClasses(className);
-        setCustomStyle({});
-      }
-    } else if (activeLetterArray.length === 1) {
-      const className = `${activeLetterColors[0]}-focus-square`;
-      const rgbValue = getComputedStyle(document.documentElement).getPropertyValue(`--${className}`);
-      if (squareGameState.reveal) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(211,54,130) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`,
-          overflow: 'hidden' });
-      } else if (squareGameState.verified) {
-        setCustomStyle({ background: `linear-gradient(to top right, ${rgbValue} 85%,rgb(4, 141, 25) 10%) top right/var(--square-side-length) var(--square-side-length) no-repeat`, 
-          overflow: 'hidden' });
-      } else {
-        setHighlightClasses(className);
-        setCustomStyle({});
-      }
-    }
-  }, [activeWordColors, activeLetterColors, squareGameState.verified, squareGameState.reveal]);
-
   function displaySquare() {
     if (!squareGrid.isPlayable) {
       setSquareText('');
@@ -125,18 +43,7 @@ export default memo(props => {
     }
   }
 
-  function handleFocus() {
-    if (squareGrid.answer === '.') return;
-    dispatch(povActions.setFocusedSquare({ focus: id }));
-  }
-
-  function handleMouseDown() {
-    if (focused.square === id) {
-      dispatch(povActions.toggleOrientation());
-    }
-  }
-
-  function checkLetter() {
+  const checkLetter = useCallback(() => {
     if (!squareGrid.isPlayable || squareGameState.input === '') return;
     if (squareGameState.input === squareGrid.answer) {
       dispatch(gameActions.markVerified({ gameId, id }));
@@ -151,7 +58,7 @@ export default memo(props => {
     } else {
       dispatch(gameActions.markIncorrect({ gameId, id }));
     }
-  }
+  }, [dispatch, gameId, id, squareGameState.input, squareGrid.answer, squareGrid.isPlayable]);
 
   function checkAnswer() {
     if (autocheck || squareGameState.check) {
@@ -159,12 +66,70 @@ export default memo(props => {
     }
   }
 
-  function log() {
-    logger.log(squareGameState);
+  useEffect(displaySquare, [squareGameState, squareGrid]);
+  useEffect(checkAnswer, [autocheck, checkLetter, squareGameState, squareGrid]);
+
+  useEffect(() => {
+    setTextColorClass(textColor ? `${textColor}-text` : '');
+  }, [textColor]);
+
+  useEffect(() => {
+    setHighlightClasses('');
+    setCustomStyle({});
+    const activeWordArray = activeWordColors || [];
+    const activeLetterArray = activeLetterColors || [];
+
+    // combine colors if more than one player on the square
+    if ((activeWordArray.length + activeLetterArray.length) > 1) {
+      const combinedColors = combinePlayerColors(activeWordArray, activeLetterArray);
+      if (squareGameState.reveal) {
+        setCustomStyle({
+          background: showColorWithRevealedMarker(combinedColors),
+          overflow: 'hidden',
+        });
+      } else if (squareGameState.verified) {
+        setCustomStyle({
+          background: showColorWithVerifiedMarker(combinedColors),
+          overflow: 'hidden',
+        });
+      } else {
+        setCustomStyle({ backgroundColor: combinedColors });
+      }
+      return;
+    }
+
+    // else, highlight square with correct single color
+    const { className, rgbValue } = getClassNameAndRgbValue(activeWordColors, activeLetterColors);
+    if (squareGameState.reveal) {
+      setCustomStyle({
+        background: showColorWithRevealedMarker(rgbValue),
+        overflow: 'hidden',
+      });
+    } else if (squareGameState.verified) {
+      setCustomStyle({
+        background: showColorWithVerifiedMarker(rgbValue),
+        overflow: 'hidden',
+      });
+    } else {
+      setHighlightClasses(className);
+      setCustomStyle({});
+    }
+  }, [activeWordColors, activeLetterColors, squareGameState.verified, squareGameState.reveal]);
+
+  function handleFocus() {
+    if (squareGrid.answer === '.') return;
+    dispatch(povActions.setFocusedSquare({ focus: id }));
+  }
+
+  function handleMouseDown() {
+    if (focused.square === id) {
+      dispatch(povActions.toggleOrientation());
+    }
   }
 
   return (
     <div
+      role="textbox"
       style={customStyle}
       id={id}
       tabIndex="0"
@@ -179,7 +144,6 @@ export default memo(props => {
                   ${zoomActive ? 'zoomed' : ''}
                   ${rebusActive && (focused.square === id) ? 'rebus-square' : ''}
                   `}
-      onClick={log}
     >
       {squareGrid.circle && <div className="circle" />}
       {squareGameState.incorrect && !squareGameState.reveal && <div className="wrong-answer-overlay" />}
@@ -197,3 +161,10 @@ export default memo(props => {
     </div>
   );
 });
+
+Square.propTypes = {
+  id: PropTypes.instanceOf(String).isRequired,
+  squareRef: PropTypes.instanceOf(RefObject).isRequired,
+};
+
+export default Square;

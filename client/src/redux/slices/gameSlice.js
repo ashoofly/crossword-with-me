@@ -94,20 +94,20 @@ export const gameSlice = createSlice({
 
         // remove player highlighted cursor
         if (playerFocus) {
-          for (const index of playerFocus.word) {
+          playerFocus.word.forEach(index => {
             state.board[index].activeWordColors = state.board[index].activeWordColors.filter(
               color => color !== playerColor
             );
             state.board[index].activeLetterColors = state.board[index].activeLetterColors.filter(
               color => color !== playerColor
             );
-          }
+          });
         }
-        state.players = state.players.map(player => {
-          return action.payload.playerId === player.playerId ?
-            {...player, online: false}
-            : player;
-        });
+        state.players = state.players.map(player => (
+          action.payload.playerId === player.playerId
+            ? { ...player, online: false }
+            : player
+        ));
       }
     },
     updatePlayerFocus: (state, action) => {
@@ -120,9 +120,9 @@ export const gameSlice = createSlice({
 
         // remove player's previous highlighted cursor
         if (playerFocus) {
-          for (const index of playerFocus.word) {
-            const activeWordColors = state.board[index].activeWordColors;
-            const activeLetterColors = state.board[index].activeLetterColors;
+          playerFocus.word.forEach(index => {
+            const { activeWordColors } = state.board[index];
+            const { activeLetterColors } = state.board[index];
 
             if (activeWordColors) {
               state.board[index].activeWordColors = activeWordColors.filter(
@@ -134,20 +134,19 @@ export const gameSlice = createSlice({
                 color => color !== playerColor
               );
             }
-          }
+          });
         }
 
         // add highlight to player's current focus
-        for (const index of action.payload.currentFocus.word) {
-          let activeWordColors = state.board[index].activeWordColors;
+        action.payload.currentFocus.word.forEach(index => {
+          let { activeWordColors } = state.board[index];
           if (!activeWordColors) {
             activeWordColors = [];
           }
-          let activeLetterColors = state.board[index].activeLetterColors;
+          let { activeLetterColors } = state.board[index];
           if (!activeLetterColors) {
             activeLetterColors = [];
           }
-
           if (index !== action.payload.currentFocus.square) {
             if (!activeWordColors.includes(playerColor)) {
               activeWordColors.push(playerColor);
@@ -159,15 +158,13 @@ export const gameSlice = createSlice({
           }
           state.board[index].activeWordColors = activeWordColors;
           state.board[index].activeLetterColors = activeLetterColors;
-        }
-
-        state.players = state.players.map(player => {
-          return action.payload.playerId === player.playerId ?
-            {...player,
-              currentFocus: action.payload.currentFocus,
-            }
-            : player;
         });
+
+        state.players = state.players.map(player => (
+          action.payload.playerId === player.playerId
+            ? { ...player, currentFocus: action.payload.currentFocus }
+            : player
+        ));
       }
       if (action.payload.source !== 'external') {
         state.savedBoardToDB = false;

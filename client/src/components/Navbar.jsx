@@ -51,7 +51,7 @@ const Navbar = memo(props => {
   const handleRebusButtonClick = useCallback(() => {
     dispatch(povActions.toggleRebus());
     cursor.jumpToSquare(focus);
-  }, []);
+  }, [cursor, dispatch, focus]);
 
   function handlePencilClick() {
     dispatch(povActions.togglePencil());

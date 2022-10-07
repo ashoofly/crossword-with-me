@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "lint": "eslint .",
     "build": "npm install",
     "dev": "NODE_ENV=development DEBUG=Server,ExpressServer,WebSocketServer,DbWorker nodemon index.js",
     "heroku-local": "NODE_ENV=heroku-local DEBUG=* node index.js",
