@@ -1,5 +1,3 @@
-import { findWordEnd } from './puzzleUtils';
-
 export function setAppLayout(window, isWidescreen) {
   const isTouchDevice = 'ontouchstart' in window;
   const isTablet = isWidescreen && isTouchDevice;
@@ -44,49 +42,4 @@ export function setBoardLayout(window, isWidescreen, numCols) {
   const boardWidth = squareSideLength * numCols;
   document.documentElement.style.setProperty('--square-side-length', `${squareSideLength}px`);
   document.documentElement.style.setProperty('--board-width', `${boardWidth}px`);
-}
-
-export function nearBottomOfScreen(element) {
-  return element.getBoundingClientRect().top > 0.8 * document.querySelector('.Board').getBoundingClientRect().bottom;
-}
-
-/**
- * For zoomed-in view (mobile option)
- */
-export function scrollToWord(orientation, squareRefs, index) {
-  const firstLetterOfWord = squareRefs[index].current;
-  const startBoundary = orientation === 'across'
-    ? firstLetterOfWord.getBoundingClientRect().left
-    : firstLetterOfWord.getBoundingClientRect().top;
-  const lastLetterOfWord = squareRefs[findWordEnd(index)].current;
-  const endBoundary = orientation === 'across'
-    ? lastLetterOfWord.getBoundingClientRect().right
-    : lastLetterOfWord.getBoundingClientRect().bottom;
-  const outOfBounds = orientation === 'across' ?
-    window.innerWidth : document.querySelector('.Board').getBoundingClientRect().bottom;
-  if (endBoundary > outOfBounds) {
-    const lengthOfWord = endBoundary - startBoundary;
-    const validBoundaries = orientation === 'across' ?
-      window.innerWidth : document.querySelector('.Board').offsetHeight;
-    if (lengthOfWord <= validBoundaries) {
-      lastLetterOfWord.scrollIntoView({
-        behavior: 'smooth',
-        block: orientation === 'across' ? (nearBottomOfScreen(firstLetterOfWord) ? 'center' : 'nearest') : 'end',
-        inline: orientation === 'across' ? 'end' : 'nearest',
-      });
-    } else {
-      firstLetterOfWord.scrollIntoView({
-        behavior: 'smooth',
-        block: orientation === 'across' ? 'nearest' : 'start',
-        inline: orientation === 'across' ? 'start' : 'nearest',
-      });
-    }
-  }
-  if (orientation === 'across' && nearBottomOfScreen(firstLetterOfWord)) {
-    firstLetterOfWord.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'nearest',
-    });
-  }
 }

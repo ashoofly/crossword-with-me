@@ -13,9 +13,10 @@ import setupStore from './redux/store';
 import SignIn from './components/SignIn';
 import App from './components/App';
 import { initializeAuth } from './utils/auth';
-import Logger from './utils/Logger';
+import Logger from './common/Logger';
 
 const logger = new Logger('Index');
+
 /**
  * Initialize Socket.io
  */
@@ -28,6 +29,7 @@ socket.on('connect', () => {
 socket.on('disconnect', reason => {
   logger.log(`Socket disconnected: ${reason}`);
 });
+
 /**
  * Initialize Firebase app
  */

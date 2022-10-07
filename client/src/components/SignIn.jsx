@@ -1,23 +1,23 @@
-import { useEffect, useState, Fragment } from "react";
+import { React, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import cryptoRandomString from 'crypto-random-string';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { handleCredentialResponse } from '../utils/auth';
-import cryptoRandomString from 'crypto-random-string';
 import '../styles/SignIn.css';
-import Logger from '../utils/Logger';
-import { useDispatch, useSelector } from 'react-redux';
-import { povSliceActions as povActions } from "../redux/slices/povSlice";
+import Logger from '../common/Logger';
+import povActions from '../redux/slices/povSlice';
 
 export default function JoinGame(props) {
   const {
-    auth, 
+    auth,
     socket
   } = props;
-  const logger = new Logger("SignIn");
+  const logger = new Logger('SignIn');
 
   const [searchParams, setSearchParams] = useSearchParams();
-  let gameId = searchParams.get('gameId');
-  let token = searchParams.get('token');
+  const gameId = searchParams.get('gameId');
+  const token = searchParams.get('token');
 
   const navigate = useNavigate();
   const [user, initialized] = useAuthenticatedUser(auth);
@@ -29,7 +29,7 @@ export default function JoinGame(props) {
 
   useEffect(() => {
     if (!token || !auth) return;
-    
+
     try {
       if (token) {
         handleCredentialResponse(token, auth, socket);
@@ -37,7 +37,6 @@ export default function JoinGame(props) {
     } catch (error) {
       logger.log(error);
     }
-
   }, [token]);
 
   useEffect(() => {
@@ -67,15 +66,14 @@ export default function JoinGame(props) {
       socket.off('player-exists', handlePlayerVerified);     
     }
 
-  }, [socket])
+  }, [socket]);
 
   useEffect(() => {
     function generateNonce() {
-      let randomStr = cryptoRandomString({length: 32});
-      let url = window.location;
+      const randomStr = cryptoRandomString({length: 32});
+      const url = window.location;
       return btoa(`${url}---${randomStr}`);
     }
-
 
     if (!initialized || user) return;
 
@@ -84,52 +82,61 @@ export default function JoinGame(props) {
     /* global google */
     google.accounts.id.initialize({
       client_id: firebaseAppConfig.googleClientId,
-      ux_mode: "redirect",
+      ux_mode: 'redirect',
       login_uri: process.env.REACT_APP_AUTH_URL,
       nonce: generateNonce()
     });
 
     google.accounts.id.renderButton(
-      document.getElementById("signInDiv"),
-      {theme: "outline", size: "large"}
+      document.getElementById('signInDiv'),
+      { theme: 'outline', size: 'large' }
     );
-    }, [user, initialized]);
+  }, [user, initialized]);
 
   useEffect(() => {
     if (socket === null || !initialized || !gameId) return;
 
     if (!user) {
-      logger.log(`Send event: get-friend-request-name`);
-      socket.emit("get-friend-request-name", gameId);
-    } 
+      logger.log('Send event: get-friend-request-name');
+      socket.emit('get-friend-request-name', gameId);
+    }
 
     if (user && gameId) {
       setSearchParams([]);
       navigate(`?gameId=${gameId}`);
     }
-
   }, [socket, initialized, user, gameId]);
 
   return (
-    <Fragment>
-      {initialized && !token && !user && !gameNotFound && <div className="join-game">
-        <h2 className="join-game-text">Please sign in to {gameId ? `join ${friendName}'s game:` : `play Crossword with Me:`}</h2>
-        <div id="signInDiv"></div>
-      </div>
-      }
-      {token && (!user || !playerVerified) && !gameNotFound && <div className="join-game">
-        <h1>Signing in...</h1>
-      </div>
-      }
-      {gameId && gameNotFound && <div className="join-game">
-        <p>Game {gameId} not found. Games are rotated every week, so this may have been a game from last week.</p>
-      </div>
-      }
-      {user && playerVerified && <div className="join-game">
-        <h1>Successfully signed in!</h1>
-      </div>
-      }
-    </Fragment>
-  )
-
+    <>
+      {initialized && !token && !user && !gameNotFound && (
+        <div className="join-game">
+          <h2 className="join-game-text">
+            Please sign in to
+            {gameId ? `join ${friendName}'s game:` : 'play Crossword with Me:'}
+          </h2>
+          <div id="signInDiv" />
+        </div>
+      )}
+      {token && (!user || !playerVerified) && !gameNotFound && (
+        <div className="join-game">
+          <h1>Signing in...</h1>
+        </div>
+      )}
+      {gameId && gameNotFound && (
+        <div className="join-game">
+          <p>
+            Game
+            {gameId}
+            not found. Games are rotated every week, so this may have been a game from last week.
+          </p>
+        </div>
+      )}
+      {user && playerVerified && (
+        <div className="join-game">
+          <h1>Successfully signed in!</h1>
+        </div>
+      )}
+    </>
+  );
 }

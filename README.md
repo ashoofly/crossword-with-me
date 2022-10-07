@@ -34,8 +34,9 @@ https://crosswordwith.me
 * Create React App
 * Chrome React / Redux DevTools
 * nodemon
+* Firebase Emulator Suite
 
-## Build Tools
+## Build / Code Quality Tools
 * Webpack
 * ESLint
 * Jest for Tests

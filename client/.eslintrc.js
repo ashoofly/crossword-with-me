@@ -6,6 +6,7 @@ module.exports = {
   extends: [
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
+    'plugin:react-redux/recommended',
     'airbnb',
   ],
   overrides: [
@@ -17,6 +18,7 @@ module.exports = {
   plugins: [
     'react',
     'react-hooks',
+    'react-redux',
   ],
   rules: {
     'object-curly-newline': 'off',
@@ -31,5 +33,7 @@ module.exports = {
       exports: 'always-multiline',
     }],
     'no-underscore-dangle': 'off',
+    'no-param-reassign': ['error', { props: false }],
+    'react-redux/useSelector-prefer-selectors': 'off',
   },
 };

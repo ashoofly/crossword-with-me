@@ -17,9 +17,9 @@ import SignIn from './SignIn';
 import '../styles/App.css';
 import gameActions from '../redux/slices/gameSlice';
 import povActions from '../redux/slices/povSlice';
-import Logger from '../utils/Logger';
-import { setAppLayout, setBoardLayout } from '../utils/Layout';
-import Cursor from '../utils/Cursor';
+import Logger from '../common/Logger';
+import { setAppLayout, setBoardLayout } from '../utils/render';
+import Cursor from '../common/Cursor';
 
 function App(props) {
   const {
@@ -427,6 +427,7 @@ function App(props) {
                 />
                 <Clue
                   isWidescreen={isWidescreen}
+                  handleKeyDown={handleKeyDown}
                   cursor={cursor}
                 />
                 {isTouchDevice && (

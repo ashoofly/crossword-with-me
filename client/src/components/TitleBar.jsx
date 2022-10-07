@@ -1,9 +1,9 @@
 import { React, memo } from 'react';
 import PlayerBox from './PlayerBox';
-import Logger from '../utils/Logger';
+import Logger from '../common/Logger';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 
-export default memo((props) => {
+export default memo(props => {
   const {
     socket,
     auth,
@@ -20,13 +20,13 @@ export default memo((props) => {
 
   return (
     <div className="title-bar">
-      <div></div>
+      <div />
       <h1 className="title-text" onClick={handleClick}>Crossword with Me</h1>
-      <PlayerBox 
+      <PlayerBox
         auth={auth}
         socket={socket}
         gameId={gameId}
       />
     </div>
-  )
+  );
 });

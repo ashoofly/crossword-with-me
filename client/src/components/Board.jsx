@@ -7,7 +7,7 @@ import Square from './Square';
 import '../styles/colors.css';
 import '../styles/Board.css';
 import gameActions from '../redux/slices/gameSlice';
-import Logger from '../utils/Logger';
+import Logger from '../common/Logger';
 
 const Board = memo(props => {
   const {

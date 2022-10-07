@@ -5,10 +5,14 @@ import prev from '../images/prev.svg';
 import next from '../images/next.svg';
 import '../styles/Clue.css';
 import povActions from '../redux/slices/povSlice';
-import Logger from '../utils/Logger';
+import Logger from '../common/Logger';
+import Cursor from '../common/Cursor';
 
 const Clue = memo(props => {
-  const { isWidescreen } = props;
+  const {
+    isWidescreen,
+    cursor,
+  } = props;
   const logger = useMemo(() => new Logger('Clue'), []);
   logger.log('Render clue component');
 
@@ -23,28 +27,41 @@ const Clue = memo(props => {
   function displayClue() {
     if (currentFocus && currentFocus.orientation && currentFocus.word) {
       const dictionaryKey = gameGrid[currentFocus.word[0]].gridNum;
-      setClueText({__html: clueDictionary[currentFocus.orientation][dictionaryKey].clue});
+      setClueText({ __html: clueDictionary[currentFocus.orientation][dictionaryKey].clue });
       if (isWidescreen) {
         setClueHeading(`${dictionaryKey} ${currentFocus.orientation.toUpperCase()}`);
       }
     }
   }
+
   useEffect(displayClue, [currentFocus, gameGrid, clueDictionary, isWidescreen]);
 
   return (
     <div className="clue-container">
       {isWidescreen && isTouchDevice && <h4 className="clue-heading">{clueHeading}</h4>}
       <div className="clue">
-        <div className="arrow-container" onClick={jumpToPreviousWord}>
+        <button
+          type="button"
+          className="arrow-container"
+          onClick={cursor.jumpToPreviousWord}
+        >
           <img className="arrows" src={prev} alt="prev_clue" />
-        </div>
-        <div
+        </button>
+        <button
+          type="button"
           onClick={() => dispatch(povActions.toggleOrientation())}
           className="clue-text"
-          dangerouslySetInnerHTML={clueText} />
-        <div className="arrow-container" onClick={jumpToNextWord}>
+          aria-label="clue-text"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={clueText}
+        />
+        <button
+          type="button"
+          className="arrow-container"
+          onClick={cursor.jumpToNextWord}
+        >
           <img className="arrows" src={next} alt="next_clue" />
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -52,6 +69,7 @@ const Clue = memo(props => {
 
 Clue.propTypes = {
   isWidescreen: PropTypes.bool.isRequired,
+  cursor: PropTypes.instanceOf(Cursor).isRequired,
 };
 
 export default Clue;

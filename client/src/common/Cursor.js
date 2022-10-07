@@ -1,5 +1,10 @@
-import { getPrevWord, findWordStart, findWordEnd, getNextWord, isLastClueSquare } from './puzzleUtils';
-import { scrollToWord } from './Layout';
+import {
+  getPrevWord,
+  getNextWord,
+  findWordStart,
+  findWordEnd,
+  isLastClueSquare,
+} from '../utils/puzzleUtils';
 
 export default class Cursor {
   constructor(game, squareRefs) {
@@ -46,7 +51,7 @@ export default class Cursor {
   jumpToSquare(index, zoomActive) {
     this.squareRefs[index].current.focus();
     if (zoomActive) {
-      scrollToWord(index);
+      this.scrollToWord(index);
     }
   }
 
@@ -84,5 +89,50 @@ export default class Cursor {
     const index = this.getPreviousSquare();
     this.jumpToSquare(index);
     return index;
+  }
+
+  static __nearBottomOfScreen(element) {
+    return element.getBoundingClientRect().top > 0.8 * document.querySelector('.Board').getBoundingClientRect().bottom;
+  }
+
+  /**
+   * For zoomed-in view (mobile option)
+   */
+  scrollToWord(orientation, index) {
+    const firstLetterOfWord = this.squareRefs[index].current;
+    const startBoundary = orientation === 'across'
+      ? firstLetterOfWord.getBoundingClientRect().left
+      : firstLetterOfWord.getBoundingClientRect().top;
+    const lastLetterOfWord = this.squareRefs[findWordEnd(index)].current;
+    const endBoundary = orientation === 'across'
+      ? lastLetterOfWord.getBoundingClientRect().right
+      : lastLetterOfWord.getBoundingClientRect().bottom;
+    const outOfBounds = orientation === 'across' ?
+      window.innerWidth : document.querySelector('.Board').getBoundingClientRect().bottom;
+    if (endBoundary > outOfBounds) {
+      const lengthOfWord = endBoundary - startBoundary;
+      const validBoundaries = orientation === 'across' ?
+        window.innerWidth : document.querySelector('.Board').offsetHeight;
+      if (lengthOfWord <= validBoundaries) {
+        lastLetterOfWord.scrollIntoView({
+          behavior: 'smooth',
+          block: orientation === 'across' ? (Cursor.nearBottomOfScreen(firstLetterOfWord) ? 'center' : 'nearest') : 'end',
+          inline: orientation === 'across' ? 'end' : 'nearest',
+        });
+      } else {
+        firstLetterOfWord.scrollIntoView({
+          behavior: 'smooth',
+          block: orientation === 'across' ? 'nearest' : 'start',
+          inline: orientation === 'across' ? 'start' : 'nearest',
+        });
+      }
+    }
+    if (orientation === 'across' && Cursor.nearBottomOfScreen(firstLetterOfWord)) {
+      firstLetterOfWord.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+    }
   }
 }

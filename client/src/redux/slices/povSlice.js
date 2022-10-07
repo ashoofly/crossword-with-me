@@ -18,16 +18,16 @@ export const povSlice = createSlice({
   name: 'pov',
   initialState: defaultState,
   reducers: {
-    'playerVerified': (state, action) => {
-      state.playerVerified = action.payload.playerVerified
+    playerVerified: (state, action) => {
+      state.playerVerified = action.payload.playerVerified;
     },
-    'initializePlayerView': (state, action) => {
-      let focusedWord = getFocusedWord(
+    initializePlayerView: (state, action) => {
+      const focusedWord = getFocusedWord(
         action.payload.gameGrid,
         action.payload.numCols,
         action.payload.numRows,
         action.payload.focus,
-        "across"
+        'across'
       );
       return {
         ...state,
@@ -36,7 +36,7 @@ export const povSlice = createSlice({
         pencilActive: false,
         zoomActive: false,
         focused: {
-          orientation: "across",
+          orientation: 'across',
           word: focusedWord,
           square: action.payload.focus,
         },
@@ -45,13 +45,13 @@ export const povSlice = createSlice({
         board: [...Array(action.payload.numRows * action.payload.numCols).keys()]
           .map(num => ({
             index: num,
-            isActiveWord: num !== action.payload.focus && focusedWord.includes(num) ? true : false,
-            isActiveSquare: num === action.payload.focus ? true : false,
-            ...action.payload.gameGrid[num]
-          }))
+            isActiveWord: num !== action.payload.focus && focusedWord.includes(num),
+            isActiveSquare: num === action.payload.focus,
+            ...action.payload.gameGrid[num],
+          })),
       };
     },
-    'setFocusedSquare': (state, action) => {
+    setFocusedSquare: (state, action) => {
       state.focused = {
         ...state.focused,
         square: action.payload.focus,
@@ -59,44 +59,44 @@ export const povSlice = createSlice({
           state.board,
           state.numCols,
           state.numRows,
-          action.payload.focus, 
+          action.payload.focus,
           state.focused.orientation
-        )
-      }
+        ),
+      };
     },
-    'setTeamGames': (state, action) => {
+    setTeamGames: (state, action) => {
       state.teamGames = Object.values(action.payload.teamGames);
     },
-    'highlightActiveWord': (state, action) => {
+    highlightActiveWord: (state, action) => {
       state.board[action.payload.id].isActiveWord = true;
     },
-    'highlightActiveSquare': (state, action) => {
+    highlightActiveSquare: (state, action) => {
       state.board[action.payload.id].isActiveSquare = true;
     },
-    'toggleOrientation': (state) => {
-      let newOrientation = state.focused.orientation === "across" ? "down" : "across";
+    toggleOrientation: state => {
+      const newOrientation = state.focused.orientation === 'across' ? 'down' : 'across';
       state.focused = {
-        ...state.focused, 
+        ...state.focused,
         orientation: newOrientation,
         word: getFocusedWord(
           state.board,
           state.numCols,
           state.numRows,
-          state.focused.square, 
+          state.focused.square,
           newOrientation
-        )
+        ),
       };
     },
-    'toggleZoom': (state) => {
+    toggleZoom: state => {
       state.zoomActive = !state.zoomActive;
     },
-    'toggleRebus': (state, action) => {
+    toggleRebus: state => {
       state.rebusActive = !state.rebusActive;
     },
-    'togglePencil': (state) => {
+    togglePencil: state => {
       state.pencilActive = !state.pencilActive;
-    }
-  }
+    },
+  },
 });
 
 export const povActions = povSlice.actions;
