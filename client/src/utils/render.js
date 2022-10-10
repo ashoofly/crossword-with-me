@@ -1,10 +1,54 @@
+/**
+ * Mobile layout:               Landscape Tablet layout:
+ *
+ * |<--- W: 100 % ----->|         |<-------- W: 50 % ------->|<-------- W: 50 % ------->|
+ * ----------------------         -------------------------------------------------------
+ * | Title Bar (H: 8%)  |         | Navbar (H: 10%)          | Title Bar (H: 10%)       |
+ * |---------------------         ------------------------------------------------------|
+ * | Nav Bar   (H: 8%)  |         | Board  (H: 90%)          | Clue (H: 55%)            |
+ * |---------------------         |                          |                          |
+ * | Board  (H <= 53%)  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * |--------------------|         |                          |--------------------------|
+ * | Clue      (H: 8%)  |         |                          | Keyboard (H: 30%)        |
+ * |--------------------|         |                          |                          |
+ * | Keyboard (H: 23%)  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * | x                  |         |                          |                          |
+ * ----------------------         -------------------------------------------------------
+ *
+ * Desktop layout:
+ * |<--------------- W: 100% ------------------->|
+ * -----------------------------------------------
+ * | Title Bar (H: min(80px, 8%))                |
+ * |---------------------------------------------|
+ * | Nav Bar (H: min(80px, 8%) + 50px)           |
+ * |                                             |
+ * |---------------------------------------------|
+ * | Clue ( H: min(100px, 8%))                   |
+ * |                                             |
+ * |---------------------------------------------|
+ * |      Board (H: Remainder to 100%)           |
+ * |     ---------------------------             |
+ * |     |x                        |             |
+ * |     |x <-- W: max(1000px) --->|             |
+ * |     |x                        |             |
+ * |     |x                        |             |
+ * |     |...                      |             |
+ * |     ---------------------------             |
+ * -----------------------------------------------
+ */
+
 export function setAppLayout(window, isWidescreen) {
   const isTouchDevice = 'ontouchstart' in window;
   const isTablet = isWidescreen && isTouchDevice;
   const { width, height } = window.visualViewport;
   const maxBoardHeightSmallScreen = height * 0.53;
   const barHeight = (isTablet) ? (height * 0.1) : (height * 0.08);
-  const clueHeight = height * 0.1;
+  const clueHeight = height * 0.08;
   const keyboardHeight = isWidescreen ? (height * 0.3) : (height * 0.23);
   const keyboardRowMargin = 2;
   const keyboardMargins = 2 + 3 + 10;

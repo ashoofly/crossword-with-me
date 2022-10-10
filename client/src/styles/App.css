@@ -34,7 +34,6 @@ button {
 
 .title-bar {
   height: var(--bar-height);
-  /* background:green; */
 }
 
 .navbar {
