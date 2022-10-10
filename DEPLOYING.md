@@ -9,6 +9,11 @@ npm run dev
 ```
 Go to `localhost:3000` to see UI
 
+## Run Linting & Tests
+```
+npm test
+```
+
 ## Heroku Local
 
 ```
