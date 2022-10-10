@@ -28,9 +28,9 @@ const Keyboard = memo(props => {
   const {
     rebusActive,
     zoomActive,
-    'focused.orientation': orientation,
-    'focused.square': focus,
+    focused,
   } = useSelector(state => state.pov);
+  const { orientation, square: focus } = focused;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];

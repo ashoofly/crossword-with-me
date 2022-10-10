@@ -30,9 +30,9 @@ const Navbar = memo(props => {
     zoomActive,
     rebusActive,
     pencilActive,
-    'focused.square': focus,
-    'focused.orientation': orientation,
+    focused,
   } = useSelector(state => state.pov);
+  const { orientation, square: focus } = focused;
 
   useEffect(() => {
     setLogger(new Logger('Navbar'));

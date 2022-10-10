@@ -19,10 +19,7 @@ const Clue = memo(props => {
   const clueDictionary = useSelector(state => state.game.clueDictionary);
   const gameGrid = useSelector(state => state.game.gameGrid);
   const currentFocus = useSelector(state => state.pov.focused);
-  const {
-    'focused.orientation': orientation,
-    'focused.square': focusedSquare,
-  } = useSelector(state => state.pov);
+  const { orientation, square: focusedSquare } = currentFocus;
   const [clueText, setClueText] = useState({ __html: '' });
   const [clueHeading, setClueHeading] = useState('');
   const isTouchDevice = 'ontouchstart' in window;
@@ -64,7 +61,7 @@ const Clue = memo(props => {
           type="button"
           id="left-arrow-container"
           className="arrow-container"
-          onClick={cursor.jumpToPreviousWord.bind(null, focusedSquare, orientation)}
+          onClick={cursor.jumpToPreviousWord.bind(cursor, focusedSquare, orientation)}
         >
           <img className="arrows" src={prev} alt="prev_clue" />
         </button>
@@ -80,7 +77,7 @@ const Clue = memo(props => {
           type="button"
           id="right-arrow-container"
           className="arrow-container"
-          onClick={cursor.jumpToNextWord.bind(null, focusedSquare, orientation)}
+          onClick={cursor.jumpToNextWord.bind(cursor, focusedSquare, orientation)}
         >
           <img className="arrows" src={next} alt="next_clue" />
         </button>
