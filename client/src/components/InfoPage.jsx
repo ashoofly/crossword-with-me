@@ -1,4 +1,4 @@
-import { React, memo } from 'react';
+import { React, memo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Dialog from '@mui/material/Dialog';
 import '../styles/InfoPage.css';
@@ -12,8 +12,16 @@ const InfoPage = memo(props => {
     handleClose,
   } = props;
   const game = useSelector(state => state.game);
-  const logger = new Logger('InfoPage');
-  logger.log('Render info page');
+  const [logger, setLogger] = useState(null);
+
+  useEffect(() => {
+    setLogger(new Logger('InfoPage'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering InfoPage component');
+  }, [logger]);
 
   function getTitle() {
     if (game.hasTitle) {
@@ -39,11 +47,11 @@ const InfoPage = memo(props => {
           </h2>
         )}
         <h3>
-          By
+          { 'By ' }
           {game.author}
         </h3>
         <h4>
-          Edited by
+          { 'Edited by ' }
           {game.editor}
         </h4>
         <small>
@@ -54,28 +62,28 @@ const InfoPage = memo(props => {
       <h3>Crossword with Me</h3>
       <ul>
         <li>
-          Crossword with Me keeps the
+          { 'Crossword with Me keeps the ' }
           <b>current week</b>
-          of New York Times crossword puzzles for you to play with friends.
+          { ' of New York Times crossword puzzles for you to play with friends.' }
         </li>
         <li>
-          To add a friend to a game, choose
+          { 'To add a friend to a game, choose ' }
           <b>&apos;Phone a Friend&apos;</b>
-          from the Hint menu.
+          { ' from the Hint menu.' }
         </li>
         <li>
-          Only the person who started the game is
+          { 'Only the person who started the game is ' }
           <b>allowed to reveal or check</b>
-          answers.
+          { ' answers.' }
         </li>
         <li>
           <b>Anybody can add</b>
-          a person to the game. They must sign in to play.
+          { ' a person to the game. They must sign in to play.' }
         </li>
         <li>
-          You can
+          { 'You can ' }
           <b>start your own game</b>
-          for every day of the week by choosing from the dropdown menu.
+          { ' for every day of the week by choosing from the dropdown menu.' }
         </li>
       </ul>
       <h3>What is Rebus?</h3>
@@ -92,17 +100,17 @@ const InfoPage = memo(props => {
       <ul>
         <li>
           <b>Tab</b>
-          or
+          { ' or ' }
           <b>Shift + Right Arrow</b>
-          to go to next word
+          { ' to go to next word' }
         </li>
         <li>
           <b>Shift + Left Arrow</b>
-          to go to previous word
+          { ' to go to previous word' }
         </li>
         <li>
           <b>Space bar</b>
-          toggles clue orientation
+          { ' toggles clue orientation' }
         </li>
       </ul>
       <h3>Mobile Tips</h3>
@@ -116,25 +124,25 @@ const InfoPage = memo(props => {
       <h3>Thank you</h3>
       <ul>
         <li>
-          New York Times for not sending me a cease-and-desist letter
-          yet for this multiplayer proof-of-concept
+          <i>New York Times</i>
+          { ' for not sending me a cease-and-desist letter yet for this multiplayer proof-of-concept' }
         </li>
         <li>
           xword.info for the daily crossword data format
         </li>
         <li>
-          Ethan Schoonover for the
+          { 'Ethan Schoonover for the ' }
           <a href="https://ethanschoonover.com/solarized/">Solarized</a>
-          color scheme
+          { ' color scheme' }
         </li>
       </ul>
       <h3>Contact</h3>
       <p>
         Please report any issues to:
-        <a href="https://github.com/ashoofly" target="_blank" rel="noreferrer">
+        <a href="https://github.com/ashoofly/crossword-with-friends/issues" target="_blank" rel="noreferrer">
           <div className="contact">
             <GitHubIcon />
-            https://github.com/ashoofly
+            Crossword with Me
           </div>
         </a>
       </p>

@@ -1,10 +1,10 @@
-import { React, useEffect, useState, useCallback, memo, RefObject } from 'react';
+import { React, useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { oneLine } from 'common-tags';
 import '../styles/Square.css';
-import gameActions from '../redux/slices/gameSlice';
-import povActions from '../redux/slices/povSlice';
+import { gameActions } from '../redux/slices/gameSlice';
+import { povActions } from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
 import { combinePlayerColors, showColorWithRevealedMarker, showColorWithVerifiedMarker, getClassNameAndRgbValue } from '../utils/render';
 
@@ -25,13 +25,21 @@ const Square = memo(props => {
   const focused = useSelector(state => state.pov.focused);
   const textColor = useSelector(state => state.game.board[id].color);
   const dispatch = useDispatch();
-  const logger = new Logger('Square');
-  logger.log(`Rendering square component ${id}`);
+  const [logger, setLogger] = useState(null);
 
   const [squareText, setSquareText] = useState('');
   const [highlightClasses, setHighlightClasses] = useState('');
   const [textColorClass, setTextColorClass] = useState('');
   const [customStyle, setCustomStyle] = useState(null);
+
+  useEffect(() => {
+    setLogger(new Logger('Square'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log(`Rendering square component ${id}`);
+  }, [id, logger]);
 
   function displaySquare() {
     if (!squareGrid.isPlayable) {
@@ -118,6 +126,7 @@ const Square = memo(props => {
 
   function handleFocus() {
     if (squareGrid.answer === '.') return;
+    logger.log(`Focus: ${id}`);
     dispatch(povActions.setFocusedSquare({ focus: id }));
   }
 
@@ -163,8 +172,8 @@ const Square = memo(props => {
 });
 
 Square.propTypes = {
-  id: PropTypes.instanceOf(String).isRequired,
-  squareRef: PropTypes.instanceOf(RefObject).isRequired,
+  id: PropTypes.number.isRequired,
+  squareRef: PropTypes.object.isRequired,
 };
 
 export default Square;

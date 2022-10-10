@@ -1,6 +1,5 @@
 import { React, useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Auth } from 'firebase/app';
 import PropTypes from 'prop-types';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -9,7 +8,7 @@ import Alert from '@mui/material/Alert';
 import lifebuoy from '../images/life-buoy.svg';
 import friend from '../images/add-friend.svg';
 import '../styles/Navbar.css';
-import gameActions from '../redux/slices/gameSlice';
+import { gameActions } from '../redux/slices/gameSlice';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import Logger from '../common/Logger';
 
@@ -17,8 +16,7 @@ const HintMenu = memo(props => {
   const {
     auth,
   } = props;
-  const logger = new Logger('HintMenu');
-  logger.log('Render hintmenu');
+  const [logger, setLogger] = useState(null);
 
   const dispatch = useDispatch();
   const [user] = useAuthenticatedUser(auth);
@@ -34,14 +32,14 @@ const HintMenu = memo(props => {
   const [openToast, setOpenToast] = useState(false);
   const open = Boolean(anchorEl);
 
-  const amOwner = useCallback(() => {
-    const me = players.find(player => player.playerId === user.uid);
-    if (me) {
-      return me.owner;
-    } else {
-      return false;
-    }
-  }, [players, user.uid]);
+  useEffect(() => {
+    setLogger(new Logger('HintMenu'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering HintMenu component');
+  }, [logger]);
 
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
@@ -102,63 +100,74 @@ const HintMenu = memo(props => {
     dispatch(gameActions.toggleAutocheck({ gameId }));
   }, [dispatch, gameId]);
 
-  const mainHintMenuItems = useMemo(() => [
-    {
-      id: 0,
-      text: 'Phone a Friend',
-      onClick: copyUrlToClipboard,
-      icon: {
-        className: 'phone-a-friend',
-        src: friend,
-        alt: 'add-a-friend-icon',
+  const mainHintMenuItems = useMemo(() => {
+    function amOwner() {
+      const me = players.find(player => player.playerId === user.uid);
+      if (me) {
+        return me.owner;
+      } else {
+        return false;
+      }
+    }
+
+    return [
+      {
+        id: 0,
+        text: 'Phone a Friend',
+        onClick: copyUrlToClipboard,
+        icon: {
+          className: 'phone-a-friend',
+          src: friend,
+          alt: 'add-a-friend-icon',
+        },
+        style: {
+          color: '#08992e',
+        },
+        hide: !user,
       },
-      style: {
-        color: '#08992e',
+      {
+        id: -1,
+        text: 'Only the owner of the puzzle can reveal/check',
+        style: {
+          color: 'rgb(220,50,47)',
+          fontSize: 12,
+          fontWeight: 'bold',
+          cursor: 'default',
+        },
+        hide: amOwner(),
       },
-      hide: !user,
-    },
-    {
-      id: -1,
-      text: 'Only the owner of the puzzle can reveal/check',
-      style: {
-        color: 'rgb(220,50,47)',
-        fontSize: 12,
-        fontWeight: 'bold',
-        cursor: 'default',
+      {
+        id: 1,
+        text: `Turn ${autocheck ? 'OFF' : 'ON'} Autocheck`,
+        onClick: handleAutocheck,
+        disabled: !amOwner(),
       },
-      hide: amOwner(),
-    },
-    {
-      id: 1,
-      text: `Turn ${autocheck ? 'OFF' : 'ON'} Autocheck`,
-      onClick: handleAutocheck,
-      disabled: amOwner(),
-    },
-    {
-      id: 2,
-      text: 'Check Square',
-      onClick: checkActiveSquare,
-      disabled: autocheck || !amOwner(),
-    },
-    {
-      id: 3,
-      text: 'Check Word',
-      onClick: checkActiveWord,
-      disabled: autocheck || !amOwner(),
-    },
-    {
-      id: 4,
-      text: 'Check Puzzle',
-      onClick: checkPuzzle,
-      disabled: autocheck || !amOwner(),
-    },
-    {
-      id: 5,
-      text: 'Reveal / Clear...',
-      onClick: goToRevealMenu,
-      disabled: autocheck || !amOwner(),
-    },
-  ], [amOwner, autocheck, checkActiveSquare, checkActiveWord,
+      {
+        id: 2,
+        text: 'Check Square',
+        onClick: checkActiveSquare,
+        disabled: autocheck || !amOwner(),
+      },
+      {
+        id: 3,
+        text: 'Check Word',
+        onClick: checkActiveWord,
+        disabled: autocheck || !amOwner(),
+      },
+      {
+        id: 4,
+        text: 'Check Puzzle',
+        onClick: checkPuzzle,
+        disabled: autocheck || !amOwner(),
+      },
+      {
+        id: 5,
+        text: 'Reveal / Clear...',
+        onClick: goToRevealMenu,
+        disabled: autocheck || !amOwner(),
+      },
+    ];
+  }, [players, autocheck, checkActiveSquare, checkActiveWord,
     checkPuzzle, copyUrlToClipboard, handleAutocheck, user]);
 
   const revealMenuItems = useMemo(() => [
@@ -259,7 +268,7 @@ const HintMenu = memo(props => {
 });
 
 HintMenu.propTypes = {
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  auth: PropTypes.object.isRequired,
 };
 
 export default HintMenu;

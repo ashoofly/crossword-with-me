@@ -68,9 +68,9 @@ module.exports = class WebSocketServer {
 
   initialize() {
     this.io.on('connection', async (socket) => {
-      socket.on('save-board', async (gameId, board) => {
+      socket.on('save-board', async (gameId, board, autocheck) => {
         try {
-          this.dbWorker.saveBoard(gameId, board);
+          this.dbWorker.saveBoard(gameId, board, autocheck);
         } catch (e) {
           console.error(e);
         }
@@ -217,4 +217,4 @@ module.exports = class WebSocketServer {
       });
     });
   }
-}
+};

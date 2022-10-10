@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@firebase/auth": "^0.20.8",
     "@mui/icons-material": "^5.10.3",
     "@mui/material": "^5.8.7",
     "@reduxjs/toolkit": "^1.8.3",
@@ -25,7 +26,6 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "lint": "eslint .",
     "dev": "env-cmd -f ../.env.local react-scripts start",
     "build-heroku-local": "env-cmd -f ../.env.heroku-local node ./build.js",
     "build-prod": "node ./build.js",
@@ -37,8 +37,30 @@
     "extends": [
       "react-app",
       "react-app/jest",
-      "plugin:react-hooks/recommended"
-    ]
+      "plugin:react-hooks/recommended",
+      "airbnb"
+    ],
+    "rules": {
+      "object-curly-newline": "off",
+      "arrow-parens": ["error", "as-needed"],
+      "no-else-return": "off",
+      "no-lonely-if": "off",
+      "comma-dangle": ["error", {
+        "functions": "never",
+        "objects": "always-multiline",
+        "arrays": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline"
+      }],
+      "no-underscore-dangle": "off",
+      "no-param-reassign": ["error", { "props": false }],
+      "react-redux/useSelector-prefer-selectors": "off",
+      "one-var": "off",
+      "one-var-declaration-per-line": "off",
+      "consistent-return": "off",
+      "react/forbid-prop-types": "off",
+      "no-unused-vars": "off"
+    }
   },
   "browserslist": {
     "production": [

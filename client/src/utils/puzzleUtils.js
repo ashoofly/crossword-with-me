@@ -63,36 +63,104 @@ function centerActiveSquareOnZoom(squareRefs, focus, orientation) {
 }
 
 // TODO: max call stack size exceeded here
-function mapGridIndexToClueDictionaryEntry(clueDictionary, orientation, gameGrid, index) {
-  const currentWordStart = findWordStart(index);
+function mapGridIndexToClueDictionaryEntry(clueDictionary, numCols, orientation, gameGrid, index) {
+  const currentWordStart = findWordStart(gameGrid, numCols, index, orientation);
   return clueDictionary[orientation][gameGrid[currentWordStart].gridNum];
 }
 
-function isLastClueSquare(index) {
-  const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
-  return currentWordClueDictionaryEntry.isLastClue && findWordEnd(index) === index;
+function isLastClueSquare(clueDictionary, numCols, numRows, orientation, gameGrid, index) {
+  const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+    clueDictionary,
+    numCols,
+    orientation,
+    gameGrid,
+    index
+  );
+  const wordEnd = findWordEnd(
+    gameGrid,
+    numCols,
+    numRows,
+    index,
+    orientation
+  );
+  return currentWordClueDictionaryEntry
+    ? (currentWordClueDictionaryEntry.isLastClue && wordEnd === index) : false;
 }
 
-export function getPrevWord(clueDictionary, orientation, index) {
-  const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
-  const { prevGridNum } = currentWordClueDictionaryEntry;
-  if (prevGridNum !== -1) {
-    const prevWordStartIndex = clueDictionary[orientation][prevGridNum].index;
-    return prevWordStartIndex;
+export function getPrevWord(clueDictionary, numCols, orientation, gameGrid, index) {
+  let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+    clueDictionary,
+    numCols,
+    orientation,
+    gameGrid,
+    index
+  );
+  if (currentWordClueDictionaryEntry) {
+    const { prevGridNum } = currentWordClueDictionaryEntry;
+    if (prevGridNum !== -1) {
+      const prevWordStartIndex = clueDictionary[orientation][prevGridNum].index;
+      return prevWordStartIndex;
+    } else {
+      // this is first clue
+      const currentWordStart = findWordStart(gameGrid, numCols, index, orientation);
+      return currentWordStart;
+    }
+  } else {
+    // handle errors in xword.info data by going to previous valid clue entry if any are missing
+    let prevIndex = index;
+    while (!currentWordClueDictionaryEntry) {
+      prevIndex -= 1;
+      currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+        clueDictionary,
+        numCols,
+        orientation,
+        gameGrid,
+        prevIndex
+      );
+    }
+    return currentWordClueDictionaryEntry.index;
   }
-  const currentWordStart = findWordStart(index);
-  return currentWordStart;
 }
 
-export function getNextWord(clueDictionary, orientation, index) {
-  const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(index);
-  const { nextGridNum } = currentWordClueDictionaryEntry;
-  if (nextGridNum !== -1) {
-    const nextWordStartIndex = clueDictionary[orientation][nextGridNum].index;
-    return nextWordStartIndex;
+export function getNextWord(clueDictionary, numCols, numRows, orientation, gameGrid, index) {
+  let currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+    clueDictionary,
+    numCols,
+    orientation,
+    gameGrid,
+    index
+  );
+  if (currentWordClueDictionaryEntry) {
+    const { nextGridNum } = currentWordClueDictionaryEntry;
+    if (nextGridNum !== -1) {
+      const nextWordStartIndex = clueDictionary[orientation][nextGridNum].index;
+      return nextWordStartIndex;
+    } else {
+      // this is last clue
+      const currentWordEnd = findWordEnd(
+        gameGrid,
+        numCols,
+        numRows,
+        index,
+        orientation
+      );
+      return currentWordEnd;
+    }
+  } else {
+    // handle errors in xword.info data by going to next valid clue entry if any are missing
+    let nextIndex = index;
+    while (!currentWordClueDictionaryEntry) {
+      nextIndex += 1;
+      currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+        clueDictionary,
+        numCols,
+        orientation,
+        gameGrid,
+        nextIndex
+      );
+    }
+    return currentWordClueDictionaryEntry.index;
   }
-  const currentWordEnd = findWordEnd(index);
-  return currentWordEnd;
 }
 
 export {

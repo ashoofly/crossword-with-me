@@ -1,12 +1,10 @@
-import { React, useEffect, memo, useMemo, RefObject } from 'react';
+import { React, useEffect, memo, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Socket from 'socket.io-client';
 import PropTypes from 'prop-types';
-import { User } from 'firebase/auth';
 import Square from './Square';
 import '../styles/colors.css';
 import '../styles/Board.css';
-import gameActions from '../redux/slices/gameSlice';
+import { gameActions } from '../redux/slices/gameSlice';
 import Logger from '../common/Logger';
 
 const Board = memo(props => {
@@ -22,8 +20,16 @@ const Board = memo(props => {
   const numRows = useSelector(state => state.game.numRows);
   const numCols = useSelector(state => state.game.numCols);
   const focused = useSelector(state => state.pov.focused);
-  const logger = useMemo(() => new Logger('Board'), []);
-  logger.log('Rendering Board component.');
+  const [logger, setLogger] = useState(null);
+
+  useEffect(() => {
+    setLogger(new Logger('Board'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering Board component');
+  }, [logger]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--numRows', numRows);
@@ -34,7 +40,7 @@ const Board = memo(props => {
   }, [numCols]);
 
   useEffect(() => {
-    if (socket === null || !gameId || Object.keys(focused).length === 0) return;
+    if (socket === null || logger === null || !gameId || Object.keys(focused).length === 0) return;
     dispatch(gameActions.updatePlayerFocus({
       playerId: user.uid,
       gameId,
@@ -48,9 +54,7 @@ const Board = memo(props => {
     <Square
       key={square.id}
       id={square.id}
-      user={user}
       squareRef={squareRefs[index]}
-      socket={socket}
     />
   ));
 
@@ -62,10 +66,10 @@ const Board = memo(props => {
 });
 
 Board.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  user: PropTypes.instanceOf(User).isRequired,
-  gameId: PropTypes.instanceOf(String).isRequired,
-  squareRefs: PropTypes.arrayOf(RefObject).isRequired,
+  socket: PropTypes.object.isRequired,
+  user: PropTypes.object.isRequired,
+  gameId: PropTypes.string.isRequired,
+  squareRefs: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 export default Board;

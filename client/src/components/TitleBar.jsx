@@ -1,6 +1,4 @@
-import { React, memo } from 'react';
-import Socket from 'socket.io-client';
-import { Auth } from 'firebase/app';
+import { React, memo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import PlayerBox from './PlayerBox';
 import Logger from '../common/Logger';
@@ -12,9 +10,17 @@ const TitleBar = memo(props => {
     auth,
     gameId,
   } = props;
-  const logger = new Logger('TitleBar');
-  logger.log('Render TitleBar');
+  const [logger, setLogger] = useState(null);
   const [user] = useAuthenticatedUser(auth);
+
+  useEffect(() => {
+    setLogger(new Logger('TitleBar'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering TitleBar component');
+  }, [logger]);
 
   function handleClick() {
     if (user) {
@@ -39,8 +45,8 @@ const TitleBar = memo(props => {
 });
 
 TitleBar.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  socket: PropTypes.object.isRequired,
+  auth: PropTypes.object.isRequired,
   gameId: PropTypes.string.isRequired,
 };
 

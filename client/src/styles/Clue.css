@@ -1,16 +1,15 @@
 .clue {
   background-color: #063642;
   color: #DCD7C9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 4fr 1fr;
   cursor: pointer;
   width: 100%;
   text-align: center;
 }
 
 .clue-text {
-  padding: 20px 10px;
+  grid-column: 2 / 3;
 }
 
 .arrows {
@@ -18,6 +17,10 @@
   filter: invert(95%) sepia(12%) saturate(221%) hue-rotate(1deg) brightness(92%) contrast(87%);
 }
 
-.arrow-container {
-  padding: 15px 20px;
+#left-arrow-container {
+  grid-column: 1 / 2;
+}
+
+#right-arrow-container {
+  grid-column: 3 / 4;
 }

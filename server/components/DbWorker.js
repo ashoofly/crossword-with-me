@@ -138,11 +138,13 @@ module.exports = class DbWorker {
    * Called on receiving Socket event 'save-board'
    * @param {String} gameId
    * @param {Object} board
+   * @param {Boolean} autocheck
    */
-  async saveBoard(gameId, board) {
+  async saveBoard(gameId, board, autocheck) {
     const gameRef = this.db.ref(`games/${gameId}`);
     gameRef.update({
       board,
+      autocheck,
     });
   }
 
@@ -185,12 +187,14 @@ module.exports = class DbWorker {
       return null;
     }
     const numCurrentPlayers = players.length;
+    const numDefaultColors = GameConfig.defaultPlayerColors.length;
+    const playerDefaultColorIndex = numCurrentPlayers % numDefaultColors;
     const addedPlayer = {
       playerId: player.id,
       photoURL: player.photoURL,
       displayName: player.displayName,
       owner: false,
-      color: GameConfig.defaultPlayerColors[numCurrentPlayers],
+      color: GameConfig.defaultPlayerColors[playerDefaultColorIndex],
       online: true,
     };
     players.push(addedPlayer);

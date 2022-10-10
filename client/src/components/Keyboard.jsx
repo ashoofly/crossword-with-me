@@ -1,10 +1,10 @@
-import { React, memo, useCallback } from 'react';
+import { React, memo, useCallback, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import '../styles/Keyboard.css';
 import Button from '@mui/material/Button';
 import backspace from '../images/backspace-outline.png';
-import povActions from '../redux/slices/povSlice';
+import { povActions } from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
 import Cursor from '../common/Cursor';
 
@@ -13,13 +13,24 @@ const Keyboard = memo(props => {
     cursor,
     handleKeyDown,
   } = props;
-  const logger = new Logger('Keyboard');
-  logger.log('Render keyboard');
+  const [logger, setLogger] = useState(null);
+
+  useEffect(() => {
+    setLogger(new Logger('Keyboard'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering Keyboard component');
+  }, [logger]);
 
   const dispatch = useDispatch();
-  const pov = useSelector(state => state.pov);
-  const { rebusActive } = pov;
-  const focus = pov.focused.square;
+  const {
+    rebusActive,
+    zoomActive,
+    'focused.orientation': orientation,
+    'focused.square': focus,
+  } = useSelector(state => state.pov);
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
   const secondRowKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
@@ -32,8 +43,8 @@ const Keyboard = memo(props => {
 
   const handleRebusButtonClick = useCallback(() => {
     dispatch(povActions.toggleRebus());
-    cursor.jumpToSquare(focus);
-  }, [cursor, dispatch, focus]);
+    cursor.jumpToSquare(focus, zoomActive, orientation);
+  }, [cursor, dispatch, focus, orientation, zoomActive]);
 
   const handleClick = useCallback(e => {
     handleKeyDown({

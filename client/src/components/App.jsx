@@ -4,9 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useMediaQuery } from 'react-responsive';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import Socket from 'socket.io-client';
 import PropTypes from 'prop-types';
-import { Auth } from 'firebase/app';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import TitleBar from './TitleBar';
 import Navbar from './Navbar';
@@ -15,8 +13,8 @@ import Clue from './Clue';
 import Keyboard from './Keyboard';
 import SignIn from './SignIn';
 import '../styles/App.css';
-import gameActions from '../redux/slices/gameSlice';
-import povActions from '../redux/slices/povSlice';
+import { gameActions } from '../redux/slices/gameSlice';
+import { povActions } from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
 import { setAppLayout, setBoardLayout } from '../utils/render';
 import Cursor from '../common/Cursor';
@@ -27,8 +25,7 @@ function App(props) {
     auth,
   } = props;
 
-  const logger = useMemo(() => new Logger('App'), []);
-  logger.log('Render App component');
+  const [logger, setLogger] = useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
   const dispatch = useDispatch();
 
@@ -48,9 +45,11 @@ function App(props) {
     loaded,
     savedBoardToDB,
     board,
+    autocheck,
     advanceCursor,
     mostRecentAction } = game;
-  const [squareRefs] = useState(Array(numRows * numCols).fill(0).map(() => createRef()));
+  const [squareRefs, setSquareRefs] = useState(Array(numRows * numCols)
+    .fill(0).map(() => createRef()));
   const [cursor, setCursor] = useState(null);
 
   /* Player State */
@@ -59,6 +58,8 @@ function App(props) {
   const rebusActive = useSelector(state => state.pov.rebusActive);
   const pencilActive = useSelector(state => state.pov.pencilActive);
   const focusedSquare = useSelector(state => state.pov.focused.square);
+  const focusedWord = useSelector(state => state.pov.focused.word);
+  const orientation = useSelector(state => state.pov.focused.orientation);
   const [deleteMode, setDeleteMode] = useState(false);
   const [overwriteMode, setOverwriteMode] = useState(false);
 
@@ -72,6 +73,18 @@ function App(props) {
   const isTouchDevice = 'ontouchstart' in window;
 
   /**
+   * Set up logger
+   */
+  useEffect(() => {
+    setLogger(new Logger('App'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering App component');
+  }, [logger]);
+
+  /**
    * Set app layout upon initial render and when resizing window
    */
   useEffect(() => {
@@ -82,6 +95,13 @@ function App(props) {
       window.removeEventListener('resize', boundFunc);
     };
   }, [isWidescreen]);
+
+  /**
+   * Set square refs when board dimensions change
+   */
+  useEffect(() => {
+    setSquareRefs(Array(numRows * numCols).fill(0).map(() => createRef()));
+  }, [numRows, numCols]);
 
   /**
    * Set board layout whenever new game is loaded and when resizing window
@@ -106,8 +126,8 @@ function App(props) {
    * Initialize cursor for game
    */
   useEffect(() => {
-    setCursor(new Cursor(game, squareRefs));
-  }, [game, squareRefs]);
+    setCursor(new Cursor(game, squareRefs, overwriteMode, zoomActive));
+  }, [game, squareRefs, overwriteMode, zoomActive]);
 
   /**
    * After user is authenticated and player is verified,
@@ -127,16 +147,16 @@ function App(props) {
       }
     } else if (requestedGameId !== loadedGameId) {
       if (user) {
-        logger.log(`Send event: get-game-by-id with ${user.uid}`);
+        logger.log(`Send event: get-game-by-id with ${user.uid} for ${requestedGameId}`);
         socket.emit('get-game-by-id', requestedGameId, user.uid);
       } else {
         navigate(`/join-game?gameId=${requestedGameId}`);
       }
     }
-  // 'loadedGameId' should not be included in dep array, b/c this would cause infinite loop:
+  // 'loadedGameId' and 'searchParams' should not be included in dep array,
+  // b/c this would cause infinite loop:
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, user, playerVerified, initialized, searchParams,
-    logger, requestedGameId, navigate]);
+  }, [socket, user, playerVerified, initialized, requestedGameId, logger, navigate]);
 
   /**
    * Set up app-level socket listeners after socket or authenticated user changes
@@ -297,20 +317,20 @@ function App(props) {
     if (socket === null) return;
     if (!savedBoardToDB) {
       logger.log('Send event: save-board');
-      socket.emit('save-board', loadedGameId, board);
+      socket.emit('save-board', loadedGameId, board, autocheck);
       dispatch(gameActions.gameSaved());
     }
-  }, [savedBoardToDB, board, players, socket, logger, loadedGameId, dispatch]);
+  }, [savedBoardToDB, board, players, socket, logger, loadedGameId, dispatch, autocheck]);
 
   /**
    * Board navigation
    */
   const goToNextSquareAfterInput = useCallback(() => {
     if (!deleteMode && !rebusActive) {
-      const index = cursor.getNextEmptySquare(focusedSquare);
-      cursor.jumpToSquare(index);
+      const index = cursor.getNextEmptySquare(orientation, focusedSquare);
+      cursor.jumpToSquare(index, zoomActive, orientation);
     }
-  }, [cursor, deleteMode, focusedSquare, rebusActive]);
+  }, [cursor, deleteMode, focusedSquare, orientation, rebusActive, zoomActive]);
 
   useEffect(() => {
     if (advanceCursor > 0) {
@@ -323,9 +343,9 @@ function App(props) {
     if (e.key === ' ') {
       dispatch(povActions.toggleOrientation());
     } else if (e.key === 'Tab' || (e.shiftKey && e.key === 'ArrowRight')) {
-      cursor.jumpToNextWord();
+      cursor.jumpToNextWord(focusedSquare, orientation);
     } else if (e.shiftKey && e.key === 'ArrowLeft') {
-      cursor.jumpToPreviousWord();
+      cursor.jumpToPreviousWord(focusedSquare, orientation);
     } else if (board[focusedSquare].verified) {
       goToNextSquareAfterInput();
     } else if (rebusActive && e.key === 'Enter') {
@@ -335,7 +355,7 @@ function App(props) {
       let currentIndex = focusedSquare;
       if (board[focusedSquare].input === '') {
         // if user input already empty, backspace to previous letter
-        currentIndex = cursor.backspace();
+        currentIndex = cursor.backspace(focusedSquare, focusedWord, orientation);
       }
       if (!board[currentIndex].verified) {
         dispatch(gameActions.changeInput({ gameId: loadedGameId, id: currentIndex, value: '', color: null }));
@@ -371,8 +391,8 @@ function App(props) {
         }
       }
     }
-  }, [board, focusedSquare, rebusActive, dispatch, cursor, goToNextSquareAfterInput,
-    loadedGameId, myColor, pencilActive, overwriteMode]);
+  }, [board, focusedSquare, rebusActive, dispatch, cursor, orientation,
+    goToNextSquareAfterInput, focusedWord, loadedGameId, myColor, pencilActive, overwriteMode]);
 
   return (
     // This <div> contains descendant interactive elements such as <Square> and <Keyboard>:
@@ -391,68 +411,64 @@ function App(props) {
       {user && playerVerified && (
         <>
           { /* Game not found page */ }
-          (
-            {requestedGameId && gameNotFound && (
-              <h1>
-                Game
-                {requestedGameId}
-                not found. Games are rotated every week,
-                so this may have been a game from last week.
-              </h1>
-            )}
-          )
+          {requestedGameId && gameNotFound && (
+            <h1>
+              Game
+              {requestedGameId}
+              not found. Games are rotated every week,
+              so this may have been a game from last week.
+            </h1>
+          )}
           { /* Game loaded page */ }
-          (
-            {!gameNotFound && loaded && (
-              <Fragment className="App">
-                <TitleBar
-                  socket={socket}
-                  auth={auth}
-                  gameId={loadedGameId}
-                  isWidescreen={isWidescreen}
-                  cursor={cursor}
-                />
-                <Navbar
-                  socket={socket}
-                  auth={auth}
-                  gameId={loadedGameId}
-                  isWidescreen={isWidescreen}
-                  cursor={cursor}
-                />
-                <Board
-                  user={user}
-                  socket={socket}
-                  gameId={loadedGameId}
-                  squareRefs={squareRefs}
-                />
-                <Clue
-                  isWidescreen={isWidescreen}
+          {!gameNotFound && loaded && (
+            <div className="App">
+              <TitleBar
+                socket={socket}
+                auth={auth}
+                gameId={loadedGameId}
+                isWidescreen={isWidescreen}
+                cursor={cursor}
+              />
+              <Navbar
+                socket={socket}
+                auth={auth}
+                gameId={loadedGameId}
+                isWidescreen={isWidescreen}
+                cursor={cursor}
+              />
+              <Board
+                user={user}
+                socket={socket}
+                gameId={loadedGameId}
+                squareRefs={squareRefs}
+              />
+              <Clue
+                isWidescreen={isWidescreen}
+                handleKeyDown={handleKeyDown}
+                cursor={cursor}
+              />
+              {isTouchDevice && (
+                <Keyboard
                   handleKeyDown={handleKeyDown}
                   cursor={cursor}
                 />
-                {isTouchDevice && (
-                  <Keyboard
-                    handleKeyDown={handleKeyDown}
-                    cursor={cursor}
-                  />
-                )}
-                { /* Notification when player enters the game */ }
-                <Snackbar
-                  open={openToast}
+              )}
+              { /* Notification when player enters the game */ }
+              <Snackbar
+                open={openToast}
+                onClose={() => setOpenToast(false)}
+                autoHideDuration={2000}
+              >
+                <Alert
                   onClose={() => setOpenToast(false)}
-                  autoHideDuration={2000}
+                  severity="info"
+                  sx={{ width: '100%' }}
                 >
-                  <Alert
-                    onClose={() => setOpenToast(false)}
-                    severity="info"
-                    sx={{ width: '100%' }}
-                  >
-                    {toastMessage}
-                  </Alert>
-                </Snackbar>
-              </Fragment>
-            )}
-          )
+                  {toastMessage}
+                </Alert>
+              </Snackbar>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -460,8 +476,8 @@ function App(props) {
 }
 
 App.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  socket: PropTypes.object.isRequired,
+  auth: PropTypes.object.isRequired,
 };
 
 export default App;

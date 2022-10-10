@@ -1,8 +1,6 @@
-import { React, memo, useState, useCallback } from 'react';
+import { React, memo, useState, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Socket from 'socket.io-client';
 import PropTypes from 'prop-types';
-import { Auth } from 'firebase/app';
 import Button from '@mui/material/Button';
 import info from '../images/info.svg';
 import pencil from '../images/pencil.svg';
@@ -12,7 +10,7 @@ import GameMenu from './GameMenu';
 import HintMenu from './HintMenu';
 import InfoPage from './InfoPage';
 import '../styles/Navbar.css';
-import povActions from '../redux/slices/povSlice';
+import { povActions } from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
 import Cursor from '../common/Cursor';
 
@@ -24,8 +22,7 @@ const Navbar = memo(props => {
     gameId,
     isWidescreen,
   } = props;
-  const logger = new Logger('Navbar');
-  logger.log('Render navbar');
+  const [logger, setLogger] = useState(null);
 
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
@@ -34,7 +31,17 @@ const Navbar = memo(props => {
     rebusActive,
     pencilActive,
     'focused.square': focus,
+    'focused.orientation': orientation,
   } = useSelector(state => state.pov);
+
+  useEffect(() => {
+    setLogger(new Logger('Navbar'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering Navbar component');
+  }, [logger]);
 
   function handleClickOpen() {
     setOpen(true);
@@ -50,12 +57,12 @@ const Navbar = memo(props => {
 
   const handleRebusButtonClick = useCallback(() => {
     dispatch(povActions.toggleRebus());
-    cursor.jumpToSquare(focus);
-  }, [cursor, dispatch, focus]);
+    cursor.jumpToSquare(focus, zoomActive, orientation);
+  }, [cursor, dispatch, focus, orientation, zoomActive]);
 
   function handlePencilClick() {
     dispatch(povActions.togglePencil());
-    cursor.jumpToSquare(focus);
+    cursor.jumpToSquare(focus, zoomActive, orientation);
   }
 
   return (
@@ -106,9 +113,9 @@ const Navbar = memo(props => {
 });
 
 Navbar.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
+  socket: PropTypes.object.isRequired,
   cursor: PropTypes.instanceOf(Cursor).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  auth: PropTypes.object.isRequired,
   gameId: PropTypes.string.isRequired,
   isWidescreen: PropTypes.bool.isRequired,
 };

@@ -1,7 +1,5 @@
 import { React, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Socket from 'socket.io-client';
-import { Auth } from 'firebase/app';
 import PropTypes from 'prop-types';
 import Tooltip from '@mui/material/Tooltip';
 import '../styles/colors.css';
@@ -13,15 +11,14 @@ import MenuItem from '@mui/material/MenuItem';
 import { signout } from '../utils/auth';
 import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import Logger from '../common/Logger';
-import povActions from '../redux/slices/povSlice';
+import { povActions } from '../redux/slices/povSlice';
 
 const PlayerBox = memo(props => {
   const {
     auth,
     socket,
   } = props;
-  const logger = useMemo(() => new Logger('PlayerBox'), []);
-  logger.log('Render Account component');
+  const [logger, setLogger] = useState(null);
 
   const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -30,8 +27,16 @@ const PlayerBox = memo(props => {
   const [friendIcons, setFriendIcons] = useState(null);
   const gameId = useSelector(state => state.game.gameId);
   const players = useSelector(state => state.game.players);
-
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    setLogger(new Logger('PlayerBox'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering PlayerBox component');
+  }, [logger]);
 
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
@@ -111,8 +116,8 @@ const PlayerBox = memo(props => {
 });
 
 PlayerBox.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  socket: PropTypes.object.isRequired,
+  auth: PropTypes.object.isRequired,
 };
 
 export default PlayerBox;

@@ -1,6 +1,4 @@
 import { React, useState, useEffect, useCallback, useMemo, memo } from 'react';
-import Socket from 'socket.io-client';
-import { Auth } from 'firebase/app';
 import PropTypes from 'prop-types';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,8 +17,7 @@ const GameMenu = memo(props => {
 
   const game = useSelector(state => state.game);
   const navigate = useNavigate();
-  const logger = useMemo(() => new Logger('GameMenu'), []);
-  logger.log('Render game menu');
+  const [logger, setLogger] = useState(null);
 
   const [user] = useAuthenticatedUser(auth);
   const teamGames = useSelector(state => state.pov.teamGames);
@@ -32,6 +29,16 @@ const GameMenu = memo(props => {
   const [heading, setHeading] = useState({ __html: 'Loading...' });
   const [selectedTeamGameId, setSelectedTeamGameId] = useState(null);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    setLogger(new Logger('GameMenu'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering GameMenu component');
+  }, [logger]);
+
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
   };
@@ -185,7 +192,7 @@ const GameMenu = memo(props => {
    * Load puzzle dates
    */
   useEffect(() => {
-    if (socket === null) return;
+    if (socket === null || logger === null) return;
     logger.log('Send event: get-puzzle-dates');
     socket.emit('get-puzzle-dates');
 
@@ -256,8 +263,8 @@ const GameMenu = memo(props => {
 });
 
 GameMenu.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  socket: PropTypes.object.isRequired,
+  auth: PropTypes.object.isRequired,
 };
 
 export default GameMenu;

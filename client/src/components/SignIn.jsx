@@ -1,7 +1,5 @@
 import { React, useEffect, useState, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Socket from 'socket.io-client';
-import { Auth } from 'firebase/app';
 import PropTypes from 'prop-types';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import cryptoRandomString from 'crypto-random-string';
@@ -9,14 +7,14 @@ import useAuthenticatedUser from '../hooks/useAuthenticatedUser';
 import { handleCredentialResponse } from '../utils/auth';
 import '../styles/SignIn.css';
 import Logger from '../common/Logger';
-import povActions from '../redux/slices/povSlice';
+import { povActions } from '../redux/slices/povSlice';
 
 const SignIn = memo(props => {
   const {
     auth,
     socket,
   } = props;
-  const logger = useMemo(() => new Logger('SignIn'), []);
+  const [logger, setLogger] = useState(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const gameId = searchParams.get('gameId');
@@ -29,6 +27,15 @@ const SignIn = memo(props => {
 
   const dispatch = useDispatch();
   const playerVerified = useSelector(state => state.pov.playerVerified);
+
+  useEffect(() => {
+    setLogger(new Logger('SignIn'));
+  }, []);
+
+  useEffect(() => {
+    if (!logger) return;
+    logger.log('Rendering SignIn component');
+  }, [logger]);
 
   useEffect(() => {
     if (!token || !auth) return;
@@ -69,7 +76,7 @@ const SignIn = memo(props => {
       socket.off('game-not-found', handleGameNotFound);
       socket.off('player-exists', handlePlayerVerified);
     };
-  }, [dispatch, logger, socket, user.uid]);
+  }, [dispatch, logger, socket, user]);
 
   useEffect(() => {
     function generateNonce() {
@@ -145,8 +152,8 @@ const SignIn = memo(props => {
 });
 
 SignIn.propTypes = {
-  socket: PropTypes.instanceOf(Socket).isRequired,
-  auth: PropTypes.instanceOf(Auth).isRequired,
+  socket: PropTypes.object.isRequired,
+  auth: PropTypes.object.isRequired,
 };
 
 export default SignIn;

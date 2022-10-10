@@ -7,6 +7,11 @@
   --board-padding: 2px;
   --keyboard-height: 16vh;
   --keyboard-row-margin: 1px;
+  --square-gridnum-size: 1.2vh;
+}
+
+button {
+  all: unset;
 }
 
 /* Mobile-first - layout for mobile and portrait tablet */

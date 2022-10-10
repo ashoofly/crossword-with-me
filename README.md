@@ -44,8 +44,6 @@ https://crosswordwith.me
   * client-side TO DO
   
 # To Do 
-* Linting for Client-side
-* Tests for Client-Side
 * If puzzle fetch fails, send message to me
   * Other monitoring
 * Alert player when puzzle complete and correct

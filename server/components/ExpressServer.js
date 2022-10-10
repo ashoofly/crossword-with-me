@@ -4,9 +4,8 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const { jwtVerify, createRemoteJWKSet } = require('jose');
 const path = require('path');
-const { fileURLToPath } = require('url');
 const { createServer } = require('http');
-const { firebaseAppConfig } = require('../firebase.js');
+const firebaseAppConfig = require('../firebaseConfig.js');
 
 const debug = Debug('ExpressServer');
 
@@ -80,4 +79,4 @@ module.exports = class ExpressServer {
     });
     return payload;
   }
-}
+};
