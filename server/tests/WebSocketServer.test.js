@@ -51,13 +51,13 @@ describe('socket.io server functionality', () => {
   test('save-board event triggers dbWorker.saveBoard()', (done) => {
     serverSocket.on('save-board', () => {
       try {
-        expect(dbWorker.saveBoard).toHaveBeenCalledWith('abc123', { board: 'example' });
+        expect(dbWorker.saveBoard).toHaveBeenCalledWith('abc123', { board: 'example' }, false);
         done();
       } catch (error) {
         done(error);
       }
     });
-    clientSocket.emit('save-board', 'abc123', { board: 'example' });
+    clientSocket.emit('save-board', 'abc123', { board: 'example' }, false);
   });
 
   test('client event "get-puzzle-dates" eventually triggers dbWorker.getPuzzleDates(),'
