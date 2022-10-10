@@ -37,6 +37,3 @@ https://console.cloud.google.com/cloudscheduler - select 'Force a job run'
 
 ## View logs for Cloud Function
 https://console.cloud.google.com/functions/details/us-central1/fetchNewPuzzle?project=crossword-with-friends&tab=log
-
-# Note
-Firebase Cloud Functions requires [CommonJS modules](https://firebase.google.com/docs/functions/handle-dependencies), so this directory uses CommonJS while the rest of the code uses ES6 import syntax. 
