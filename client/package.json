@@ -23,14 +23,7 @@
     "react-scripts": "5.0.1",
     "rewire": "^6.0.0",
     "socket.io-client": "^4.5.1",
-    "uuid": "^8.3.2",
-    "eslint": "^8.24.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jsx-a11y": "^6.6.1",
-    "eslint-plugin-react": "^7.31.8",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-redux": "^4.0.0"
+    "uuid": "^8.3.2"
   },
   "scripts": {
     "dev": "env-cmd -f ../.env.local react-scripts start",
@@ -80,5 +73,15 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.6.1",
+    "eslint-plugin-react": "^7.31.8",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-redux": "^4.0.0",
+    "gh-pages": "^4.0.0"
   }
 }
