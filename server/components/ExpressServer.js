@@ -48,7 +48,7 @@ module.exports = class ExpressServer {
     if (process.env.NODE_ENV !== 'development') {
       // const __filename = fileURLToPath(import.meta.url);
       // const __dirname = path.dirname(__filename);
-      const root = path.join(__dirname, '../client/build');
+      const root = path.join(__dirname, '../../client/build');
       this.server.use('/', express.static(root));
       this.server.get('*', (req, res) => {
         res.sendFile(path.join(root, 'index.html'));

@@ -122,7 +122,7 @@ const SignIn = memo(props => {
       {initialized && !token && !user && !gameNotFound && (
         <div className="join-game">
           <h2 className="join-game-text">
-            Please sign in to
+            { ' Please sign in to ' }
             {gameId ? `join ${friendName}'s game:` : 'play Crossword with Me:'}
           </h2>
           <div id="signInDiv" />
@@ -136,9 +136,9 @@ const SignIn = memo(props => {
       {gameId && gameNotFound && (
         <div className="join-game">
           <p>
-            Game
+            { 'Game ' }
             {gameId}
-            not found. Games are rotated every week, so this may have been a game from last week.
+            { ' not found. Games are rotated every week, so this may have been a game from last week.' }
           </p>
         </div>
       )}

@@ -10,6 +10,7 @@ npm run dev
 Go to `localhost:3000` to see UI
 
 ## Heroku Local
+
 ```
 cd client
 npm run build-heroku-local
@@ -19,6 +20,9 @@ npm run heroku-local
 Go to `localhost:5000` to see UI
 
 ## Heroku Staging
+
+**Note**: This is the first stage at which you can test mobile devices due to the security restrictions of using Google as the auth server (authorized JavaScript origins cannot just be unsecure IP addresses unless they are `localhost`, which does not work for mobile connections).
+
 ```
 git push staging master
 ```

@@ -7,7 +7,7 @@
     "lint": "eslint .",
     "build": "npm install",
     "dev": "NODE_ENV=development DEBUG=Server,ExpressServer,WebSocketServer,DbWorker nodemon index.js",
-    "heroku-local": "NODE_ENV=heroku-local DEBUG=* node index.js",
+    "heroku-local": "NODE_ENV=heroku-local DEBUG=Server,ExpressServer,WebSocketServer,DbWorker node index.js",
     "prod": "NODE_ENV=production node index.js",
     "help": "nodemon --help",
     "test": "jest"
