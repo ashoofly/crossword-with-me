@@ -50,7 +50,6 @@ function App(props) {
   const [squareRefs, setSquareRefs] = useState(Array(numRows * numCols)
     .fill(0).map(() => createRef()));
   const [cursor, setCursor] = useState(null);
-  const [counter, setCounter] = useState(advanceCursor);
 
   /* Player State */
   const pov = useSelector(state => state.pov);
@@ -87,6 +86,7 @@ function App(props) {
       socketLogger: new Logger('Socket'),
       focusLogger: new Logger('Focus'),
       errorLogger: new Logger('Error'),
+      debugLogger: new Logger('Debug'),
     });
   }, []);
 
@@ -350,13 +350,12 @@ function App(props) {
     pov, rebusActive, zoomActive]);
 
   useEffect(() => {
-    if (advanceCursor > counter) {
-      setCounter(counter + 1);
+    if (advanceCursor > 0) {
       goToNextSquareAfterInput();
     }
   // Including the function 'goToNextSquareAfterInput()' as a dependency results in infinite loop
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advanceCursor, counter]);
+  }, [advanceCursor]);
 
   const handleKeyDown = useCallback(e => {
     e.preventDefault();

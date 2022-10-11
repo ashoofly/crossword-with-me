@@ -6,6 +6,7 @@ const logOnly = [
   'Error',
   'Auth',
   'Index',
+  'Debug',
   // 'App',
   // 'Board',
   // 'Clue',
