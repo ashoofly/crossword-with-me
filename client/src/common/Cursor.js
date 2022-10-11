@@ -7,87 +7,93 @@ import {
 } from '../utils/puzzleUtils';
 
 export default class Cursor {
-  constructor(game, squareRefs, overwriteMode, zoomActive) {
-    this.game = game;
+  constructor(squareRefs) {
     this.squareRefs = squareRefs;
-    this.overwriteMode = overwriteMode;
-    this.zoomActive = zoomActive;
   }
 
-  getNextEmptySquare(orientation, index, previous) {
+  getNextEmptySquare(game, pov, index, overwriteMode = false, previous = false) {
+    const {
+      clueDictionary,
+      numCols,
+      numRows,
+      gameGrid,
+      board,
+    } = game;
+    const { orientation } = pov.focused;
+
     // If last square in orientation, remain on square
     if (isLastClueSquare(
-      this.game.clueDictionary,
-      this.game.numCols,
-      this.game.numRows,
+      clueDictionary,
+      numCols,
+      numRows,
       orientation,
-      this.game.gameGrid,
+      gameGrid,
       index
     )) return index;
 
-    const incrementInterval = orientation === 'across' ? 1 : this.game.numCols;
+    const incrementInterval = orientation === 'across' ? 1 : game.numCols;
 
-    if (this.overwriteMode) {
+    if (overwriteMode) {
       const next = index + incrementInterval;
       // in overwrite mode, just go to the next playable square in the word
       // regardless of whether it is occupied
-      if (next < (this.game.numCols * this.game.numRows)
-          && this.game.gameGrid[next].isPlayable
-          && !this.game.board[next].verified) {
+      if (next < (numCols * numRows)
+          && gameGrid[next].isPlayable
+          && !board[next].verified) {
         return next;
       }
       return getNextWord(
-        this.game.clueDictionary,
-        this.game.numCols,
-        this.game.numRows,
+        clueDictionary,
+        numCols,
+        numRows,
         orientation,
-        this.game.gameGrid,
+        gameGrid,
         index
       );
     }
     const currentWordStart = findWordStart(
-      this.game.gameGrid,
-      this.game.numCols,
+      gameGrid,
+      numCols,
       index,
       orientation
     );
     const currentWordEnd = findWordEnd(
-      this.game.gameGrid,
-      this.game.numCols,
-      this.game.numRows,
+      gameGrid,
+      numCols,
+      numRows,
       index,
       orientation
     );
 
     // Start at current square and go to next empty letter in word
     for (let i = index; i <= currentWordEnd; i += incrementInterval) {
-      if (!this.game.board[i].verified && this.game.board[i].input === '') return i;
+      if (!board[i].verified && board[i].input === '') return i;
     }
     // If all filled, go back to any empty letters at the beginning of the word
     for (let i = currentWordStart; i < index; i += incrementInterval) {
-      if (!this.game.board[i].verified && this.game.board[i].input === '') return i;
+      if (!board[i].verified && board[i].input === '') return i;
     }
 
     // If word is all filled out, find next word
     if (previous) {
       const prevWord = getPrevWord(
-        this.game.clueDictionary,
-        this.game.numCols,
+        clueDictionary,
+        numCols,
         orientation,
-        this.game.gameGrid,
+        gameGrid,
         index
       );
-      return this.getNextEmptySquare(orientation, prevWord, true);
+      return this.getNextEmptySquare(game, pov, prevWord, overwriteMode, true);
     }
     const nextWordStart = getNextWord(
-      this.game.clueDictionary,
-      this.game.numCols,
-      this.game.numRows,
+      clueDictionary,
+      numCols,
+      numRows,
       orientation,
-      this.game.gameGrid,
+      gameGrid,
       index
     );
-    return this.getNextEmptySquare(orientation, nextWordStart);
+    return this.getNextEmptySquare(game, pov, nextWordStart, overwriteMode, false);
   }
 
   jumpToSquare(index, zoomActive, orientation) {
@@ -97,56 +103,82 @@ export default class Cursor {
     }
   }
 
-  jumpToPreviousWord(focusedSquare, orientation) {
+  jumpToPreviousWord(game, pov, focusedSquare) {
+    const {
+      clueDictionary,
+      numCols,
+      gameGrid,
+    } = game;
+    const { focused, zoomActive } = pov;
+    const { orientation } = focused;
+
     const prevWordStart = getPrevWord(
-      this.game.clueDictionary,
-      this.game.numCols,
+      clueDictionary,
+      numCols,
       orientation,
-      this.game.gameGrid,
+      gameGrid,
       focusedSquare
     );
-    const index = this.getNextEmptySquare(orientation, prevWordStart, true);
-    this.jumpToSquare(index, this.zoomActive, orientation);
+    const index = this.getNextEmptySquare(game, pov, prevWordStart, false, true);
+    this.jumpToSquare(index, zoomActive, orientation);
   }
 
-  jumpToNextWord(focusedSquare, orientation) {
+  jumpToNextWord(game, pov, focusedSquare) {
+    const {
+      clueDictionary,
+      numCols,
+      numRows,
+      gameGrid,
+    } = game;
+    const { focused, zoomActive } = pov;
+    const { orientation } = focused;
+
     const nextWordStart = getNextWord(
-      this.game.clueDictionary,
-      this.game.numCols,
-      this.game.numRows,
+      clueDictionary,
+      numCols,
+      numRows,
       orientation,
-      this.game.gameGrid,
+      gameGrid,
       focusedSquare
     );
-    const index = this.getNextEmptySquare(orientation, nextWordStart);
-    this.jumpToSquare(index, this.zoomActive, orientation);
+    const index = this.getNextEmptySquare(game, pov, nextWordStart, false, false);
+    this.jumpToSquare(index, zoomActive, orientation);
   }
 
-  getPreviousSquare(focusedSquare, focusedWord, orientation) {
+  static getPreviousSquare(game, pov) {
+    const {
+      clueDictionary,
+      numCols,
+      numRows,
+      gameGrid,
+    } = game;
+    const { focused } = pov;
+    const { orientation, square: focusedSquare, word: focusedWord } = focused;
+
     if (focusedSquare === 0) return 0;
 
     if (orientation === 'across') {
       let current = focusedSquare - 1;
-      while (!this.game.gameGrid[current].isPlayable) {
+      while (!gameGrid[current].isPlayable) {
         current -= 1;
       }
       return current;
     } else {
       // orientation: down
       if (focusedSquare > focusedWord[0]) {
-        return focusedSquare - this.game.numCols;
+        return focusedSquare - numCols;
       } else {
         const prevWord = getPrevWord(
-          this.game.clueDictionary,
-          this.game.numCols,
+          clueDictionary,
+          numCols,
           orientation,
-          this.game.gameGrid,
+          gameGrid,
           focusedSquare
         );
         const prevWordEndIndex = findWordEnd(
-          this.game.gameGrid,
-          this.game.numCols,
-          this.game.numRows,
+          gameGrid,
+          numCols,
+          numRows,
           prevWord,
           orientation
         );
@@ -155,9 +187,11 @@ export default class Cursor {
     }
   }
 
-  backspace(focusedSquare, focusedWord, orientation) {
-    const index = this.getPreviousSquare(focusedSquare, focusedWord, orientation);
-    this.jumpToSquare(index, this.zoomActive, orientation);
+  backspace(game, pov) {
+    const { focused, zoomActive } = pov;
+    const { orientation, square: focusedSquare, word: focusedWord } = focused;
+    const index = Cursor.getPreviousSquare(game, pov);
+    this.jumpToSquare(index, zoomActive, orientation);
     return index;
   }
 

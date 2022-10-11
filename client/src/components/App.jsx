@@ -51,8 +51,10 @@ function App(props) {
   const [squareRefs, setSquareRefs] = useState(Array(numRows * numCols)
     .fill(0).map(() => createRef()));
   const [cursor, setCursor] = useState(null);
+  const [counter, setCounter] = useState(advanceCursor);
 
   /* Player State */
+  const pov = useSelector(state => state.pov);
   const zoomActive = useSelector(state => state.pov.zoomActive);
   const playerVerified = useSelector(state => state.pov.playerVerified);
   const rebusActive = useSelector(state => state.pov.rebusActive);
@@ -126,8 +128,8 @@ function App(props) {
    * Initialize cursor for game
    */
   useEffect(() => {
-    setCursor(new Cursor(game, squareRefs, overwriteMode, zoomActive));
-  }, [game, squareRefs, overwriteMode, zoomActive]);
+    setCursor(new Cursor(squareRefs));
+  }, [squareRefs]);
 
   /**
    * After user is authenticated and player is verified,
@@ -327,25 +329,29 @@ function App(props) {
    */
   const goToNextSquareAfterInput = useCallback(() => {
     if (!deleteMode && !rebusActive) {
-      const index = cursor.getNextEmptySquare(orientation, focusedSquare);
+      const index = cursor.getNextEmptySquare(game, pov, focusedSquare, overwriteMode);
       cursor.jumpToSquare(index, zoomActive, orientation);
     }
-  }, [cursor, deleteMode, focusedSquare, orientation, rebusActive, zoomActive]);
+  }, [cursor, deleteMode, focusedSquare, game, orientation, overwriteMode,
+    pov, rebusActive, zoomActive]);
 
   useEffect(() => {
-    if (advanceCursor > 0) {
+    if (advanceCursor > counter) {
+      setCounter(counter + 1);
       goToNextSquareAfterInput();
     }
-  }, [advanceCursor, goToNextSquareAfterInput]);
+  // Including the function 'goToNextSquareAfterInput()' as a dependency results in infinite loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advanceCursor, counter]);
 
   const handleKeyDown = useCallback(e => {
     e.preventDefault();
     if (e.key === ' ') {
       dispatch(povActions.toggleOrientation());
     } else if (e.key === 'Tab' || (e.shiftKey && e.key === 'ArrowRight')) {
-      cursor.jumpToNextWord(focusedSquare, orientation);
+      cursor.jumpToNextWord(game, pov, focusedSquare);
     } else if (e.shiftKey && e.key === 'ArrowLeft') {
-      cursor.jumpToPreviousWord(focusedSquare, orientation);
+      cursor.jumpToPreviousWord(game, pov, focusedSquare);
     } else if (board[focusedSquare].verified) {
       goToNextSquareAfterInput();
     } else if (rebusActive && e.key === 'Enter') {
@@ -355,7 +361,7 @@ function App(props) {
       let currentIndex = focusedSquare;
       if (board[focusedSquare].input === '') {
         // if user input already empty, backspace to previous letter
-        currentIndex = cursor.backspace(focusedSquare, focusedWord, orientation);
+        currentIndex = cursor.backspace(game, pov);
       }
       if (!board[currentIndex].verified) {
         dispatch(gameActions.changeInput({ gameId: loadedGameId, id: currentIndex, value: '', color: null }));
@@ -392,7 +398,7 @@ function App(props) {
       }
     }
   }, [board, focusedSquare, rebusActive, dispatch, cursor, orientation,
-    goToNextSquareAfterInput, focusedWord, loadedGameId, myColor, pencilActive, overwriteMode]);
+    goToNextSquareAfterInput, game, pov, loadedGameId, myColor, pencilActive, overwriteMode]);
 
   return (
     // This <div> contains descendant interactive elements such as <Square> and <Keyboard>:
