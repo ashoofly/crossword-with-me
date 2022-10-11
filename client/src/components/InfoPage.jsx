@@ -10,18 +10,14 @@ const InfoPage = memo(props => {
   const {
     open,
     handleClose,
+    loggers,
   } = props;
   const game = useSelector(state => state.game);
-  const [logger, setLogger] = useState(null);
 
-  useEffect(() => {
-    setLogger(new Logger('InfoPage'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering InfoPage component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('InfoPage');
+  }
 
   function getTitle() {
     if (game.hasTitle) {
@@ -153,6 +149,7 @@ const InfoPage = memo(props => {
 InfoPage.propTypes = {
   open: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default InfoPage;

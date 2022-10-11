@@ -17,8 +17,8 @@ const PlayerBox = memo(props => {
   const {
     auth,
     socket,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
   const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -29,14 +29,10 @@ const PlayerBox = memo(props => {
   const players = useSelector(state => state.game.players);
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    setLogger(new Logger('PlayerBox'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering PlayerBox component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('PlayerBox');
+  }
 
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
@@ -69,11 +65,11 @@ const PlayerBox = memo(props => {
   }, [user, initialized, players]);
 
   const handleSignout = useCallback(() => {
-    logger.log('Send event: leave-game');
+    if (loggers) loggers.socketLogger.log('Send event: leave-game');
     socket.emit('leave-game', user.uid, gameId);
     signout(auth);
     dispatch(povActions.playerVerified({ playerVerified: false }));
-  }, [auth, dispatch, gameId, logger, socket, user.uid]);
+  }, [auth, dispatch, gameId, loggers, socket, user.uid]);
 
   return (
     <>
@@ -118,6 +114,7 @@ const PlayerBox = memo(props => {
 PlayerBox.propTypes = {
   socket: PropTypes.object.isRequired,
   auth: PropTypes.object.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default PlayerBox;

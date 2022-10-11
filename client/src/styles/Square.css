@@ -15,6 +15,7 @@
   font-size: calc(var(--square-side-length) * 0.25);
   display: flex;
   color: rgb(60, 85, 92);
+  z-index: 5;
 }
 
 .square-value {
@@ -49,6 +50,7 @@
   z-index: 1;
   width: 100%;
   height: 100%;
+  opacity: 0.8;
 }
 
 .wrong-answer-overlay {

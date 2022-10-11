@@ -12,17 +12,13 @@ const Keyboard = memo(props => {
   const {
     cursor,
     handleKeyDown,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
-  useEffect(() => {
-    setLogger(new Logger('Keyboard'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering Keyboard component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('Keyboard');
+  }
 
   const dispatch = useDispatch();
   const {
@@ -118,6 +114,7 @@ const Keyboard = memo(props => {
 Keyboard.propTypes = {
   cursor: PropTypes.instanceOf(Cursor).isRequired,
   handleKeyDown: PropTypes.func.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default Keyboard;

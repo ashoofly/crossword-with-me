@@ -11,6 +11,10 @@ export default class Cursor {
     this.squareRefs = squareRefs;
   }
 
+  static puzzleIsFilled(gameGrid, board) {
+    return board.every((square, i) => (!gameGrid[i].isPlayable || square.input !== '' || square.verified));
+  }
+
   getNextEmptySquare(game, pov, index, overwriteMode = false, previous = false) {
     const {
       clueDictionary,
@@ -20,6 +24,14 @@ export default class Cursor {
       board,
     } = game;
     const { orientation } = pov.focused;
+
+    // If puzzle is filled, go to first or last playable square
+    const isFilled = Cursor.puzzleIsFilled(gameGrid, board);
+    if (isFilled && previous) {
+      return gameGrid.findIndex(square => square.isPlayable);
+    } else if (isFilled) {
+      return gameGrid.findLastIndex(square => square.isPlayable);
+    }
 
     // If last square in orientation, remain on square
     if (isLastClueSquare(

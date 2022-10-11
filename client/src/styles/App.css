@@ -154,12 +154,6 @@ button {
     justify-self: center;
   }
 
-  .clue-container {
-    width: var(--board-width);
-    height: var(--clue-height);
-
-  }
-
   .Board {
     max-height: 100%;
     justify-content: center;
@@ -167,8 +161,8 @@ button {
 
   .clue-container {
     grid-row: 3 / 4;
-    height: var(--clue-height);
-
+    width: var(--board-width);
+    height: var(--clueH);
   }
 
   .clue {
@@ -176,7 +170,7 @@ button {
     color: #073642;
     font-weight: bold;
     font-size: min(18px, 2vh);
-    height: var(--clue-height);
+    height: var(--clueH);
 
   }
 

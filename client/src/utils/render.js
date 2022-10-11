@@ -13,7 +13,7 @@
  * | x                  |         |                          |                          |
  * | x                  |         |                          |                          |
  * |--------------------|         |                          |--------------------------|
- * | Clue      (H: 8%)  |         |                          | Keyboard (H: 30%)        |
+ * | Clue     (H: 10%)  |         |                          | Keyboard (H: 30%)        |
  * |--------------------|         |                          |                          |
  * | Keyboard (H: 23%)  |         |                          |                          |
  * | x                  |         |                          |                          |
@@ -28,7 +28,7 @@
  * | Nav Bar (H: min(80px, 8%) + 50px)           |
  * |                                             |
  * |---------------------------------------------|
- * | Clue ( H: min(100px, 8%))                   |
+ * | Clue ( H: min(100px, 10%))                   |
  * |                                             |
  * |---------------------------------------------|
  * |      Board (H: Remainder to 100%)           |
@@ -48,7 +48,7 @@ export function setAppLayout(window, isWidescreen) {
   const { width, height } = window.visualViewport;
   const maxBoardHeightSmallScreen = height * 0.53;
   const barHeight = (isTablet) ? (height * 0.1) : (height * 0.08);
-  const clueHeight = height * 0.08;
+  const clueHeight = height * 0.1;
   const keyboardHeight = isWidescreen ? (height * 0.3) : (height * 0.23);
   const keyboardRowMargin = 2;
   const keyboardMargins = 2 + 3 + 10;
@@ -72,14 +72,19 @@ export function setAppLayout(window, isWidescreen) {
 function getSquareSideLength(window, isWidescreen, numCols, numRows, zoomActive) {
   const boardPadding = 2;
   const isTouchDevice = 'ontouchstart' in window;
+  const isTablet = isWidescreen && isTouchDevice;
   const { height } = window.visualViewport;
-  const barHeight = isWidescreen ? (height * 0.1) : (height * 0.08);
+  const barHeight = isTablet ? (height * 0.1) : (height * 0.08);
+  const clueHeight = height * 0.1;
   if (!isTouchDevice) {
-    return (height - (3 * barHeight) - 20) / (zoomActive ? 10 : numRows);
+    /* desktop */
+    return (height - (2 * barHeight + clueHeight) - 20) / (zoomActive ? 10 : numRows);
   } else if (isWidescreen) {
+    /* landscape tablet */
     return ((window.visualViewport.height * 0.9) - (2 * boardPadding))
       / (zoomActive ? 10 : numRows);
   } else {
+    /* mobile */
     return (window.visualViewport.width - (2 * boardPadding)) / (zoomActive ? 10 : numCols);
   }
 }

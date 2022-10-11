@@ -12,6 +12,7 @@ const Square = memo(props => {
   const {
     id,
     squareRef,
+    loggers,
   } = props;
 
   const squareGrid = useSelector(state => state.game.gameGrid[id]);
@@ -25,21 +26,16 @@ const Square = memo(props => {
   const focused = useSelector(state => state.pov.focused);
   const textColor = useSelector(state => state.game.board[id].color);
   const dispatch = useDispatch();
-  const [logger, setLogger] = useState(null);
 
   const [squareText, setSquareText] = useState('');
   const [highlightClasses, setHighlightClasses] = useState('');
   const [textColorClass, setTextColorClass] = useState('');
   const [customStyle, setCustomStyle] = useState(null);
 
-  useEffect(() => {
-    setLogger(new Logger('Square'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log(`Rendering square component ${id}`);
-  }, [id, logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log(`Square ${id}`);
+  }
 
   function displaySquare() {
     if (!squareGrid.isPlayable) {
@@ -103,30 +99,29 @@ const Square = memo(props => {
       } else {
         setCustomStyle({ backgroundColor: combinedColors });
       }
-      return;
-    }
-
-    // else, highlight square with correct single color
-    const { className, rgbValue } = getClassNameAndRgbValue(activeWordColors, activeLetterColors);
-    if (squareGameState.reveal) {
-      setCustomStyle({
-        background: showColorWithRevealedMarker(rgbValue),
-        overflow: 'hidden',
-      });
-    } else if (squareGameState.verified) {
-      setCustomStyle({
-        background: showColorWithVerifiedMarker(rgbValue),
-        overflow: 'hidden',
-      });
-    } else {
-      setHighlightClasses(className);
-      setCustomStyle({});
+    } else if (activeWordArray.length > 0 || activeLetterArray.length > 0) {
+      // else, highlight square with correct single color
+      const { className, rgbValue } = getClassNameAndRgbValue(activeWordColors, activeLetterColors);
+      if (squareGameState.reveal) {
+        setCustomStyle({
+          background: showColorWithRevealedMarker(rgbValue),
+          overflow: 'hidden',
+        });
+      } else if (squareGameState.verified) {
+        setCustomStyle({
+          background: showColorWithVerifiedMarker(rgbValue),
+          overflow: 'hidden',
+        });
+      } else {
+        setHighlightClasses(className);
+        setCustomStyle({});
+      }
     }
   }, [activeWordColors, activeLetterColors, squareGameState.verified, squareGameState.reveal]);
 
   function handleFocus() {
     if (squareGrid.answer === '.') return;
-    logger.log(`Focus: ${id}`);
+    if (loggers) loggers.focusLogger.log(id);
     dispatch(povActions.setFocusedSquare({ focus: id }));
   }
 
@@ -174,6 +169,7 @@ const Square = memo(props => {
 Square.propTypes = {
   id: PropTypes.number.isRequired,
   squareRef: PropTypes.object.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default Square;

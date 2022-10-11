@@ -9,18 +9,14 @@ const TitleBar = memo(props => {
     socket,
     auth,
     gameId,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
   const [user] = useAuthenticatedUser(auth);
 
-  useEffect(() => {
-    setLogger(new Logger('TitleBar'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering TitleBar component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('TitleBar');
+  }
 
   function handleClick() {
     if (user) {
@@ -39,6 +35,7 @@ const TitleBar = memo(props => {
         auth={auth}
         socket={socket}
         gameId={gameId}
+        loggers={loggers}
       />
     </div>
   );
@@ -48,6 +45,7 @@ TitleBar.propTypes = {
   socket: PropTypes.object.isRequired,
   auth: PropTypes.object.isRequired,
   gameId: PropTypes.string.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default TitleBar;

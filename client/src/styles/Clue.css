@@ -10,6 +10,7 @@
 
 .clue-text {
   grid-column: 2 / 3;
+  overflow-y: auto;
 }
 
 .arrows {

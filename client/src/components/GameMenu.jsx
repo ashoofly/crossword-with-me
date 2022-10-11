@@ -13,11 +13,11 @@ const GameMenu = memo(props => {
   const {
     socket,
     auth,
+    loggers,
   } = props;
 
   const game = useSelector(state => state.game);
   const navigate = useNavigate();
-  const [logger, setLogger] = useState(null);
 
   const [user] = useAuthenticatedUser(auth);
   const teamGames = useSelector(state => state.pov.teamGames);
@@ -30,14 +30,10 @@ const GameMenu = memo(props => {
   const [selectedTeamGameId, setSelectedTeamGameId] = useState(null);
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    setLogger(new Logger('GameMenu'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering GameMenu component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('GameMenu');
+  }
 
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
@@ -103,12 +99,11 @@ const GameMenu = memo(props => {
     const date = new Date(tg.date);
     const dow = abbrevDow[tg.dow];
     const month = abbrevMonths[date.getMonth()];
-    logger.log(teamGames);
     const gameInfo = teamGames.find(teamGame => teamGame.gameId === tg.gameId);
     if (gameInfo) {
       setHeading({ __html: `<span class="heading-dow">${gameInfo.friend.displayName.split(' ')[0]}'s</span> <span class="heading-date">${dow} ${month} ${date.getDate()}</span>` });
     }
-  }, [abbrevDow, abbrevMonths, logger, teamGames]);
+  }, [abbrevDow, abbrevMonths, teamGames]);
 
   const soloGameHeading = useMemo(() => <MenuItem className="submenu-heading">My Games</MenuItem>, []);
   const gamesWithFriends = useMemo(() => <MenuItem className="submenu-heading">Friends&apos; Games</MenuItem>, []);
@@ -159,10 +154,10 @@ const GameMenu = memo(props => {
     setSelectedTeamGameId(null);
     const dow = weekdays[index];
     if (user) {
-      logger.log('Send event: get-game-by-dow');
+      if (loggers) loggers.socketLogger.log('Send event: get-game-by-dow');
       socket.emit('get-game-by-dow', dow, user.uid);
     }
-  }, [logger, socket, user, weekdays]);
+  }, [socket, user, weekdays, loggers]);
 
   const showMenu = useCallback(() => {
     const currentMenuItems = menuContent.map((menuItem, index) => (
@@ -192,14 +187,16 @@ const GameMenu = memo(props => {
    * Load puzzle dates
    */
   useEffect(() => {
-    if (socket === null || logger === null) return;
-    logger.log('Send event: get-puzzle-dates');
+    if (socket === null || !loggers) return;
+    const { socketLogger } = loggers;
+
+    socketLogger.log('Send event: get-puzzle-dates');
     socket.emit('get-puzzle-dates');
 
     socket.once('load-puzzle-dates', pDates => {
       setPuzzleDates(pDates);
     });
-  }, [logger, socket]);
+  }, [socket, loggers]);
 
   useEffect(() => {
     if (puzzleDates) {
@@ -265,6 +262,7 @@ const GameMenu = memo(props => {
 GameMenu.propTypes = {
   socket: PropTypes.object.isRequired,
   auth: PropTypes.object.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default GameMenu;

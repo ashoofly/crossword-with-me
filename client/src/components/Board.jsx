@@ -13,6 +13,7 @@ const Board = memo(props => {
     user,
     gameId,
     squareRefs,
+    loggers,
   } = props;
 
   const dispatch = useDispatch();
@@ -20,16 +21,11 @@ const Board = memo(props => {
   const numRows = useSelector(state => state.game.numRows);
   const numCols = useSelector(state => state.game.numCols);
   const focused = useSelector(state => state.pov.focused);
-  const [logger, setLogger] = useState(null);
 
-  useEffect(() => {
-    setLogger(new Logger('Board'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering Board component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('Board');
+  }
 
   useEffect(() => {
     document.documentElement.style.setProperty('--numRows', numRows);
@@ -40,21 +36,26 @@ const Board = memo(props => {
   }, [numCols]);
 
   useEffect(() => {
-    if (socket === null || logger === null || !gameId || Object.keys(focused).length === 0) return;
+    if (socket === null || !gameId || Object.keys(focused).length === 0 || !loggers) return;
+    const { socketLogger } = loggers;
+
     dispatch(gameActions.updatePlayerFocus({
       playerId: user.uid,
       gameId,
       currentFocus: focused,
     }));
-    logger.log(`Send event: update-player-focus - socket ${socket.id}`);
+
+    socketLogger.log(`Send event: update-player-focus - socket ${socket.id}`);
     socket.emit('update-player-focus', user.uid, gameId, focused);
-  }, [user, gameId, focused, socket, dispatch, logger]);
+
+  }, [user, gameId, focused, socket, dispatch, loggers]);
 
   const squares = gameGrid.map((square, index) => (
     <Square
       key={square.id}
       id={square.id}
       squareRef={squareRefs[index]}
+      loggers={loggers}
     />
   ));
 
@@ -70,6 +71,7 @@ Board.propTypes = {
   user: PropTypes.object.isRequired,
   gameId: PropTypes.string.isRequired,
   squareRefs: PropTypes.arrayOf(PropTypes.object).isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default Board;

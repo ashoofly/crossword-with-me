@@ -21,8 +21,8 @@ const Navbar = memo(props => {
     cursor,
     gameId,
     isWidescreen,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
@@ -34,14 +34,10 @@ const Navbar = memo(props => {
   } = useSelector(state => state.pov);
   const { orientation, square: focus } = focused;
 
-  useEffect(() => {
-    setLogger(new Logger('Navbar'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering Navbar component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('Navbar');
+  }
 
   function handleClickOpen() {
     setOpen(true);
@@ -71,6 +67,7 @@ const Navbar = memo(props => {
         socket={socket}
         auth={auth}
         gameId={gameId}
+        loggers={loggers}
       />
       {isWidescreen && (
         <Button
@@ -98,16 +95,16 @@ const Navbar = memo(props => {
         socket={socket}
         auth={auth}
         gameId={gameId}
+        loggers={loggers}
       />
-      <div>
-        <button type="button" className="icon-bg" onClick={handleClickOpen}>
-          <img className="info-icon" src={info} alt="info" />
-        </button>
-        <InfoPage
-          open={open}
-          handleClose={handleClose}
-        />
-      </div>
+      <button type="button" className="icon-bg" onClick={handleClickOpen}>
+        <img className="info-icon" src={info} alt="info" />
+      </button>
+      <InfoPage
+        open={open}
+        handleClose={handleClose}
+        loggers={loggers}
+      />
     </div>
   );
 });
@@ -118,6 +115,7 @@ Navbar.propTypes = {
   auth: PropTypes.object.isRequired,
   gameId: PropTypes.string.isRequired,
   isWidescreen: PropTypes.bool.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default Navbar;

@@ -13,8 +13,8 @@ const SignIn = memo(props => {
   const {
     auth,
     socket,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const gameId = searchParams.get('gameId');
@@ -28,14 +28,10 @@ const SignIn = memo(props => {
   const dispatch = useDispatch();
   const playerVerified = useSelector(state => state.pov.playerVerified);
 
-  useEffect(() => {
-    setLogger(new Logger('SignIn'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering SignIn component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('SignIn');
+  }
 
   useEffect(() => {
     if (!token || !auth) return;
@@ -45,12 +41,13 @@ const SignIn = memo(props => {
         handleCredentialResponse(token, auth, socket);
       }
     } catch (error) {
-      logger.log(error);
+      if (loggers) loggers.errorLogger.log(error);
     }
-  }, [auth, logger, socket, token]);
+  }, [auth, loggers, socket, token]);
 
   useEffect(() => {
-    if (socket === null) return;
+    if (socket === null || !loggers) return;
+    const { socketLogger } = loggers;
 
     function handleDisplayFriendRequest(fname) {
       setFriendName(fname);
@@ -60,7 +57,7 @@ const SignIn = memo(props => {
     }
 
     function handlePlayerVerified(playerId) {
-      logger.log(`Received player-exists event for ${playerId}`);
+      socketLogger.log(`Received player-exists event for ${playerId}`);
       if (user.uid === playerId) {
         dispatch(povActions.playerVerified({ playerVerified: true }));
       }
@@ -76,7 +73,7 @@ const SignIn = memo(props => {
       socket.off('game-not-found', handleGameNotFound);
       socket.off('player-exists', handlePlayerVerified);
     };
-  }, [dispatch, logger, socket, user]);
+  }, [dispatch, loggers, socket, user]);
 
   useEffect(() => {
     function generateNonce() {
@@ -104,10 +101,11 @@ const SignIn = memo(props => {
   }, [user, initialized]);
 
   useEffect(() => {
-    if (socket === null || !initialized || !gameId) return;
+    if (socket === null || !initialized || !gameId || !loggers) return;
+    const { socketLogger } = loggers;
 
     if (!user) {
-      logger.log('Send event: get-friend-request-name');
+      socketLogger.log('Send event: get-friend-request-name');
       socket.emit('get-friend-request-name', gameId);
     }
 
@@ -115,7 +113,7 @@ const SignIn = memo(props => {
       setSearchParams([]);
       navigate(`?gameId=${gameId}`);
     }
-  }, [socket, initialized, user, gameId, logger, setSearchParams, navigate]);
+  }, [socket, initialized, user, gameId, loggers, setSearchParams, navigate]);
 
   return (
     <>
@@ -154,6 +152,7 @@ const SignIn = memo(props => {
 SignIn.propTypes = {
   socket: PropTypes.object.isRequired,
   auth: PropTypes.object.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default SignIn;

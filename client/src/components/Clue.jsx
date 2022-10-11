@@ -12,8 +12,8 @@ const Clue = memo(props => {
   const {
     isWidescreen,
     cursor,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
   const dispatch = useDispatch();
   const clueDictionary = useSelector(state => state.game.clueDictionary);
@@ -27,13 +27,10 @@ const Clue = memo(props => {
   const game = useSelector(state => state.game);
   const pov = useSelector(state => state.pov);
 
-  useEffect(() => {
-    setLogger(new Logger('Clue'));
-  }, []);
-
-  // if (logger) {
-  //   logger.log('Rendering Clue component');
-  // }
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('Clue');
+  }
 
   function displayClue() {
     if (currentFocus && currentFocus.orientation && currentFocus.word) {
@@ -91,6 +88,7 @@ const Clue = memo(props => {
 Clue.propTypes = {
   isWidescreen: PropTypes.bool.isRequired,
   cursor: PropTypes.instanceOf(Cursor).isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default Clue;

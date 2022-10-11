@@ -15,8 +15,8 @@ import Logger from '../common/Logger';
 const HintMenu = memo(props => {
   const {
     auth,
+    loggers,
   } = props;
-  const [logger, setLogger] = useState(null);
 
   const dispatch = useDispatch();
   const [user] = useAuthenticatedUser(auth);
@@ -32,14 +32,10 @@ const HintMenu = memo(props => {
   const [openToast, setOpenToast] = useState(false);
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    setLogger(new Logger('HintMenu'));
-  }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering HintMenu component');
-  }, [logger]);
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('HintMenu');
+  }
 
   const handleClick = e => {
     setAnchorEl(e.currentTarget);
@@ -269,6 +265,7 @@ const HintMenu = memo(props => {
 
 HintMenu.propTypes = {
   auth: PropTypes.object.isRequired,
+  loggers: PropTypes.object.isRequired,
 };
 
 export default HintMenu;

@@ -25,14 +25,13 @@ function App(props) {
     auth,
   } = props;
 
-  const [logger, setLogger] = useState(null);
+  const [loggers, setLoggers] = useState(null);
   const [user, initialized] = useAuthenticatedUser(auth);
   const dispatch = useDispatch();
 
   /* Routing */
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [requestedGameId] = useState(searchParams.get('gameId'));
 
   /* Game State */
   const [gameNotFound, setGameNotFound] = useState(false);
@@ -74,17 +73,22 @@ function App(props) {
   const isWidescreen = useMediaQuery({ query: '(min-width: 1000px)' });
   const isTouchDevice = 'ontouchstart' in window;
 
+  if (loggers) {
+    const { renderLogger } = loggers;
+    renderLogger.log('App');
+  }
+
   /**
-   * Set up logger
+   * Set up loggers
    */
   useEffect(() => {
-    setLogger(new Logger('App'));
+    setLoggers({
+      renderLogger: new Logger('Render'),
+      socketLogger: new Logger('Socket'),
+      focusLogger: new Logger('Focus'),
+      errorLogger: new Logger('Error'),
+    });
   }, []);
-
-  useEffect(() => {
-    if (!logger) return;
-    logger.log('Rendering App component');
-  }, [logger]);
 
   /**
    * Set app layout upon initial render and when resizing window
@@ -137,19 +141,21 @@ function App(props) {
    * or get default game if no game ID specified.
    */
   useEffect(() => {
-    if (socket === null || !initialized || !playerVerified) return;
+    if (socket === null || !initialized || !playerVerified || !loggers) return;
+    const { socketLogger } = loggers;
 
-    logger.log(`Send event: get-team-games for user: ${user.uid}`);
+    socketLogger.log(`Send event: get-team-games for user: ${user.uid}`);
     socket.emit('get-team-games', user.uid);
 
+    const requestedGameId = searchParams.get('gameId');
     if (!requestedGameId) {
       if (user) {
-        logger.log(`Send event: get-default-game - user: ${user.uid}`);
+        socketLogger.log(`Send event: get-default-game - user: ${user.uid}`);
         socket.emit('get-default-game', user.uid);
       }
     } else if (requestedGameId !== loadedGameId) {
       if (user) {
-        logger.log(`Send event: get-game-by-id with ${user.uid} for ${requestedGameId}`);
+        socketLogger.log(`Send event: get-game-by-id with ${user.uid} for ${requestedGameId}`);
         socket.emit('get-game-by-id', requestedGameId, user.uid);
       } else {
         navigate(`/join-game?gameId=${requestedGameId}`);
@@ -158,16 +164,18 @@ function App(props) {
   // 'loadedGameId' and 'searchParams' should not be included in dep array,
   // b/c this would cause infinite loop:
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, user, playerVerified, initialized, requestedGameId, logger, navigate]);
+  }, [socket, user, playerVerified, initialized, searchParams, loggers, navigate]);
 
   /**
    * Set up app-level socket listeners after socket or authenticated user changes
    */
   useEffect(() => {
-    if (!user || socket === null) return;
+    if (!user || socket === null || !loggers) return;
+
+    const { socketLogger } = loggers;
 
     function handleLoadTeamGame(returnedGames) {
-      logger.log('Received load-team-games');
+      socketLogger.log('Received load-team-games');
       if (returnedGames) {
         dispatch(povActions.setTeamGames({ teamGames: returnedGames }));
       }
@@ -175,7 +183,7 @@ function App(props) {
 
     function handleLoadGame(loadedGame) {
       dispatch(gameActions.loadGame({ ...loadedGame, loaded: true }));
-      logger.log(`Received game ${loadedGame.gameId} from server. Loading..`);
+      socketLogger.log(`Received game ${loadedGame.gameId} from server. Loading..`);
       setGameNotFound(false);
 
       dispatch(povActions.initializePlayerView({
@@ -192,14 +200,14 @@ function App(props) {
     }
 
     function handlePlayerVerified(playerId) {
-      logger.log(`Received player-exists event for ${playerId}`);
+      socketLogger.log(`Received player-exists event for ${playerId}`);
       if (user.uid === playerId) {
         dispatch(povActions.playerVerified({ playerVerified: true }));
       }
     }
 
     function handlePlayerNotFound(playerId) {
-      logger.log(`Received player-not-found event for ${playerId}`);
+      socketLogger.log(`Received player-not-found event for ${playerId}`);
       if (user.uid === playerId) {
         dispatch(povActions.playerVerified({ playerVerified: false }));
       }
@@ -212,7 +220,7 @@ function App(props) {
     socket.on('player-not-found', handlePlayerNotFound);
 
     if (user && !playerVerified) {
-      logger.log(`Send verify-player-exists event for ${user.uid}`);
+      socketLogger.log(`Send verify-player-exists event for ${user.uid}`);
       socket.emit('verify-player-exists', user.uid);
     }
 
@@ -224,33 +232,35 @@ function App(props) {
       socket.off('player-exists', handlePlayerVerified);
       socket.off('player-not-found', handlePlayerNotFound);
     };
-  }, [dispatch, logger, playerVerified, setSearchParams, socket, user]);
+  }, [dispatch, loggers, playerVerified, setSearchParams, socket, user]);
 
   /**
    * Set up game-level socket listeners after
    * socket is initialized, user is authenticated, and specific game is loaded
    */
   useEffect(() => {
-    if (!user || socket === null || !game) return;
+    if (!user || socket === null || !game || !loggers) return;
+
+    const { socketLogger } = loggers;
 
     function handleReceiveChanges(wrappedAction) {
       if (wrappedAction.source === socket.id) return;
       if (wrappedAction.gameId !== loadedGameId) return;
-      logger.log(`[${socket.id}] Received external change for ${wrappedAction.gameId} from other client ${wrappedAction.source}, updating Redux state.`);
+      socketLogger.log(`[${socket.id}] Received external change for ${wrappedAction.gameId} from other client ${wrappedAction.source}, updating Redux state.`);
       try {
         dispatch(gameActions[wrappedAction.type]({ ...wrappedAction.payload, source: 'external' }));
       } catch (error) {
-        logger.log(error);
+        socketLogger.log(error);
       }
     }
 
     function handlePlayerAddedToGame(player, gameId) {
-      logger.log(`Received player-added-to-game event: ${player.playerId} for ${gameId}`);
+      socketLogger.log(`Received player-added-to-game event: ${player.playerId} for ${gameId}`);
       dispatch(gameActions.addPlayerToGame({ player, gameId }));
     }
 
     function handlePlayerOnline(playerId, displayName, serverGameId) {
-      logger.log(`Received player-online event: Player ${playerId} signed into game ${serverGameId}!`);
+      socketLogger.log(`Received player-online event: Player ${playerId} signed into game ${serverGameId}!`);
       dispatch(gameActions.enteringPlayer({ playerId, gameId: serverGameId }));
       if (user && (playerId !== user.uid) && (serverGameId === loadedGameId)) {
         const firstName = displayName.split(' ')[0];
@@ -260,13 +270,13 @@ function App(props) {
     }
 
     function handlePlayerOffline(playerId, serverGameId) {
-      logger.log(`Player ${playerId} signed out of game ${serverGameId}`);
+      socketLogger.log(`Player ${playerId} signed out of game ${serverGameId}`);
       dispatch(gameActions.exitingPlayer({ playerId, gameId: serverGameId }));
     }
 
     function handleLoadPlayerCursorChange(socketId, playerId, serverGameId, currentFocus) {
       if (socketId !== socket.id) {
-        logger.log(`Received update-player-focus from ${playerId}`);
+        socketLogger.log(`Received update-player-focus from ${playerId}`);
         dispatch(gameActions.updatePlayerFocus({ playerId, gameId: serverGameId, currentFocus, source: 'external' }));
       }
     }
@@ -285,7 +295,7 @@ function App(props) {
       socket.off('player-offline', handlePlayerOffline);
       socket.off('update-player-focus', handleLoadPlayerCursorChange);
     };
-  }, [dispatch, game, loadedGameId, logger, socket, user]);
+  }, [dispatch, game, loadedGameId, loggers, socket, user]);
 
   /**
    * Set player game color for specific game
@@ -302,27 +312,31 @@ function App(props) {
    * Send state updates through socket to other clients
    */
   useEffect(() => {
-    if (!mostRecentAction || mostRecentAction.initial || socket === null) return;
-    logger.log(`Send event: send-changes for ${mostRecentAction.type}`);
+    if (!mostRecentAction || mostRecentAction.initial || socket === null || !loggers) return;
+    const { socketLogger } = loggers;
+
+    socketLogger.log(`Send event: send-changes for ${mostRecentAction.type}`);
     socket.emit('send-changes', {
       source: socket.id,
       gameId: mostRecentAction.gameId,
       type: mostRecentAction.type,
       payload: mostRecentAction.payload,
     });
-  }, [logger, mostRecentAction, socket]);
+  }, [loggers, mostRecentAction, socket]);
 
   /**
    * Saves board to DB on current player changes
    */
   useEffect(() => {
-    if (socket === null) return;
+    if (socket === null || !loggers) return;
+    const { socketLogger } = loggers;
+
     if (!savedBoardToDB) {
-      logger.log('Send event: save-board');
+      socketLogger.log('Send event: save-board');
       socket.emit('save-board', loadedGameId, board, autocheck);
       dispatch(gameActions.gameSaved());
     }
-  }, [savedBoardToDB, board, players, socket, logger, loadedGameId, dispatch, autocheck]);
+  }, [savedBoardToDB, board, players, socket, loggers, loadedGameId, dispatch, autocheck]);
 
   /**
    * Board navigation
@@ -417,10 +431,10 @@ function App(props) {
       {user && playerVerified && (
         <>
           { /* Game not found page */ }
-          {requestedGameId && gameNotFound && (
+          {searchParams.get('gameId') && gameNotFound && (
             <h1>
               Game
-              {requestedGameId}
+              {searchParams.get('gameId')}
               not found. Games are rotated every week,
               so this may have been a game from last week.
             </h1>
@@ -434,6 +448,7 @@ function App(props) {
                 gameId={loadedGameId}
                 isWidescreen={isWidescreen}
                 cursor={cursor}
+                loggers={loggers}
               />
               <Navbar
                 socket={socket}
@@ -441,22 +456,26 @@ function App(props) {
                 gameId={loadedGameId}
                 isWidescreen={isWidescreen}
                 cursor={cursor}
+                loggers={loggers}
               />
               <Board
                 user={user}
                 socket={socket}
                 gameId={loadedGameId}
                 squareRefs={squareRefs}
+                loggers={loggers}
               />
               <Clue
                 isWidescreen={isWidescreen}
                 handleKeyDown={handleKeyDown}
                 cursor={cursor}
+                loggers={loggers}
               />
               {isTouchDevice && (
                 <Keyboard
                   handleKeyDown={handleKeyDown}
                   cursor={cursor}
+                  loggers={loggers}
                 />
               )}
               { /* Notification when player enters the game */ }
