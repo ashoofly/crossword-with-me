@@ -135,7 +135,7 @@ const InfoPage = memo(props => {
       <h3>Contact</h3>
       <p>
         Please report any issues to:
-        <a href="https://github.com/ashoofly/crossword-with-friends/issues" target="_blank" rel="noreferrer">
+        <a href="https://github.com/ashoofly/crossword-with-me/issues" target="_blank" rel="noreferrer">
           <div className="contact">
             <GitHubIcon />
             Crossword with Me
