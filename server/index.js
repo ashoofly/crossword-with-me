@@ -7,11 +7,6 @@ const firebaseAdmin = require('./firebase.js');
 const AdminDatabaseListener = require('./functions/utils/AdminDatabaseListener.js');
 
 try {
-  // if (process.env.NODE_ENV === 'development') {
-  //   dotenv.config({ path: '../.env.local' });
-  // } else if (process.env.NODE_ENV === 'heroku-local') {
-  //   dotenv.config({ path: '../.env.heroku-local' });
-  // }
   const debug = Debug('Server');
   const auth = firebaseAdmin.auth();
   const db = firebaseAdmin.database();

@@ -165,7 +165,7 @@ class PuzzleUtils {
   async cleanupOldGames() {
     const now = new Date();
     const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const games = await this.dbListener.getDbObjectByIdOnce('games');
+    const games = await this.dbListener.getDbCollectionOnce('games');
     if (games) {
       Object.values(games).forEach(async (game) => {
         const gameDate = new Date(Date.parse(game.date));
