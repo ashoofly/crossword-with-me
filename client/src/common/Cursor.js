@@ -108,10 +108,10 @@ export default class Cursor {
     return this.getNextEmptySquare(game, pov, nextWordStart, overwriteMode, false);
   }
 
-  jumpToSquare(index, zoomActive, orientation) {
+  jumpToSquare(game, index, zoomActive, orientation) {
     this.squareRefs[index].current.focus();
     if (zoomActive) {
-      this.scrollToWord(orientation, index);
+      this.scrollToWord(game, orientation, index);
     }
   }
 
@@ -132,7 +132,7 @@ export default class Cursor {
       focusedSquare
     );
     const index = this.getNextEmptySquare(game, pov, prevWordStart, false, true);
-    this.jumpToSquare(index, zoomActive, orientation);
+    this.jumpToSquare(game, index, zoomActive, orientation);
   }
 
   jumpToNextWord(game, pov, focusedSquare) {
@@ -154,7 +154,7 @@ export default class Cursor {
       focusedSquare
     );
     const index = this.getNextEmptySquare(game, pov, nextWordStart, false, false);
-    this.jumpToSquare(index, zoomActive, orientation);
+    this.jumpToSquare(game, index, zoomActive, orientation);
   }
 
   static getPreviousSquare(game, pov) {
@@ -203,7 +203,7 @@ export default class Cursor {
     const { focused, zoomActive } = pov;
     const { orientation, square: focusedSquare, word: focusedWord } = focused;
     const index = Cursor.getPreviousSquare(game, pov);
-    this.jumpToSquare(index, zoomActive, orientation);
+    this.jumpToSquare(game, index, zoomActive, orientation);
     return index;
   }
 
@@ -226,15 +226,15 @@ export default class Cursor {
   /**
    * For zoomed-in view (mobile option)
    */
-  scrollToWord(orientation, index) {
+  scrollToWord(game, orientation, index) {
     const firstLetterOfWord = this.squareRefs[index].current;
     const startBoundary = orientation === 'across'
       ? firstLetterOfWord.getBoundingClientRect().left
       : firstLetterOfWord.getBoundingClientRect().top;
     const wordEnd = findWordEnd(
-      this.game.gameGrid,
-      this.game.numCols,
-      this.game.numRows,
+      game.gameGrid,
+      game.numCols,
+      game.numRows,
       index,
       orientation
     );

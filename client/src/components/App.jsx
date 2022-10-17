@@ -352,7 +352,7 @@ function App(props) {
   const goToNextSquareAfterInput = useCallback(() => {
     if (!deleteMode && !rebusActive) {
       const index = cursor.getNextEmptySquare(game, pov, focusedSquare, overwriteMode);
-      cursor.jumpToSquare(index, zoomActive, orientation);
+      cursor.jumpToSquare(game, index, zoomActive, orientation);
     }
   }, [cursor, deleteMode, focusedSquare, game, orientation, overwriteMode,
     pov, rebusActive, zoomActive]);

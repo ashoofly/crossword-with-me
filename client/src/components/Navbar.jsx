@@ -33,6 +33,7 @@ const Navbar = memo(props => {
     pencilActive,
     focused,
   } = useSelector(state => state.pov);
+  const game = useSelector(state => state.game);
   const { orientation, square: focus } = focused;
 
   if (loggers) {
@@ -54,12 +55,12 @@ const Navbar = memo(props => {
 
   const handleRebusButtonClick = useCallback(() => {
     dispatch(povActions.toggleRebus());
-    cursor.jumpToSquare(focus, zoomActive, orientation);
+    cursor.jumpToSquare(game, focus, zoomActive, orientation);
   }, [cursor, dispatch, focus, orientation, zoomActive]);
 
   function handlePencilClick() {
     dispatch(povActions.togglePencil());
-    cursor.jumpToSquare(focus, zoomActive, orientation);
+    cursor.jumpToSquare(game, focus, zoomActive, orientation);
   }
 
   return (

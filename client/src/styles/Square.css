@@ -60,8 +60,8 @@
   width: calc(1.414 * 100%);
   transform: rotate(-45deg);
   transform-origin: bottom left;
-  bottom: -2px; 
-  left: -1px;
+  bottom: -1px;
+  left: 0px;
 }
 
 .partially-correct-overlay {
@@ -71,8 +71,8 @@
   width: calc(1.414 * 100%);
   transform: rotate(-45deg);
   transform-origin: bottom left;
-  bottom: -2px; 
-  left: -1px;
+  bottom: -1px;
+  left: 0px;
 }
 
 .revealed-color {
@@ -128,10 +128,6 @@
 }
 .violet-text {
   color: var(--violet);
-}
-
-.focus-overlap {
-  background-color: rgb(204, 192.5, 183.5);
 }
 
 .red-focus-square {

@@ -26,6 +26,7 @@ const Keyboard = memo(props => {
     zoomActive,
     focused,
   } = useSelector(state => state.pov);
+  const game = useSelector(state => state.game);
   const { orientation, square: focus } = focused;
 
   const firstRowKeys = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
@@ -39,8 +40,8 @@ const Keyboard = memo(props => {
 
   const handleRebusButtonClick = useCallback(() => {
     dispatch(povActions.toggleRebus());
-    cursor.jumpToSquare(focus, zoomActive, orientation);
-  }, [cursor, dispatch, focus, orientation, zoomActive]);
+    cursor.jumpToSquare(game, focus, zoomActive, orientation);
+  }, [cursor, game, dispatch, focus, orientation, zoomActive]);
 
   const handleClick = useCallback(e => {
     handleKeyDown({
