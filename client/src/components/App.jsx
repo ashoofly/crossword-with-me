@@ -431,12 +431,26 @@ function App(props) {
         <>
           { /* Game not found page */ }
           {searchParams.get('gameId') && gameNotFound && (
-            <h1>
-              Game
-              {searchParams.get('gameId')}
-              not found. Games are rotated every week,
-              so this may have been a game from last week.
-            </h1>
+            <div className="textbox-container">
+              <div className="game-not-found">
+                <p>
+                  { 'Game ' }
+                  <b style={{ color: '#93A1A1' }}>{searchParams.get('gameId')}</b>
+                  { ' not found. ' }
+                </p>
+                <small>
+                  Games are rotated every week, so this may have been a game from last week.
+                </small>
+                <p>
+                  <small>
+                    { ' <-- Go back ' }
+                    <b>
+                      <a href="/">Home</a>
+                    </b>
+                  </small>
+                </p>
+              </div>
+            </div>
           )}
           { /* Game loaded page */ }
           {!gameNotFound && loaded && (

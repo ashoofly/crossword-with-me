@@ -38,7 +38,7 @@ const InfoPage = memo(props => {
         {game.hasTitle && (
           <h2>
             {game.dow}
-            ,
+            { ', ' }
             {game.date}
           </h2>
         )}
@@ -50,6 +50,7 @@ const InfoPage = memo(props => {
           { 'Edited by ' }
           {game.editor}
         </h4>
+        <p><a href="https://www.nytimes.com/2022/10/15/crosswords/daily-puzzle-2022-10-16.html">{'More about today\'s puzzle'}</a></p>
         <small>
           &copy;
           {game.copyright}
