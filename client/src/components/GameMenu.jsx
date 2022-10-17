@@ -14,6 +14,7 @@ const GameMenu = memo(props => {
     socket,
     auth,
     loggers,
+    puzzleDates,
   } = props;
 
   const game = useSelector(state => state.game);
@@ -25,7 +26,6 @@ const GameMenu = memo(props => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuContent, setMenuContent] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
-  const [puzzleDates, setPuzzleDates] = useState(null);
   const [heading, setHeading] = useState({ __html: 'Loading...' });
   const [selectedTeamGameId, setSelectedTeamGameId] = useState(null);
   const open = Boolean(anchorEl);
@@ -128,7 +128,7 @@ const GameMenu = memo(props => {
     const sorted = teamGames.slice().sort(sortFriendsFunc);
 
     return sorted.map(g => {
-      const date = new Date(puzzleDates[g.dow]);
+      const date = new Date(g.date);
       const month = abbrevMonths[date.getMonth()];
       const dow = abbrevDow[g.dow];
 
@@ -182,21 +182,6 @@ const GameMenu = memo(props => {
     const month = abbrevMonths[date.getMonth()];
     setHeading({ __html: `<span class="heading-dow">My ${game.dow}</span> <span class="heading-date">${month} ${date.getDate()}</span>` });
   }, [abbrevMonths, game.date, game.dow]);
-
-  /**
-   * Load puzzle dates
-   */
-  useEffect(() => {
-    if (socket === null || !loggers) return;
-    const { socketLogger } = loggers;
-
-    socketLogger.log('Send event: get-puzzle-dates');
-    socket.emit('get-puzzle-dates');
-
-    socket.once('load-puzzle-dates', pDates => {
-      setPuzzleDates(pDates);
-    });
-  }, [socket, loggers]);
 
   useEffect(() => {
     if (puzzleDates) {
@@ -263,6 +248,7 @@ GameMenu.propTypes = {
   socket: PropTypes.object.isRequired,
   auth: PropTypes.object.isRequired,
   loggers: PropTypes.object.isRequired,
+  puzzleDates: PropTypes.object.isRequired,
 };
 
 export default GameMenu;

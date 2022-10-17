@@ -22,6 +22,7 @@ const Navbar = memo(props => {
     gameId,
     isWidescreen,
     loggers,
+    puzzleDates,
   } = props;
 
   const [open, setOpen] = useState(false);
@@ -68,6 +69,7 @@ const Navbar = memo(props => {
         auth={auth}
         gameId={gameId}
         loggers={loggers}
+        puzzleDates={puzzleDates}
       />
       {isWidescreen && (
         <Button
@@ -116,6 +118,7 @@ Navbar.propTypes = {
   gameId: PropTypes.string.isRequired,
   isWidescreen: PropTypes.bool.isRequired,
   loggers: PropTypes.object.isRequired,
+  puzzleDates: PropTypes.object.isRequired,
 };
 
 export default Navbar;

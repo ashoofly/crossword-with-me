@@ -50,6 +50,7 @@ function App(props) {
   const [squareRefs, setSquareRefs] = useState(Array(numRows * numCols)
     .fill(0).map(() => createRef()));
   const [cursor, setCursor] = useState(null);
+  const [puzzleDates, setPuzzleDates] = useState(null);
 
   /* Player State */
   const pov = useSelector(state => state.pov);
@@ -147,6 +148,9 @@ function App(props) {
     socketLogger.log(`Send event: get-team-games for user: ${user.uid}`);
     socket.emit('get-team-games', user.uid);
 
+    socketLogger.log('Send event: get-puzzle-dates');
+    socket.emit('get-puzzle-dates');
+
     const requestedGameId = searchParams.get('gameId');
     if (!requestedGameId) {
       if (user) {
@@ -173,6 +177,10 @@ function App(props) {
     if (!user || socket === null || !loggers) return;
 
     const { socketLogger } = loggers;
+
+    function handleLoadPuzzleDates(loadedPuzzleDates) {
+      setPuzzleDates(loadedPuzzleDates);
+    }
 
     function handleLoadTeamGame(returnedGames) {
       socketLogger.log('Received load-team-games');
@@ -212,7 +220,7 @@ function App(props) {
         dispatch(povActions.playerVerified({ playerVerified: false }));
       }
     }
-
+    socket.on('load-puzzle-dates', handleLoadPuzzleDates);
     socket.on('load-team-games', handleLoadTeamGame);
     socket.on('load-game', handleLoadGame);
     socket.on('game-not-found', handleGameNotFound);
@@ -470,6 +478,7 @@ function App(props) {
                 isWidescreen={isWidescreen}
                 cursor={cursor}
                 loggers={loggers}
+                puzzleDates={puzzleDates}
               />
               <Board
                 user={user}

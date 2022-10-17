@@ -27,6 +27,23 @@ const InfoPage = memo(props => {
     }
   }
 
+  function getLink() {
+    const gameDate = new Date(game.date);
+    const monthNumber = gameDate.getMonth() + 1;
+    const dayDate = gameDate.getDate();
+    const year = gameDate.getFullYear();
+
+    const previousDate = new Date(gameDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+    const previousDateMonth = previousDate.getMonth() + 1;
+    const previousDateDay = previousDate.getDate();
+    const previousDateYear = previousDate.getFullYear();
+
+    return ['https://www.nytimes.com',
+      `/${previousDateYear}/${previousDateMonth}/${previousDateDay}`,
+      `/crosswords/daily-puzzle-${year}-${monthNumber}-${dayDate}.html`].join('');
+  }
+
   return (
     <Dialog
       onClose={handleClose}
@@ -50,7 +67,7 @@ const InfoPage = memo(props => {
           { 'Edited by ' }
           {game.editor}
         </h4>
-        <p><a href="https://www.nytimes.com/2022/10/15/crosswords/daily-puzzle-2022-10-16.html">{'More about today\'s puzzle'}</a></p>
+        <p><a href={getLink()}>{'More about today\'s puzzle'}</a></p>
         <small>
           &copy;
           {game.copyright}
