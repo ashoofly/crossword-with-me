@@ -1,3 +1,6 @@
+/* eslint-disable func-names */
+import Logger from '../common/Logger';
+
 /**
  * Mobile layout:               Landscape Tablet layout:
  *
@@ -41,7 +44,6 @@
  * |     ---------------------------             |
  * -----------------------------------------------
  */
-
 export function setAppLayout(window, isWidescreen) {
   const isTouchDevice = 'ontouchstart' in window;
   const isTablet = isWidescreen && isTouchDevice;
@@ -151,3 +153,25 @@ export function getClassNameAndRgbValue(activeWordColors, activeLetterColors) {
   const rgbValue = getComputedStyle(document.documentElement).getPropertyValue(`--${className}`);
   return { className, rgbValue };
 }
+
+function saveBoard(socketLogger, socket, loadedGameId, board, autocheck, dispatch, gameActions) {
+  socketLogger.log('Send event: save-board');
+  socket.emit('save-board', loadedGameId, board, autocheck);
+  dispatch(gameActions.gameSaved());
+}
+
+function debounce(func, delay = 300) {
+  const logger = new Logger('Timer');
+  let timer;
+  return function (...args) {
+    logger.log(`Clearing timer ${timer}`);
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      logger.log(`Running function ${func.name}`);
+      func.apply(func, args);
+    }, delay);
+    logger.log(`Set timer ${timer} to run func in ${delay} ms`);
+  };
+}
+
+export const debouncedSaveBoard = debounce(saveBoard);

@@ -16,7 +16,7 @@ import '../styles/App.css';
 import { gameActions } from '../redux/slices/gameSlice';
 import { povActions } from '../redux/slices/povSlice';
 import Logger from '../common/Logger';
-import { setAppLayout, setBoardLayout } from '../utils/render';
+import { setAppLayout, setBoardLayout, debouncedSaveBoard } from '../utils/render';
 import Cursor from '../common/Cursor';
 
 function App(props) {
@@ -340,9 +340,15 @@ function App(props) {
     const { socketLogger } = loggers;
 
     if (!savedBoardToDB) {
-      socketLogger.log('Send event: save-board');
-      socket.emit('save-board', loadedGameId, board, autocheck);
-      dispatch(gameActions.gameSaved());
+      debouncedSaveBoard(
+        socketLogger,
+        socket,
+        loadedGameId,
+        board,
+        autocheck,
+        dispatch,
+        gameActions
+      );
     }
   }, [savedBoardToDB, board, players, socket, loggers, loadedGameId, dispatch, autocheck]);
 
