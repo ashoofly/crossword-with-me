@@ -2,6 +2,39 @@
 
 https://crosswordwith.me
 
+# Screenshots 
+
+<style
+  type="text/css">
+
+.responsive {
+  display: flex;
+}
+
+figcaption {
+  font-size: 16px;
+  font-weight: bold;
+}
+</style>
+## Responsive Views
+<div class="responsive">
+<figure>
+  <figcaption>Mobile</figcaption>
+  <img alt="mobile-view" src="./images/mobile.jpeg" width="300">
+</figure>
+<figure>
+  <figcaption>Tablet</figcaption>
+  <img alt="tablet-view" src="./images/tablet.png" width="400">
+</figure>
+<figure>
+  <figcaption>Desktop</figcaption>
+  <img alt="desktop-view" src="./images/desktop.png" width="400">
+</figure>
+</div>
+
+## Multi-player Gameplay
+<img alt="multiplayer-view" src="./images/multiplayer.png" width="400">
+
 
 # Tech Stack
 
