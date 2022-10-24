@@ -4,19 +4,23 @@ https://crosswordwith.me
 
 # Screenshots 
 
-## Responsive Views
-#### Mobile
-<img alt="mobile-view" src="./images/mobile.jpeg" width="300">
-
-#### Tablet
-<img alt="tablet-view" src="./images/tablet.png" width="400">
-
-#### Desktop
-<img alt="desktop-view" src="./images/desktop.png" width="400">
-
-## Multi-player Gameplay
-<img alt="multiplayer-view" src="./images/multiplayer.png" width="400">
-
+#### Views
+<table>
+ <tr>
+  <th>Mobile</th>
+  <th>Tablet</th>
+  <th>Desktop</th>
+  <th>Multiplayer</th>
+ </tr>
+ <tr>
+  <td><img alt="mobile-view" src="./images/mobile.jpeg" width="300"></td>
+  <td><img alt="tablet-view" src="./images/tablet.png" width="400"></td>
+  <td><img alt="desktop-view" src="./images/desktop.png" width="400"></td>
+  <td><img alt="multiplayer-view" src="./images/multiplayer.png" width="400"></td>
+ </tr>
+  <tr>
+ </tr>
+</table>
 
 # Tech Stack
 
