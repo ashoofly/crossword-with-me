@@ -84,7 +84,7 @@ button {
   min-height: var(--keyboard-button-min-height);
 }
 
-/* Overriden layout properties for landscape tablets */
+/* Overridden layout properties for landscape tablets */
 @media (min-width: 1000px) and (hover: none) {
   :root {
     --widescreen-left-width: 50%;
@@ -108,7 +108,6 @@ button {
     grid-column: 1 / 2;
     grid-row: 1 / 2;
   } 
-
 
   .Board {
     grid-row: 2 / 4;
@@ -152,7 +151,7 @@ button {
     display: grid;
     --barH: min(80px, var(--bar-height));
     --clueH: min(100px, var(--clue-height));
-    grid-template-rows: var(--barH) calc(var(--barH) + 50px) var(--clueH) calc(100% - (2 * var(--barH) + var(--clueH) + 50px));
+    grid-template-rows: var(--barH) var(--barH) var(--clueH) calc(100% - (2 * var(--barH) + var(--clueH)));
     justify-content: initial;
   }
 
@@ -161,8 +160,7 @@ button {
   }
 
   .title-bar,
-  .navbar
-   {
+  .navbar {
     max-height: 80px;
   }
 

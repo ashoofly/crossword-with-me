@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 const logOnly = [
   // 'Render',
-  'Socket',
-  // 'Focus',
+  // 'Socket',
+  'Focus',
   // 'Error',
   // 'Auth',
   // 'Index',

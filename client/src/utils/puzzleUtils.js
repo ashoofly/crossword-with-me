@@ -68,6 +68,25 @@ function mapGridIndexToClueDictionaryEntry(clueDictionary, numCols, orientation,
   return clueDictionary[orientation][gameGrid[currentWordStart].gridNum];
 }
 
+function isLastClue(clueDictionary, numCols, numRows, orientation, gameGrid, index) {
+  const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
+    clueDictionary,
+    numCols,
+    orientation,
+    gameGrid,
+    index
+  );
+  const wordEnd = findWordEnd(
+    gameGrid,
+    numCols,
+    numRows,
+    index,
+    orientation
+  );
+  return currentWordClueDictionaryEntry
+    ? (currentWordClueDictionaryEntry.nextGridNum === -1) : false;
+}
+
 function isLastClueSquare(clueDictionary, numCols, numRows, orientation, gameGrid, index) {
   const currentWordClueDictionaryEntry = mapGridIndexToClueDictionaryEntry(
     clueDictionary,
@@ -84,7 +103,7 @@ function isLastClueSquare(clueDictionary, numCols, numRows, orientation, gameGri
     orientation
   );
   return currentWordClueDictionaryEntry
-    ? (currentWordClueDictionaryEntry.isLastClue && wordEnd === index) : false;
+    ? (currentWordClueDictionaryEntry.nextGridNum === -1 && wordEnd === index) : false;
 }
 
 export function getPrevWord(clueDictionary, numCols, orientation, gameGrid, index) {
@@ -169,5 +188,6 @@ export {
   centerActiveSquareOnZoom,
   findWordStart,
   findWordEnd,
+  isLastClue,
   isLastClueSquare,
 };

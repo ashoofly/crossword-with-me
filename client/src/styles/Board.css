@@ -3,7 +3,6 @@
   --numCols: auto-fill;
   --boardWidth: calc(100%);
   --boardHeight: 91vh;
-
   --board-padding: 5px;
 }
 
@@ -12,28 +11,13 @@
   --squareSideLength: calc(var(--app-width)/var(--numCols));
   grid-template-columns: repeat(var(--numCols), var(--square-side-length));
   grid-template-rows: repeat(var(--numRows), var(--square-side-length));
-  /* grid-template-columns: repeat(var(--numCols), 1fr); */
-  /* grid-auto-columns: max-content; */
   overflow-x: auto;
 }
 
 @media (max-width: 599px) {
   .Board {
     --boardHeight: 50vh;
-    /* --squareSideLength: min(calc(var(--boardWidth)/var(--numCols)), calc(var(--boardHeight)/var(--numRows)));
-    grid-template-rows: repeat(var(--numRows), calc(50vh/var(--numRows))); */
-    /* max-height: 50vh; */
     overflow: scroll;
     touch-action: pinch-zoom pan-x pan-y;
   }
 }
-
-/* @media (min-width: 600px) {
-  .Board {
-    height: 91vh;
-    --squareSideLength: min(calc(var(--boardWidth)/var(--numCols)), calc(var(--boardHeight)/var(--numRows)));
-    grid-template-columns: repeat(var(--numCols), var(--squareSideLength));
-    grid-template-rows: repeat(var(--numRows), var(--squareSideLength));
-    justify-content: center;
-  }
-} */

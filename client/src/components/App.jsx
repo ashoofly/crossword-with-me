@@ -133,8 +133,8 @@ function App(props) {
    * Initialize cursor for game
    */
   useEffect(() => {
-    setCursor(new Cursor(squareRefs));
-  }, [squareRefs]);
+    setCursor(new Cursor(squareRefs, dispatch));
+  }, [squareRefs, dispatch]);
 
   /**
    * After user is authenticated and player is verified,
@@ -379,14 +379,12 @@ function App(props) {
       cursor.jumpToNextWord(game, pov, focusedSquare);
     } else if (e.shiftKey && e.key === 'ArrowLeft') {
       cursor.jumpToPreviousWord(game, pov, focusedSquare);
-    } else if (board[focusedSquare].verified) {
-      goToNextSquareAfterInput();
     } else if (rebusActive && e.key === 'Enter') {
       dispatch(povActions.toggleRebus());
     } else if (e.key === 'Backspace') {
       setDeleteMode(true);
       let currentIndex = focusedSquare;
-      if (board[focusedSquare].input === '') {
+      if (board[focusedSquare].input === '' || board[focusedSquare].verified) {
         // if user input already empty, backspace to previous letter
         currentIndex = cursor.backspace(game, pov);
       }
@@ -396,7 +394,9 @@ function App(props) {
     } else {
       setDeleteMode(false);
       if (e.key.length === 1 && e.key.match(/[A-Za-z]/)) {
-        if (rebusActive) {
+        if (board[focusedSquare].verified) {
+          goToNextSquareAfterInput();
+        } else if (rebusActive) {
           const currentInput = board[focusedSquare].input;
           const newValue = currentInput + e.key.toUpperCase();
           dispatch(gameActions.changeInput({

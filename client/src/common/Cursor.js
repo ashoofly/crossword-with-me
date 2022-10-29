@@ -3,16 +3,24 @@ import {
   getNextWord,
   findWordStart,
   findWordEnd,
+  isLastClue,
   isLastClueSquare,
 } from '../utils/puzzleUtils';
+import { povActions } from '../redux/slices/povSlice';
 
 export default class Cursor {
-  constructor(squareRefs) {
+  constructor(squareRefs, dispatch) {
     this.squareRefs = squareRefs;
+    this.dispatch = dispatch;
   }
 
   static puzzleIsFilled(gameGrid, board) {
     return board.every((square, i) => (!gameGrid[i].isPlayable || square.input !== '' || square.verified));
+  }
+
+  getFirstSquareInOppositeOrientation(gameGrid) {
+    this.dispatch(povActions.toggleOrientation());
+    return gameGrid.findIndex(square => square.isPlayable);
   }
 
   getNextEmptySquare(game, pov, index, overwriteMode = false, previous = false) {
@@ -25,15 +33,7 @@ export default class Cursor {
     } = game;
     const { orientation } = pov.focused;
 
-    // If puzzle is filled, go to first or last playable square
-    const isFilled = Cursor.puzzleIsFilled(gameGrid, board);
-    if (isFilled && previous) {
-      return gameGrid.findIndex(square => square.isPlayable);
-    } else if (isFilled) {
-      return gameGrid.findLastIndex(square => square.isPlayable);
-    }
-
-    // If last square in orientation, remain on square
+    // If last square in orientation, go to first square in opposite orientation
     if (isLastClueSquare(
       clueDictionary,
       numCols,
@@ -41,11 +41,12 @@ export default class Cursor {
       orientation,
       gameGrid,
       index
-    )) return index;
+    )) return this.getFirstSquareInOppositeOrientation(gameGrid);
 
     const incrementInterval = orientation === 'across' ? 1 : game.numCols;
 
-    if (overwriteMode) {
+    const puzzleIsFilled = Cursor.puzzleIsFilled(gameGrid, board);
+    if (overwriteMode || puzzleIsFilled) {
       const next = index + incrementInterval;
       // in overwrite mode, just go to the next playable square in the word
       // regardless of whether it is occupied
@@ -120,6 +121,7 @@ export default class Cursor {
       clueDictionary,
       numCols,
       gameGrid,
+      board,
     } = game;
     const { focused, zoomActive } = pov;
     const { orientation } = focused;
@@ -131,7 +133,9 @@ export default class Cursor {
       gameGrid,
       focusedSquare
     );
-    const index = this.getNextEmptySquare(game, pov, prevWordStart, false, true);
+    const puzzleIsFilled = Cursor.puzzleIsFilled(gameGrid, board);
+    const index = puzzleIsFilled ? prevWordStart
+      : this.getNextEmptySquare(game, pov, prevWordStart, false, true);
     this.jumpToSquare(game, index, zoomActive, orientation);
   }
 
@@ -141,6 +145,7 @@ export default class Cursor {
       numCols,
       numRows,
       gameGrid,
+      board,
     } = game;
     const { focused, zoomActive } = pov;
     const { orientation } = focused;
@@ -153,7 +158,17 @@ export default class Cursor {
       gameGrid,
       focusedSquare
     );
-    const index = this.getNextEmptySquare(game, pov, nextWordStart, false, false);
+
+    let index;
+    // If last square in orientation, go to first square in opposite orientation
+    if (isLastClue(clueDictionary, numCols, numRows, orientation, gameGrid, focusedSquare)) {
+      index = this.getFirstSquareInOppositeOrientation(gameGrid);
+    } else {
+      // If puzzle is filled, just go to next word. Otherwise, find next empty square.
+      const puzzleIsFilled = Cursor.puzzleIsFilled(gameGrid, board);
+      index = puzzleIsFilled ? nextWordStart
+        : this.getNextEmptySquare(game, pov, nextWordStart, false, false);
+    }
     this.jumpToSquare(game, index, zoomActive, orientation);
   }
 
@@ -201,7 +216,7 @@ export default class Cursor {
 
   backspace(game, pov) {
     const { focused, zoomActive } = pov;
-    const { orientation, square: focusedSquare, word: focusedWord } = focused;
+    const { orientation } = focused;
     const index = Cursor.getPreviousSquare(game, pov);
     this.jumpToSquare(game, index, zoomActive, orientation);
     return index;

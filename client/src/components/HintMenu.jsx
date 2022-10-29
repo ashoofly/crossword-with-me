@@ -160,7 +160,7 @@ const HintMenu = memo(props => {
         id: 5,
         text: 'Reveal / Clear...',
         onClick: goToRevealMenu,
-        disabled: autocheck || !amOwner(),
+        disabled: !amOwner(),
       },
     ];
   }, [players, autocheck, checkActiveSquare, checkActiveWord,
