@@ -62,7 +62,6 @@ function centerActiveSquareOnZoom(squareRefs, focus, orientation) {
   });
 }
 
-// TODO: max call stack size exceeded here
 function mapGridIndexToClueDictionaryEntry(clueDictionary, numCols, orientation, gameGrid, index) {
   const currentWordStart = findWordStart(gameGrid, numCols, index, orientation);
   return clueDictionary[orientation][gameGrid[currentWordStart].gridNum];
