@@ -68,6 +68,7 @@ https://crosswordwith.me
   * Other monitoring
 * Alert player when puzzle complete and correct
   * Streaks, scores
+* Client-side tests
 * Set up test database for test environment
 * Allow anonymous players
   * Clear anonymous games from the database every night
