@@ -29,13 +29,13 @@ Go to `localhost:5000` to see UI
 **Note**: This is the first stage at which you can test mobile devices due to the security restrictions of using Google as the auth server (authorized JavaScript origins cannot just be unsecure IP addresses unless they are `localhost`, which does not work for mobile connections).
 
 ```
-git push staging master
+git push staging main
 ```
 Go to https://evening-inlet-23063.herokuapp.com/ to see UI
 
 ## Heroku Production
 ```
-git push production master
+git push production main
 ```
 Go to https://floating-plains-76141.herokuapp.com/ to see UI
 
