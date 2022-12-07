@@ -161,16 +161,12 @@ function saveBoard(socketLogger, socket, loadedGameId, board, autocheck, dispatc
 }
 
 function debounce(func, delay = 300) {
-  const logger = new Logger('Timer');
   let timer;
   return function (...args) {
-    logger.log(`Clearing timer ${timer}`);
     clearTimeout(timer);
     timer = setTimeout(() => {
-      logger.log(`Running function ${func.name}`);
       func.apply(func, args);
     }, delay);
-    logger.log(`Set timer ${timer} to run func in ${delay} ms`);
   };
 }
 

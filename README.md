@@ -63,17 +63,19 @@ https://crosswordwith.me
   * client-side TO DO
   
 # To Do 
+* Accessibility
 * If puzzle fetch fails, send message to me
   * Other monitoring
 * Alert player when puzzle complete and correct
   * Streaks, scores
-* Display when avatar icons exceed title bar
-  * Allow custom colors
-* Chat Functionality
-  * To discuss game, etc. 
+* Client-side tests
+* Set up test database for test environment
 * Allow anonymous players
   * Clear anonymous games from the database every night
-
+* Chat Functionality
+  * To discuss game, etc. 
+* Display when avatar icons exceed title bar
+  * Allow custom colors
 
 
 

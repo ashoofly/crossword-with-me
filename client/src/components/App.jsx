@@ -54,13 +54,14 @@ function App(props) {
 
   /* Player State */
   const pov = useSelector(state => state.pov);
-  const zoomActive = useSelector(state => state.pov.zoomActive);
-  const playerVerified = useSelector(state => state.pov.playerVerified);
-  const rebusActive = useSelector(state => state.pov.rebusActive);
-  const pencilActive = useSelector(state => state.pov.pencilActive);
-  const focusedSquare = useSelector(state => state.pov.focused.square);
-  const focusedWord = useSelector(state => state.pov.focused.word);
-  const orientation = useSelector(state => state.pov.focused.orientation);
+  const {
+    zoomActive,
+    playerVerified,
+    rebusActive,
+    pencilActive,
+    focused,
+  } = pov;
+  const { orientation, square: focusedSquare } = focused;
   const [deleteMode, setDeleteMode] = useState(false);
   const [overwriteMode, setOverwriteMode] = useState(false);
 
@@ -145,21 +146,16 @@ function App(props) {
     if (socket === null || !initialized || !playerVerified || !loggers) return;
     const { socketLogger } = loggers;
 
-    socketLogger.log(`Send event: get-team-games for user: ${user.uid}`);
     socket.emit('get-team-games', user.uid);
-
-    socketLogger.log('Send event: get-puzzle-dates');
     socket.emit('get-puzzle-dates');
 
     const requestedGameId = searchParams.get('gameId');
     if (!requestedGameId) {
       if (user) {
-        socketLogger.log(`Send event: get-default-game - user: ${user.uid}`);
         socket.emit('get-default-game', user.uid);
       }
     } else if (requestedGameId !== loadedGameId) {
       if (user) {
-        socketLogger.log(`Send event: get-game-by-id with ${user.uid} for ${requestedGameId}`);
         socket.emit('get-game-by-id', requestedGameId, user.uid);
       } else {
         navigate(`/join-game?gameId=${requestedGameId}`);
@@ -424,7 +420,7 @@ function App(props) {
         }
       }
     }
-  }, [board, focusedSquare, rebusActive, dispatch, cursor, orientation,
+  }, [board, focusedSquare, rebusActive, dispatch, cursor,
     goToNextSquareAfterInput, game, pov, loadedGameId, myColor, pencilActive, overwriteMode]);
 
   return (
