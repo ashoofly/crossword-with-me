@@ -22,6 +22,9 @@ https://crosswordwith.me
  </tr>
 </table>
 
+# Architecture
+<img alt="crossword-software-architecture-diagram" src="./images/crossword-architecture.png" width="800">
+
 # Tech Stack
 
 * Responsive Design
@@ -64,6 +67,10 @@ https://crosswordwith.me
   
 # To Do 
 * Accessibility
+  * When tabbing to different word, screen reader reads out number & orientation (e.g., "13 across"), clue, and number of letters
+  * If there are already filled in letters, read them aloud (e.g., A B _ D _ ). 
+  * Different behavior - no automatic skipping filled in letters. User manually moves within word with arrow keys.
+  * Say which square you are on - e.g., "third square"
 * If puzzle fetch fails, send message to me
   * Other monitoring
 * Alert player when puzzle complete and correct
