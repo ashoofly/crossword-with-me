@@ -86,7 +86,10 @@ Created with [Excalidraw](https://excalidraw.com/)
   * To discuss game, etc. 
 * Display when avatar icons exceed title bar
   * Allow custom colors
-
+* Let player know when disconnected from Socket, otherwise anything they input during disconnect won't be saved
+* Join as viewer first and then only part of game if attempt to fill in answer
+* Ability to remove self from game
+* Ability to browse clue list for desktop and tablet, b/c there is room
 
 
 
