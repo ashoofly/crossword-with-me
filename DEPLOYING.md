@@ -31,6 +31,12 @@ Go to `localhost:5000` to see UI
 ```
 git push staging main
 ```
+
+To push feature branch to staging:
+```
+git push staging feature-branch:main
+```
+
 Go to https://evening-inlet-23063.herokuapp.com/ to see UI
 
 ## Heroku Production
