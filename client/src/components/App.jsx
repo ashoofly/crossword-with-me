@@ -143,8 +143,7 @@ function App(props) {
    * or get default game if no game ID specified.
    */
   useEffect(() => {
-    if (socket === null || !initialized || !playerVerified || !loggers) return;
-    const { socketLogger } = loggers;
+    if (socket === null || !initialized || !playerVerified) return;
 
     socket.emit('get-team-games', user.uid);
     socket.emit('get-puzzle-dates');
@@ -157,14 +156,12 @@ function App(props) {
     } else if (requestedGameId !== loadedGameId) {
       if (user) {
         socket.emit('get-game-by-id', requestedGameId, user.uid);
-      } else {
-        navigate(`/join-game?gameId=${requestedGameId}`);
       }
     }
   // 'loadedGameId' and 'searchParams' should not be included in dep array,
   // b/c this would cause infinite loop:
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, user, playerVerified, initialized, searchParams, loggers, navigate]);
+  }, [socket, user, playerVerified, initialized, searchParams, navigate]);
 
   /**
    * Set up app-level socket listeners after socket or authenticated user changes
@@ -428,7 +425,7 @@ function App(props) {
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div className="container" onKeyDown={handleKeyDown}>
       { /* Login page if not signed in */ }
-      {initialized && !user && <SignIn auth={auth} socket={socket} />}
+      {initialized && !user && <SignIn auth={auth} socket={socket} loggers={loggers} />}
 
       { /* Loading page */ }
       {user && !playerVerified && (
