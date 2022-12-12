@@ -22,7 +22,7 @@ const SignIn = memo(props => {
 
   const navigate = useNavigate();
   const [user, initialized] = useAuthenticatedUser(auth);
-  const [friendName, setFriendName] = useState(null);
+  const [friendName, setFriendName] = useState('your friend');
   const [gameNotFound, setGameNotFound] = useState(false);
 
   const dispatch = useDispatch();

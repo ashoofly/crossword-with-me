@@ -50,7 +50,6 @@ root.render(
       <Router>
         <Routes>
           <Route path="/" element={<App socket={socket} auth={auth} />} />
-          <Route path="/join-game" element={<SignIn socket={socket} auth={auth} />} />
         </Routes>
       </Router>
     </Provider>
