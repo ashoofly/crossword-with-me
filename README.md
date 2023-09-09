@@ -69,6 +69,9 @@ Created with [Excalidraw](https://excalidraw.com/)
   * client-side TO DO
   
 # To Do 
+* Client-side tests
+* CI/CD
+* Add Renovate/Dependabot
 * Accessibility
   * When tabbing to different word, screen reader reads out number & orientation (e.g., "13 across"), clue, and number of letters
   * If there are already filled in letters, read them aloud (e.g., A B _ D _ ). 
@@ -78,7 +81,6 @@ Created with [Excalidraw](https://excalidraw.com/)
   * Other monitoring
 * Alert player when puzzle complete and correct
   * Streaks, scores
-* Client-side tests
 * Set up test database for test environment
 * Allow anonymous players
   * Clear anonymous games from the database every night
